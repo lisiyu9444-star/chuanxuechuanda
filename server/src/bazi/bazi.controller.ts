@@ -5,7 +5,7 @@ import {
   HttpCode,
   Req,
 } from '@nestjs/common'
-import { BaziService, FourPillar, OutfitRecommendation } from './bazi.service'
+import { BaziService, FourPillar, FavorableAnalysis, OutfitRecommendation } from './bazi.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
 
 @Controller('bazi')
@@ -33,6 +33,7 @@ export class BaziController {
       fourPillars: FourPillar[]
       fiveElements: Array<{ name: string; count: number }>
       favorableElement: string
+      favorableAnalysis: FavorableAnalysis
       outfit: OutfitRecommendation
       imageUrl: string
     }
@@ -60,6 +61,7 @@ export class BaziController {
         fourPillars: baziResult.fourPillars,
         fiveElements: baziResult.fiveElements,
         favorableElement: baziResult.favorableElement,
+        favorableAnalysis: baziResult.favorableAnalysis,
         outfit: baziResult.outfit,
         imageUrl,
       },

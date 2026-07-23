@@ -23,6 +23,14 @@ interface BaZiResult {
   }>
   fiveElements: Array<{ name: string; count: number }>
   favorableElement: string
+  favorableAnalysis: {
+    dayMaster: string
+    strength: string
+    coreYongShen: string
+    assistantXiShen: string
+    taboo: string
+    logicSummary: string
+  }
   outfit: {
     style: string
     colors: string[]
@@ -191,13 +199,13 @@ const ResultPage = () => {
             </CardContent>
           </Card>
 
-          {/* Favorable Element */}
+          {/* Favorable Element Analysis */}
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
               <Text className="block text-sm font-medium text-indigo-500 mb-3">
-                喜用神
+                喜用神分析
               </Text>
-              <View className="flex items-center gap-3">
+              <View className="flex items-center gap-3 mb-3">
                 <View
                   className="w-12 h-12 rounded-full flex items-center justify-center"
                   style={{
@@ -216,12 +224,17 @@ const ResultPage = () => {
                 </View>
                 <View className="flex-1">
                   <Text className="block text-gray-700 text-sm">
-                    你的八字喜用神为「{result.favorableElement}」
+                    核心用神「{result.favorableAnalysis.coreYongShen}」· 喜神「{result.favorableAnalysis.assistantXiShen}」
                   </Text>
                   <Text className="block text-gray-400 text-xs mt-1">
-                    今日穿搭宜采用{result.outfit.colors.join('、')}色系
+                    忌神「{result.favorableAnalysis.taboo}」· {result.favorableAnalysis.strength}
                   </Text>
                 </View>
+              </View>
+              <View className="bg-gray-50 rounded-lg p-3">
+                <Text className="block text-xs text-gray-500 leading-relaxed">
+                  {result.favorableAnalysis.logicSummary}
+                </Text>
               </View>
             </CardContent>
           </Card>
