@@ -1,13 +1,13 @@
 export default typeof definePageConfig === 'function'
   ? definePageConfig({
-    navigationBarTitleText: '天命穿搭',
-    navigationBarBackgroundColor: '#0d1117',
-    navigationBarTextStyle: 'white',
-    backgroundColor: '#0d1117'
+    navigationBarTitleText: 'AI五行穿搭',
+    navigationBarBackgroundColor: '#ffffff',
+    navigationBarTextStyle: 'black',
+    backgroundColor: '#ffffff'
   })
   : {
-    navigationBarTitleText: '天命穿搭',
-    navigationBarBackgroundColor: '#0d1117',
-    navigationBarTextStyle: 'white',
-    backgroundColor: '#0d1117'
+    navigationBarTitleText: 'AI五行穿搭',
+    navigationBarBackgroundColor: '#ffffff',
+    navigationBarTextStyle: 'black',
+    backgroundColor: '#ffffff'
   }

@@ -26,7 +26,7 @@ const SHICHEN_OPTIONS = [
 const IndexPage = () => {
   const [nickname, setNickname] = useState('')
   const [gender, setGender] = useState('male')
-  const [birthDate, setBirthDate] = useState('')
+  const [birthDate, setBirthDate] = useState('2000-01-01')
   const [shichenIndex, setShichenIndex] = useState(-1)
   const [location, setLocation] = useState('')
 
@@ -61,29 +61,29 @@ const IndexPage = () => {
   }
 
   return (
-    <View className="min-h-full bg-[#0d1117] px-6 py-8">
+    <View className="min-h-full bg-white px-6 py-6">
       {/* Header */}
-      <View className="flex flex-col items-center pt-8 pb-10">
-        <View className="w-16 h-16 rounded-full bg-[#161b22] border border-[#c9a96e] flex items-center justify-center mb-4">
-          <Sparkles size={28} color="#c9a96e" />
+      <View className="flex flex-col items-center pt-8 pb-8">
+        <View className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4">
+          <Sparkles size={28} color="#ffffff" />
         </View>
-        <Text className="block text-2xl font-serif text-[#c9a96e] mb-2">天命穿搭</Text>
-        <Text className="block text-sm text-[#8b8680]">
-          洞察八字玄机 · 定制每日穿搭
+        <Text className="block text-xl font-bold text-gray-900 mb-1">AI五行穿搭</Text>
+        <Text className="block text-sm text-gray-400">
+          根据你的八字 · 推荐每日穿搭
         </Text>
       </View>
 
       {/* Form */}
-      <View className="flex flex-col gap-5">
+      <View className="flex flex-col gap-4">
         {/* Nickname */}
-        <Card className="bg-[#161b22] border-[#2a2a35]">
-          <CardContent className="p-5">
-            <Text className="block text-sm text-[#c9a96e] mb-3 font-serif">
-              您的昵称
+        <Card className="bg-white border-gray-100 shadow-sm">
+          <CardContent className="p-4">
+            <Text className="block text-sm text-gray-500 mb-2">
+              你的昵称
             </Text>
-            <View className="bg-[#1a1f28] rounded-lg px-4 py-3">
+            <View className="bg-gray-50 rounded-xl px-4 py-3">
               <Input
-                className="w-full bg-transparent text-[#f0ebe3] placeholder:text-[#8b8680]"
+                className="w-full bg-transparent text-gray-900 placeholder:text-gray-400"
                 placeholder="请输入昵称"
                 value={nickname}
                 onInput={(e) => setNickname(e.detail.value)}
@@ -93,32 +93,32 @@ const IndexPage = () => {
         </Card>
 
         {/* Gender */}
-        <Card className="bg-[#161b22] border-[#2a2a35]">
-          <CardContent className="p-5">
-            <Text className="block text-sm text-[#c9a96e] mb-3 font-serif">
-              您的性别
+        <Card className="bg-white border-gray-100 shadow-sm">
+          <CardContent className="p-4">
+            <Text className="block text-sm text-gray-500 mb-2">
+              你的性别
             </Text>
             <RadioGroup
               value={gender}
               onValueChange={(val) => setGender(val)}
-              className="flex gap-4"
+              className="flex gap-3"
             >
-              <View className="flex-1 flex items-center justify-center py-3 rounded-lg bg-[#1a1f28] border border-[#2a2a35] data-[state=checked]:border-[#c9a96e] data-[state=checked]:bg-[#1a1f28]">
-                <RadioGroupItem value="male" className="border-[#8b8680] data-[state=checked]:border-[#c9a96e] data-[state=checked]:bg-[#c9a96e]" />
-                <Text className="block ml-2 text-[#f0ebe3]">男</Text>
+              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-indigo-400 data-[state=checked]:bg-indigo-50">
+                <RadioGroupItem value="male" className="border-gray-300 data-[state=checked]:border-indigo-500 data-[state=checked]:bg-indigo-500" />
+                <Text className="block ml-2 text-gray-700 text-sm">男</Text>
               </View>
-              <View className="flex-1 flex items-center justify-center py-3 rounded-lg bg-[#1a1f28] border border-[#2a2a35] data-[state=checked]:border-[#c9a96e] data-[state=checked]:bg-[#1a1f28]">
-                <RadioGroupItem value="female" className="border-[#8b8680] data-[state=checked]:border-[#c9a96e] data-[state=checked]:bg-[#c9a96e]" />
-                <Text className="block ml-2 text-[#f0ebe3]">女</Text>
+              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-indigo-400 data-[state=checked]:bg-indigo-50">
+                <RadioGroupItem value="female" className="border-gray-300 data-[state=checked]:border-indigo-500 data-[state=checked]:bg-indigo-500" />
+                <Text className="block ml-2 text-gray-700 text-sm">女</Text>
               </View>
             </RadioGroup>
           </CardContent>
         </Card>
 
         {/* Birth Date */}
-        <Card className="bg-[#161b22] border-[#2a2a35]">
-          <CardContent className="p-5">
-            <Text className="block text-sm text-[#c9a96e] mb-3 font-serif">
+        <Card className="bg-white border-gray-100 shadow-sm">
+          <CardContent className="p-4">
+            <Text className="block text-sm text-gray-500 mb-2">
               出生日期
             </Text>
             <Picker
@@ -128,12 +128,12 @@ const IndexPage = () => {
               value={birthDate}
               onChange={(e) => setBirthDate(e.detail.value)}
             >
-              <View className="bg-[#1a1f28] rounded-lg px-4 py-3">
+              <View className="bg-gray-50 rounded-xl px-4 py-3">
                 <Text
                   className={
                     birthDate
-                      ? 'block text-[#f0ebe3]'
-                      : 'block text-[#8b8680]'
+                      ? 'block text-gray-900'
+                      : 'block text-gray-400'
                   }
                 >
                   {birthDate || '请选择出生日期'}
@@ -144,9 +144,9 @@ const IndexPage = () => {
         </Card>
 
         {/* Birth Time (时辰) */}
-        <Card className="bg-[#161b22] border-[#2a2a35]">
-          <CardContent className="p-5">
-            <Text className="block text-sm text-[#c9a96e] mb-3 font-serif">
+        <Card className="bg-white border-gray-100 shadow-sm">
+          <CardContent className="p-4">
+            <Text className="block text-sm text-gray-500 mb-2">
               出生时辰
             </Text>
             <Picker
@@ -157,12 +157,12 @@ const IndexPage = () => {
                 setShichenIndex(Number(e.detail.value))
               }
             >
-              <View className="bg-[#1a1f28] rounded-lg px-4 py-3">
+              <View className="bg-gray-50 rounded-xl px-4 py-3">
                 <Text
                   className={
                     shichenIndex >= 0
-                      ? 'block text-[#f0ebe3]'
-                      : 'block text-[#8b8680]'
+                      ? 'block text-gray-900'
+                      : 'block text-gray-400'
                   }
                 >
                   {shichenIndex >= 0
@@ -175,15 +175,15 @@ const IndexPage = () => {
         </Card>
 
         {/* Location */}
-        <Card className="bg-[#161b22] border-[#2a2a35]">
-          <CardContent className="p-5">
-            <Text className="block text-sm text-[#c9a96e] mb-3 font-serif">
+        <Card className="bg-white border-gray-100 shadow-sm">
+          <CardContent className="p-4">
+            <Text className="block text-sm text-gray-500 mb-2">
               所在城市
             </Text>
-            <View className="bg-[#1a1f28] rounded-lg px-4 py-3 flex items-center gap-2">
-              <MapPin size={16} color="#8b8680" />
+            <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center gap-2">
+              <MapPin size={16} color="#9ca3af" />
               <Input
-                className="flex-1 bg-transparent text-[#f0ebe3] placeholder:text-[#8b8680]"
+                className="flex-1 bg-transparent text-gray-900 placeholder:text-gray-400"
                 placeholder="请输入所在城市"
                 value={location}
                 onInput={(e) => setLocation(e.detail.value)}
@@ -195,11 +195,11 @@ const IndexPage = () => {
         {/* Submit Button */}
         <View className="pt-2 pb-8">
           <Button
-            className="w-full bg-[#c9a96e] text-[#0d1117] font-bold py-4 rounded-lg text-base border-0"
+            className="w-full bg-indigo-500 text-white font-bold py-4 rounded-xl text-base border-0 shadow-sm"
             onClick={handleSubmit}
           >
-            <Sparkles size={18} color="#0d1117" />
-            <Text className="ml-2 text-[#0d1117] font-bold">开始推演</Text>
+            <Sparkles size={18} color="#ffffff" />
+            <Text className="ml-2 text-white font-bold">开始推演</Text>
           </Button>
         </View>
       </View>

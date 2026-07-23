@@ -28,11 +28,11 @@ interface BaZiResult {
 }
 
 const ELEMENT_COLORS: Record<string, string> = {
-  '木': '#4a9e6e',
-  '火': '#c75450',
-  '土': '#c9a054',
-  '金': '#b8b0a8',
-  '水': '#4a7fb5',
+  '木': '#22c55e',
+  '火': '#ef4444',
+  '土': '#f59e0b',
+  '金': '#6b7280',
+  '水': '#3b82f6',
 }
 
 const ResultPage = () => {
@@ -49,9 +49,9 @@ const ResultPage = () => {
   const handleUnlock = () => {
     Taro.showModal({
       title: '解锁今日穿搭',
-      content: '观看短视频即可解锁您的专属穿搭推荐',
+      content: '观看短视频即可解锁你的专属穿搭推荐',
       confirmText: '观看解锁',
-      confirmColor: '#c9a96e',
+      confirmColor: '#6366f1',
       success: (res) => {
         if (res.confirm) {
           setUnlocked(true)
@@ -62,28 +62,28 @@ const ResultPage = () => {
 
   if (!result) {
     return (
-      <View className="min-h-full bg-[#0d1117] flex items-center justify-center">
-        <Text className="text-[#8b8680]">加载中...</Text>
+      <View className="min-h-full bg-white flex items-center justify-center">
+        <Text className="text-gray-400">加载中...</Text>
       </View>
     )
   }
 
-  const elementColor = ELEMENT_COLORS[result.favorableElement] || '#c9a96e'
+  const elementColor = ELEMENT_COLORS[result.favorableElement] || '#6366f1'
 
   return (
-    <View className="min-h-full bg-[#0d1117] px-6 py-6">
+    <View className="min-h-full bg-white px-6 py-5">
       {/* Header */}
-      <View className="flex flex-col items-center mb-6">
-        <Text className="block text-xl font-serif text-[#c9a96e] mb-1">
+      <View className="flex flex-col items-center mb-5">
+        <Text className="block text-lg font-bold text-gray-900 mb-1">
           {result.nickname} 的今日穿搭
         </Text>
-        <Text className="block text-sm text-[#8b8680]">
-          基于八字命理 · 为您量身定制
+        <Text className="block text-sm text-gray-400">
+          基于八字五行 · 为你量身定制
         </Text>
       </View>
 
       {/* Image Area */}
-      <View className="relative w-full rounded-xl overflow-hidden mb-6 bg-[#161b22]">
+      <View className="relative w-full rounded-2xl overflow-hidden mb-5 bg-gray-100">
         <View className="w-full" style={{ height: '600px' }}>
           <Image
             src={result.imageUrl}
@@ -99,13 +99,13 @@ const ResultPage = () => {
         {!unlocked && (
           <View
             className="absolute inset-0 flex flex-col items-center justify-center"
-            style={{ backgroundColor: 'rgba(13, 17, 23, 0.5)' }}
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
           >
-            <Lock size={36} color="#c9a96e" />
-            <Text className="block text-[#f0ebe3] mt-3 text-base font-serif">
-              您的专属穿搭已生成
+            <Lock size={32} color="#6366f1" />
+            <Text className="block text-gray-900 mt-3 text-base font-medium">
+              你的专属穿搭已生成
             </Text>
-            <Text className="block text-[#8b8680] mt-1 text-sm">
+            <Text className="block text-gray-400 mt-1 text-sm">
               观看视频即可解锁
             </Text>
           </View>
@@ -114,13 +114,13 @@ const ResultPage = () => {
 
       {/* Unlock Button */}
       {!unlocked && (
-        <View className="mb-6">
+        <View className="mb-5">
           <Button
-            className="w-full bg-[#c9a96e] text-[#0d1117] font-bold py-4 rounded-lg border-0"
+            className="w-full bg-indigo-500 text-white font-bold py-4 rounded-xl border-0 shadow-sm"
             onClick={handleUnlock}
           >
-            <Sparkles size={18} color="#0d1117" />
-            <Text className="ml-2 text-[#0d1117] font-bold">
+            <Sparkles size={18} color="#ffffff" />
+            <Text className="ml-2 text-white font-bold">
               观看视频解锁穿搭
             </Text>
           </Button>
@@ -131,15 +131,15 @@ const ResultPage = () => {
       {unlocked && (
         <View className="flex flex-col gap-4">
           {/* Unlocked indicator */}
-          <View className="flex items-center justify-center gap-2 py-2">
-            <CircleCheck size={16} color="#4a9e6e" />
-            <Text className="text-sm text-[#4a9e6e]">已解锁</Text>
+          <View className="flex items-center justify-center gap-2 py-1">
+            <CircleCheck size={16} color="#22c55e" />
+            <Text className="text-sm text-green-500">已解锁</Text>
           </View>
 
           {/* BaZi Summary */}
-          <Card className="bg-[#161b22] border-[#2a2a35]">
-            <CardContent className="p-5">
-              <Text className="block text-sm text-[#c9a96e] mb-4 font-serif">
+          <Card className="bg-white border-gray-100 shadow-sm">
+            <CardContent className="p-4">
+              <Text className="block text-sm font-medium text-indigo-500 mb-3">
                 八字概览
               </Text>
               <View className="flex justify-between gap-2">
@@ -148,17 +148,17 @@ const ResultPage = () => {
                     key={pillar.name}
                     className="flex-1 flex flex-col items-center gap-2"
                   >
-                    <Text className="block text-xs text-[#8b8680]">
+                    <Text className="block text-xs text-gray-400">
                       {pillar.name}
                     </Text>
                     <Text
-                      className="block text-lg font-serif"
+                      className="block text-lg font-bold"
                       style={{ color: ELEMENT_COLORS[pillar.stemElement] }}
                     >
                       {pillar.stem}
                     </Text>
                     <Text
-                      className="block text-lg font-serif"
+                      className="block text-lg font-bold"
                       style={{ color: ELEMENT_COLORS[pillar.branchElement] }}
                     >
                       {pillar.branch}
@@ -170,33 +170,33 @@ const ResultPage = () => {
           </Card>
 
           {/* Favorable Element */}
-          <Card className="bg-[#161b22] border-[#2a2a35]">
-            <CardContent className="p-5">
-              <Text className="block text-sm text-[#c9a96e] mb-3 font-serif">
+          <Card className="bg-white border-gray-100 shadow-sm">
+            <CardContent className="p-4">
+              <Text className="block text-sm font-medium text-indigo-500 mb-3">
                 喜用神
               </Text>
               <View className="flex items-center gap-3">
                 <View
                   className="w-12 h-12 rounded-full flex items-center justify-center"
                   style={{
-                    backgroundColor: `${elementColor}20`,
+                    backgroundColor: `${elementColor}15`,
                     borderWidth: '2px',
                     borderStyle: 'solid',
                     borderColor: elementColor,
                   }}
                 >
                   <Text
-                    className="block text-xl font-serif"
+                    className="block text-xl font-bold"
                     style={{ color: elementColor }}
                   >
                     {result.favorableElement}
                   </Text>
                 </View>
                 <View className="flex-1">
-                  <Text className="block text-[#f0ebe3] text-sm">
-                    您的八字喜用神为「{result.favorableElement}」
+                  <Text className="block text-gray-700 text-sm">
+                    你的八字喜用神为「{result.favorableElement}」
                   </Text>
-                  <Text className="block text-[#8b8680] text-xs mt-1">
+                  <Text className="block text-gray-400 text-xs mt-1">
                     今日穿搭宜采用{result.outfit.colors.join('、')}色系
                   </Text>
                 </View>
@@ -205,21 +205,21 @@ const ResultPage = () => {
           </Card>
 
           {/* Outfit Recommendation */}
-          <Card className="bg-[#161b22] border-[#2a2a35]">
-            <CardContent className="p-5">
-              <Text className="block text-sm text-[#c9a96e] mb-3 font-serif">
+          <Card className="bg-white border-gray-100 shadow-sm">
+            <CardContent className="p-4">
+              <Text className="block text-sm font-medium text-indigo-500 mb-2">
                 穿搭推荐
               </Text>
-              <Text className="block text-[#f0ebe3] text-sm mb-3">
+              <Text className="block text-gray-600 text-sm mb-3">
                 {result.outfit.description}
               </Text>
               <View className="flex flex-wrap gap-2">
                 {result.outfit.colors.map((color) => (
                   <View
                     key={color}
-                    className="px-3 py-1 rounded-full bg-[#1a1f28] border border-[#2a2a35]"
+                    className="px-3 py-1 rounded-full bg-gray-50 border border-gray-100"
                   >
-                    <Text className="text-xs text-[#f0ebe3]">{color}</Text>
+                    <Text className="text-xs text-gray-600">{color}</Text>
                   </View>
                 ))}
               </View>
@@ -229,10 +229,10 @@ const ResultPage = () => {
           {/* Regenerate Button */}
           <View className="pb-8">
             <Button
-              className="w-full bg-[#161b22] text-[#c9a96e] border border-[#c9a96e] py-3 rounded-lg"
+              className="w-full bg-white text-indigo-500 border border-indigo-200 py-3 rounded-xl"
               onClick={() => Taro.navigateBack({ delta: 2 })}
             >
-              <Text className="text-[#c9a96e]">重新测算</Text>
+              <Text className="text-indigo-500">重新测算</Text>
             </Button>
           </View>
         </View>
