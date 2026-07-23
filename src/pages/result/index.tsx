@@ -9,12 +9,17 @@ import './index.css'
 interface BaZiResult {
   nickname: string
   gender: string
+  dayMaster: string
+  dayMasterElement: string
   fourPillars: Array<{
     name: string
     stem: string
     branch: string
+    ganZhi: string
     stemElement: string
     branchElement: string
+    naYin: string
+    tenGod: string
   }>
   fiveElements: Array<{ name: string; count: number }>
   favorableElement: string
@@ -139,18 +144,30 @@ const ResultPage = () => {
           {/* BaZi Summary */}
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
-              <Text className="block text-sm font-medium text-indigo-500 mb-3">
-                八字概览
-              </Text>
+              <View className="flex items-center justify-between mb-3">
+                <Text className="block text-sm font-medium text-indigo-500">
+                  八字概览
+                </Text>
+                {result.dayMaster && (
+                  <Text className="block text-xs text-gray-400">
+                    日主：<Text style={{ color: ELEMENT_COLORS[result.dayMasterElement] || '#6366f1', fontWeight: 'bold' }}>{result.dayMaster}</Text>（{result.dayMasterElement}）
+                  </Text>
+                )}
+              </View>
               <View className="flex justify-between gap-2">
                 {result.fourPillars.map((pillar) => (
                   <View
                     key={pillar.name}
-                    className="flex-1 flex flex-col items-center gap-2"
+                    className="flex-1 flex flex-col items-center gap-1"
                   >
                     <Text className="block text-xs text-gray-400">
                       {pillar.name}
                     </Text>
+                    {pillar.tenGod ? (
+                      <Text className="block text-xs text-gray-400">
+                        {pillar.tenGod}
+                      </Text>
+                    ) : null}
                     <Text
                       className="block text-lg font-bold"
                       style={{ color: ELEMENT_COLORS[pillar.stemElement] }}
@@ -163,6 +180,11 @@ const ResultPage = () => {
                     >
                       {pillar.branch}
                     </Text>
+                    {pillar.naYin ? (
+                      <Text className="block text-xs text-gray-300 mt-1">
+                        {pillar.naYin}
+                      </Text>
+                    ) : null}
                   </View>
                 ))}
               </View>

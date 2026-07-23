@@ -28,6 +28,8 @@ export class BaziController {
     data: {
       nickname: string
       gender: string
+      dayMaster: string
+      dayMasterElement: string
       fourPillars: FourPillar[]
       fiveElements: Array<{ name: string; count: number }>
       favorableElement: string
@@ -37,25 +39,10 @@ export class BaziController {
   }> {
     const { nickname, gender, birthDate, birthTime } = body
 
-    // Parse 时辰 index from string like "子时 (23:00-01:00)"
-    const shichenMap: Record<string, number> = {
-      '子': 0, '丑': 1, '寅': 2, '卯': 3,
-      '辰': 4, '巳': 5, '午': 6, '未': 7,
-      '申': 8, '酉': 9, '戌': 10, '亥': 11,
-    }
+    // 使用 @openfate/bazi-engine 进行专业排盘
+    const baziResult = this.baziService.calculateBaZi(birthDate, birthTime)
 
-    let birthTimeIndex = 0
-    for (const [key, idx] of Object.entries(shichenMap)) {
-      if (birthTime.startsWith(key)) {
-        birthTimeIndex = idx
-        break
-      }
-    }
-
-    // Calculate BaZi
-    const baziResult = this.baziService.calculateBaZi(birthDate, birthTimeIndex)
-
-    // Generate outfit image
+    // 生成穿搭图片
     const forwardHeaders = HeaderUtils.extractForwardHeaders(
       req.headers as Record<string, string>,
     )
@@ -68,6 +55,8 @@ export class BaziController {
       data: {
         nickname,
         gender,
+        dayMaster: baziResult.dayMaster,
+        dayMasterElement: baziResult.dayMasterElement,
         fourPillars: baziResult.fourPillars,
         fiveElements: baziResult.fiveElements,
         favorableElement: baziResult.favorableElement,

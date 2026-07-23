@@ -200,6 +200,9 @@ importers:
       '@nestjs/platform-express':
         specifier: ^10.4.15
         version: 10.4.20(@nestjs/common@10.4.20(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.20)
+      '@openfate/bazi-engine':
+        specifier: ^1.1.2
+        version: 1.1.2
       '@supabase/supabase-js':
         specifier: 2.95.3
         version: 2.95.3
@@ -2919,6 +2922,12 @@ packages:
     resolution: {integrity: sha512-um0xL3fO7Mf4fDxcqx9KryrB7zgRM5JSlvGN5AGkP6JLM5XEKyjeAiPbNxdXVXQ16isuAhYpvP88NgL2BGd6aA==}
     engines: {node: '>=8.0.0', npm: '>=5.0.0'}
     hasBin: true
+
+  '@openfate/bazi-engine@1.1.2':
+    resolution: {integrity: sha512-Gpxdm7H8l+WHPFHTZhVuLjtuWshrJUFnY413KZJ8NtiryFV17DtXz/Z8YHRp1YhEIFcPvPtxr5B/jDULk25lfA==}
+
+  '@openfate/true-solar-time@4.0.2':
+    resolution: {integrity: sha512-kPcQBPay0sdNGnj2XyoUlg1Cyq6lcVOaTTqlC+lh1Bvg6RODwG4ZD3rOk0C5O/qhnErWXoKHRMb2Kap/YfhAgg==}
 
   '@parcel/watcher-android-arm64@2.5.4':
     resolution: {integrity: sha512-hoh0vx4v+b3BNI7Cjoy2/B0ARqcwVNrzN/n7DLq9ZB4I3lrsvhrkCViJyfTj/Qi5xM9YFiH4AmHGK6pgH1ss7g==}
@@ -7699,6 +7708,9 @@ packages:
     peerDependencies:
       '@tarojs/components': '>=3.0.0'
       react: '>=16.8.0'
+
+  lunar-javascript@1.7.7:
+    resolution: {integrity: sha512-u/KYiwPIBo/0bT+WWfU7qO1d+aqeB90Tuy4ErXenr2Gam0QcWeezUvtiOIyXR7HbVnW2I1DKfU0NBvzMZhbVQw==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -13972,6 +13984,13 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
+  '@openfate/bazi-engine@1.1.2':
+    dependencies:
+      '@openfate/true-solar-time': 4.0.2
+      lunar-javascript: 1.7.7
+
+  '@openfate/true-solar-time@4.0.2': {}
+
   '@parcel/watcher-android-arm64@2.5.4':
     optional: true
 
@@ -19711,6 +19730,8 @@ snapshots:
       fuse.js: 7.1.0
       react: 18.3.1
       sharp: 0.33.5
+
+  lunar-javascript@1.7.7: {}
 
   magic-string@0.30.21:
     dependencies:
