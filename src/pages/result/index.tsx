@@ -135,7 +135,7 @@ const ResultPage = () => {
       {!unlocked && (
         <View className="mb-5">
           <Button
-            className="w-full bg-indigo-500 text-white font-bold py-4 rounded-xl border-0 shadow-sm"
+            className="w-full bg-purple-500 text-white font-bold py-4 rounded-xl border-0 shadow-sm"
             onClick={handleUnlock}
           >
             <Sparkles size={18} color="#ffffff" />
@@ -159,7 +159,7 @@ const ResultPage = () => {
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
               <View className="flex items-center justify-between mb-3">
-                <Text className="block text-sm font-medium text-indigo-500">
+                <Text className="block text-sm font-medium text-purple-500">
                   八字概览
                 </Text>
                 {result.dayMaster && (
@@ -208,7 +208,7 @@ const ResultPage = () => {
           {/* Favorable Element Analysis */}
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
-              <Text className="block text-sm font-medium text-indigo-500 mb-3">
+              <Text className="block text-sm font-medium text-purple-500 mb-3">
                 喜用神分析
               </Text>
               <View className="flex items-center gap-3 mb-3">
@@ -248,7 +248,7 @@ const ResultPage = () => {
           {/* Outfit Recommendation */}
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
-              <Text className="block text-sm font-medium text-indigo-500 mb-2">
+              <Text className="block text-sm font-medium text-purple-500 mb-2">
                 穿搭推荐
               </Text>
               <Text className="block text-gray-600 text-sm mb-3">
@@ -270,10 +270,10 @@ const ResultPage = () => {
           {/* Regenerate Button */}
           <View className="pb-8">
             <Button
-              className="w-full bg-white text-indigo-500 border border-indigo-200 py-3 rounded-xl"
+              className="w-full bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
               onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
             >
-              <Text className="text-indigo-500">重新测算</Text>
+              <Text className="text-purple-500">重新测算</Text>
             </Button>
           </View>
         </View>

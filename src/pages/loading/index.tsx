@@ -90,8 +90,8 @@ const LoadingPage = () => {
       <View className="flex flex-col items-center pt-10 pb-6">
         {/* Clean loading animation - bouncing dots */}
         <View className="flex items-center gap-2 mb-6">
-          <View className="w-3 h-3 rounded-full bg-indigo-500 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
-          <View className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
+          <View className="w-3 h-3 rounded-full bg-purple-500 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
+          <View className="w-3 h-3 rounded-full bg-purple-400 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
           <View className="w-3 h-3 rounded-full bg-purple-400 animate-bounce-dot" style={{ animationDelay: '300ms' }} />
         </View>
 
@@ -114,7 +114,7 @@ const LoadingPage = () => {
         <View className="mb-5">
           <Card className="bg-gray-50 border-gray-100">
             <CardContent className="p-4">
-              <Text className="block text-sm font-medium text-indigo-500 mb-3">
+              <Text className="block text-sm font-medium text-purple-500 mb-3">
                 个人信息
               </Text>
               <View className="flex flex-col gap-2">
@@ -160,7 +160,7 @@ const LoadingPage = () => {
               <View
                 className={`w-2 h-2 rounded-full ${
                   index <= currentStep
-                    ? 'bg-indigo-500'
+                    ? 'bg-purple-500'
                     : 'bg-gray-200'
                 }`}
               />

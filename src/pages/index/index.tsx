@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Sparkles, Mars, Venus } from 'lucide-react-taro'
+import { Rocket, Mars, Venus } from 'lucide-react-taro'
 import './index.css'
 
 const SHICHEN_OPTIONS = [
@@ -73,8 +73,8 @@ const IndexPage = () => {
     <View className="min-h-full bg-white px-6 py-6">
       {/* Header */}
       <View className="flex flex-col items-center pt-8 pb-8">
-        <View className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4">
-          <Sparkles size={28} color="#ffffff" />
+        <View className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-4">
+          <Rocket size={28} color="#ffffff" />
         </View>
         <Text className="block text-xl font-bold text-gray-900 mb-1">幸运穿搭</Text>
         <Text className="block text-sm text-gray-400">
@@ -112,14 +112,14 @@ const IndexPage = () => {
               onValueChange={(val) => setGender(val)}
               className="flex gap-3"
             >
-              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-indigo-400 data-[state=checked]:bg-indigo-50">
-                <RadioGroupItem value="male" className="border-gray-300 data-[state=checked]:border-indigo-500 data-[state=checked]:bg-indigo-500" />
-                <Mars size={16} color="#6366f1" className="ml-2" />
+              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-[#7C3AED] data-[state=checked]:bg-purple-50">
+                <RadioGroupItem value="male" className="border-gray-300 data-[state=checked]:border-[#7C3AED] data-[state=checked]:bg-[#7C3AED]" />
+                <Mars size={16} color="#7C3AED" className="ml-2" />
                 <Text className="block ml-1 text-gray-700 text-sm">男</Text>
               </View>
-              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-pink-400 data-[state=checked]:bg-pink-50">
-                <RadioGroupItem value="female" className="border-gray-300 data-[state=checked]:border-pink-500 data-[state=checked]:bg-pink-500" />
-                <Venus size={16} color="#ec4899" className="ml-2" />
+              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-[#7C3AED] data-[state=checked]:bg-purple-50">
+                <RadioGroupItem value="female" className="border-gray-300 data-[state=checked]:border-[#7C3AED] data-[state=checked]:bg-[#7C3AED]" />
+                <Venus size={16} color="#7C3AED" className="ml-2" />
                 <Text className="block ml-1 text-gray-700 text-sm">女</Text>
               </View>
             </RadioGroup>
@@ -218,10 +218,11 @@ const IndexPage = () => {
         {/* Submit Button */}
         <View className="pt-2 pb-8">
           <Button
-            className="w-full bg-indigo-500 text-white font-bold py-4 rounded-xl text-base border-0 shadow-sm"
+            className="w-full text-white font-bold py-4 rounded-xl text-base border-0 shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #9333EA 50%, #A855F7 100%)' }}
             onClick={handleSubmit}
           >
-            <Sparkles size={18} color="#ffffff" />
+            <Rocket size={18} color="#ffffff" />
             <Text className="ml-2 text-white font-bold">开始推演</Text>
           </Button>
         </View>
