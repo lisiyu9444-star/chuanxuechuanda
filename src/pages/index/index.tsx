@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Sparkles, MapPin } from 'lucide-react-taro'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Sparkles, Mars, Venus } from 'lucide-react-taro'
 import './index.css'
 
 const SHICHEN_OPTIONS = [
@@ -23,12 +24,23 @@ const SHICHEN_OPTIONS = [
   '亥时 (21:00-23:00)',
 ]
 
+const CITIES = [
+  '北京', '上海', '广州', '深圳', '杭州', '成都', '重庆', '武汉',
+  '南京', '天津', '苏州', '西安', '长沙', '沈阳', '青岛', '郑州',
+  '大连', '东莞', '宁波', '厦门', '福州', '无锡', '合肥', '昆明',
+  '哈尔滨', '济南', '佛山', '长春', '温州', '石家庄', '南宁', '常州',
+  '泉州', '南昌', '贵阳', '太原', '烟台', '嘉兴', '南通', '金华',
+  '珠海', '惠州', '徐州', '海口', '乌鲁木齐', '绍兴', '中山', '台州',
+  '兰州', '呼和浩特',
+]
+
 const IndexPage = () => {
   const [nickname, setNickname] = useState('')
   const [gender, setGender] = useState('male')
+  const [calendarType, setCalendarType] = useState('solar')
   const [birthDate, setBirthDate] = useState('2000-01-01')
   const [shichenIndex, setShichenIndex] = useState(-1)
-  const [location, setLocation] = useState('')
+  const [cityIndex, setCityIndex] = useState(0)
 
   const handleSubmit = () => {
     if (!nickname.trim()) {
@@ -43,17 +55,14 @@ const IndexPage = () => {
       Taro.showToast({ title: '请选择出生时辰', icon: 'none' })
       return
     }
-    if (!location.trim()) {
-      Taro.showToast({ title: '请输入所在城市', icon: 'none' })
-      return
-    }
 
     const userData = {
       nickname: nickname.trim(),
       gender,
+      calendarType,
       birthDate,
       birthTime: SHICHEN_OPTIONS[shichenIndex],
-      location: location.trim(),
+      location: CITIES[cityIndex],
     }
 
     Taro.setStorageSync('userData', userData)
@@ -105,22 +114,33 @@ const IndexPage = () => {
             >
               <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-indigo-400 data-[state=checked]:bg-indigo-50">
                 <RadioGroupItem value="male" className="border-gray-300 data-[state=checked]:border-indigo-500 data-[state=checked]:bg-indigo-500" />
-                <Text className="block ml-2 text-gray-700 text-sm">男</Text>
+                <Mars size={16} color="#6366f1" className="ml-2" />
+                <Text className="block ml-1 text-gray-700 text-sm">男</Text>
               </View>
-              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-indigo-400 data-[state=checked]:bg-indigo-50">
-                <RadioGroupItem value="female" className="border-gray-300 data-[state=checked]:border-indigo-500 data-[state=checked]:bg-indigo-500" />
-                <Text className="block ml-2 text-gray-700 text-sm">女</Text>
+              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-pink-400 data-[state=checked]:bg-pink-50">
+                <RadioGroupItem value="female" className="border-gray-300 data-[state=checked]:border-pink-500 data-[state=checked]:bg-pink-500" />
+                <Venus size={16} color="#ec4899" className="ml-2" />
+                <Text className="block ml-1 text-gray-700 text-sm">女</Text>
               </View>
             </RadioGroup>
           </CardContent>
         </Card>
 
-        {/* Birth Date */}
+        {/* Calendar Type + Birth Date */}
         <Card className="bg-white border-gray-100 shadow-sm">
           <CardContent className="p-4">
             <Text className="block text-sm text-gray-500 mb-2">
               出生日期
             </Text>
+            <ToggleGroup
+              type="single"
+              value={calendarType}
+              onValueChange={(val) => val && setCalendarType(val as string)}
+              className="mb-3"
+            >
+              <ToggleGroupItem value="solar" className="flex-1 text-sm">阳历</ToggleGroupItem>
+              <ToggleGroupItem value="lunar" className="flex-1 text-sm">农历</ToggleGroupItem>
+            </ToggleGroup>
             <Picker
               mode="date"
               start="1940-01-01"
@@ -174,21 +194,24 @@ const IndexPage = () => {
           </CardContent>
         </Card>
 
-        {/* Location */}
+        {/* Location - City Picker */}
         <Card className="bg-white border-gray-100 shadow-sm">
           <CardContent className="p-4">
             <Text className="block text-sm text-gray-500 mb-2">
               所在城市
             </Text>
-            <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center gap-2">
-              <MapPin size={16} color="#9ca3af" />
-              <Input
-                className="flex-1 bg-transparent text-gray-900 placeholder:text-gray-400"
-                placeholder="请输入所在城市"
-                value={location}
-                onInput={(e) => setLocation(e.detail.value)}
-              />
-            </View>
+            <Picker
+              mode="selector"
+              range={CITIES}
+              value={cityIndex}
+              onChange={(e) => setCityIndex(Number(e.detail.value))}
+            >
+              <View className="bg-gray-50 rounded-xl px-4 py-3">
+                <Text className="block text-gray-900">
+                  {CITIES[cityIndex]}
+                </Text>
+              </View>
+            </Picker>
           </CardContent>
         </Card>
 

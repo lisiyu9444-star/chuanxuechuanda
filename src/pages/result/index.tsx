@@ -93,11 +93,11 @@ const ResultPage = () => {
       <View className="px-6 pb-8">
       {/* Header */}
       <View className="flex flex-col items-center mb-5">
-        <Text className="block text-lg font-bold text-gray-900 mb-1">
-          {result.nickname} 的今日穿搭
+        <Text className="block text-xl font-bold text-gray-900 mb-2">
+          {result.nickname} 今日专属穿搭推荐
         </Text>
         <Text className="block text-sm text-gray-400">
-          基于八字五行 · 为你量身定制
+          {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
         </Text>
       </View>
 
