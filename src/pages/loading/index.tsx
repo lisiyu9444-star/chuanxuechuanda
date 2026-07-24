@@ -12,6 +12,7 @@ interface UserData {
   birthDate: string
   birthTime: string
   location: string
+  calendarType?: string
 }
 
 const LOADING_STEPS = [
@@ -60,6 +61,7 @@ const LoadingPage = () => {
             birthDate: userData.birthDate,
             birthTime: userData.birthTime,
             location: userData.location,
+            calendarType: userData.calendarType || 'solar',
           },
         })
         console.log('BaZi API response:', res.data)
@@ -67,7 +69,7 @@ const LoadingPage = () => {
         const result = res.data?.data
         if (result) {
           Taro.setStorageSync('baziResult', result)
-          Taro.navigateTo({ url: '/pages/result/index' })
+          Taro.redirectTo({ url: '/pages/result/index' })
         }
       } catch (error) {
         console.error('BaZi calculation failed:', error)

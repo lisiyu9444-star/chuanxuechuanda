@@ -84,7 +84,13 @@ const ResultPage = () => {
   const elementColor = ELEMENT_COLORS[result.favorableElement] || '#6366f1'
 
   return (
-    <View className="min-h-full bg-white px-6 py-5">
+    <View className="min-h-full bg-white">
+      {/* Custom Nav Bar (no back button) */}
+      <View className="pt-12 pb-3 flex items-center justify-center bg-white">
+        <Text className="block text-base font-semibold text-gray-900">AI五行穿搭</Text>
+      </View>
+
+      <View className="px-6 pb-8">
       {/* Header */}
       <View className="flex flex-col items-center mb-5">
         <Text className="block text-lg font-bold text-gray-900 mb-1">
@@ -265,13 +271,14 @@ const ResultPage = () => {
           <View className="pb-8">
             <Button
               className="w-full bg-white text-indigo-500 border border-indigo-200 py-3 rounded-xl"
-              onClick={() => Taro.navigateBack({ delta: 2 })}
+              onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
             >
               <Text className="text-indigo-500">重新测算</Text>
             </Button>
           </View>
         </View>
       )}
+      </View>
     </View>
   )
 }
