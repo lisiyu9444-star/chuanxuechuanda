@@ -35,6 +35,8 @@ export interface OutfitRecommendation {
   prompt: string
   backgroundColor: string
   season: string
+  bottomColor: string
+  colorRule: string
 }
 
 interface BaZiResult {
@@ -148,6 +150,76 @@ const BACKGROUND_COLORS: Record<string, { same: string[]; neutral: string[]; con
 /** 五行对应主色（用于 prompt 中颜色描述） */
 const ELEMENT_MAIN_COLOR: Record<string, string> = {
   木: '青绿色', 火: '赤红色', 土: '暖黄色', 金: '银白色', 水: '深蓝色',
+}
+
+/** 上下装配色映射表：每个用神对应的浅色/深色/中性色/同色系异调色 */
+const BOTTOM_COLOR_MAP: Record<string, {
+  light: string[]; dark: string[]; neutral: string[]; sameFamily: string[]
+}> = {
+  木: {
+    light: ['薄荷绿', '嫩草绿', '浅豆绿', '春芽绿'],
+    dark: ['森林绿', '松柏绿', '墨绿', '苍翠绿'],
+    neutral: ['米白', '暖灰', '燕麦色', '卡其色'],
+    sameFamily: ['竹青色', '松石绿', '碧绿色', '柳叶绿'],
+  },
+  火: {
+    light: ['浅粉杏', '裸色', '珊瑚粉', '海棠粉'],
+    dark: ['朱砂红', '正红色', '火焰红', '深紫红'],
+    neutral: ['黑', '深灰', '米白', '驼色'],
+    sameFamily: ['丁香紫', '薰衣草紫', '绯红', '葡萄紫'],
+  },
+  土: {
+    light: ['奶油色', '浅米色', '杏色', '米黄'],
+    dark: ['咖啡色', '深棕', '赭石色', '茶褐色'],
+    neutral: ['白', '浅灰', '暖灰', '卡其色'],
+    sameFamily: ['琥珀黄', '姜黄', '芥末黄', '棕黄色'],
+  },
+  金: {
+    light: ['象牙白', '珍珠白', '浅香槟', '乳白色'],
+    dark: ['银灰', '铂金色', '深灰', '烟灰色'],
+    neutral: ['暖灰', '米白', '浅驼色', '燕麦色'],
+    sameFamily: ['月光银', '银白', '月白', '牡蛎白'],
+  },
+  水: {
+    light: ['雾霾蓝', '浅蓝', '天蓝', '冰蓝'],
+    dark: ['藏青', '深海蓝', '午夜黑', '深墨色'],
+    neutral: ['米白', '浅灰', '暖灰', '驼色'],
+    sameFamily: ['宝蓝', '深湖蓝', '黛色', '鸦青'],
+  },
+}
+
+/** 下装颜色生成法则 */
+type ColorRule = '深浅' | '中性平衡' | '同色异调'
+
+/** 根据用神主色生成下装颜色，遵循三大时尚法则 */
+function generateBottomColor(element: string): { color: string; rule: string } {
+  const map = BOTTOM_COLOR_MAP[element]
+  if (!map) return { color: '米白色', rule: '中性平衡' }
+
+  const rules: ColorRule[] = ['深浅', '中性平衡', '同色异调']
+  const rule = rules[Math.floor(Math.random() * rules.length)]
+
+  const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
+
+  switch (rule) {
+    case '深浅': {
+      // 主色偏深 → 选浅色下装；主色偏浅 → 选深色下装
+      const mainColor = ELEMENT_MAIN_COLOR[element] || ''
+      const isDarkMain = ['深蓝', '赤红', '深', '墨', '藏青'].some(d => mainColor.includes(d))
+        || ['水', '火'].includes(element)
+      const color = isDarkMain ? pick(map.light) : pick(map.dark)
+      const desc = isDarkMain ? '深色上衣搭配浅色下装，制造视觉张力' : '浅色上衣搭配深色下装，稳重落地'
+      return { color, rule: desc }
+    }
+    case '中性平衡': {
+      const color = pick(map.neutral)
+      return { color, rule: `鲜艳主色搭配${color}中性色下装，压制浮夸感` }
+    }
+    case '同色异调': {
+      const color = pick(map.sameFamily)
+      return { color, rule: `同色系异色调渐变，营造高级层次感` }
+    }
+  }
 }
 
 /** 根据系统时间判断当前季节 */
@@ -640,6 +712,9 @@ export class BaziService {
     const bgColor = pickBackgroundColor(element)
     const season = getCurrentSeason()
     const mainColor = ELEMENT_MAIN_COLOR[element] || '白色'
+    const bottomColorResult = generateBottomColor(element)
+    const bottomColor = bottomColorResult.color
+    const colorRule = bottomColorResult.rule
     const genderText = gender === 'female' ? '女装' : '男装'
     const xiShen = analysis?.assistantXiShen || '白色'
     const xiShenColor = ELEMENT_MAIN_COLOR[xiShen] || '白色'
@@ -675,7 +750,7 @@ export class BaziService {
 采用 ${bgColor} 的平整细腻亚麻纹理背景布，背景布完全平铺无褶皱，营造极简高级画布感。
 
 【主体穿搭 - 主色=用神】
-核心单品为 ${mainColor} 的棉麻${items.outerwear}，搭配同色系棉麻${items.bottom}，
+核心单品为 ${mainColor} 的棉麻${items.outerwear}，搭配 ${bottomColor} 的棉麻${items.bottom}，
 面料需呈现清晰的天然肌理（哑光棉麻质感）。
 
 【辅助单品 - 辅色=喜神】
@@ -697,7 +772,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 【反向提示词】
 不要出现假人模特、不要人脸、不要杂乱背景、不要褶皱堆叠、不要平淡无阴影的顶光、不要透视畸变、不要过度饱和的廉价色彩、不要额外多出的衣物或饰品${isFemale ? '' : '、不要女性化单品、不要裙装、不要高跟鞋'}。`
 
-    return { style, colors, description, prompt, backgroundColor: bgColor, season }
+    return { style, colors, description, prompt, backgroundColor: bgColor, season, bottomColor, colorRule }
   }
 
   // ========== Image Generation ==========
