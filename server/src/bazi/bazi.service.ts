@@ -33,6 +33,8 @@ export interface OutfitRecommendation {
   colors: string[]
   description: string
   prompt: string
+  backgroundColor: string
+  season: string
 }
 
 interface BaZiResult {
@@ -134,6 +136,41 @@ const ELEMENT_COLORS: Record<string, string[]> = {
   ],
 }
 
+/** 用神对应背景色映射表（同色系/中性色/撞色） */
+const BACKGROUND_COLORS: Record<string, { same: string[]; neutral: string[]; contrast: string[] }> = {
+  木: { same: ['浅薄荷绿', '米白'], neutral: ['暖灰', '燕麦色'], contrast: ['柔雾粉'] },
+  火: { same: ['浅粉杏色', '裸色'], neutral: ['黑', '深灰'], contrast: ['牛仔蓝', '米白'] },
+  土: { same: ['奶油色', '浅米色'], neutral: ['白色'], contrast: ['灰蓝'] },
+  金: { same: ['浅香槟', '浅灰'], neutral: ['暖灰'], contrast: ['藏蓝', '墨绿'] },
+  水: { same: ['浅蓝', '雾霾蓝'], neutral: ['米白'], contrast: ['浅橙', '杏色'] },
+}
+
+/** 五行对应主色（用于 prompt 中颜色描述） */
+const ELEMENT_MAIN_COLOR: Record<string, string> = {
+  木: '青绿色', 火: '赤红色', 土: '暖黄色', 金: '银白色', 水: '深蓝色',
+}
+
+/** 根据系统时间判断当前季节 */
+function getCurrentSeason(): string {
+  const month = new Date().getMonth() + 1
+  if (month >= 3 && month <= 5) return '春季'
+  if (month >= 6 && month <= 8) return '夏季'
+  if (month >= 9 && month <= 11) return '秋季'
+  return '冬季'
+}
+
+/** 根据用神选取背景色（70%中性色，30%撞色） */
+function pickBackgroundColor(element: string): string {
+  const bg = BACKGROUND_COLORS[element]
+  if (!bg) return '暖灰'
+  const rand = Math.random()
+  if (rand < 0.7) {
+    return bg.neutral[Math.floor(Math.random() * bg.neutral.length)]
+  } else {
+    return bg.contrast[Math.floor(Math.random() * bg.contrast.length)]
+  }
+}
+
 const OUTFIT_STYLES: Record<string, string> = {
   木: '自然清新风，棉麻材质，植物纹样，灵动飘逸',
   火: '热情活力风，利落剪裁，鲜明对比，时尚前卫',
@@ -155,6 +192,7 @@ export class BaziService {
   calculateBaZi(
     birthDate: string,
     birthTime: string,
+    gender: string = 'male',
   ): Omit<BaZiResult, 'nickname' | 'gender'> {
     const [year, month, day] = birthDate.split('-').map(Number)
 
@@ -207,7 +245,7 @@ export class BaziService {
     const favorableAnalysis = this.calculateFavorableElement(chart)
     const favorableElement = favorableAnalysis.coreYongShen
 
-    const outfit = this.generateOutfit(favorableElement, favorableAnalysis)
+    const outfit = this.generateOutfit(favorableElement, favorableAnalysis, gender)
 
     return {
       dayMaster, dayMasterElement, fourPillars, fiveElements,
@@ -429,10 +467,15 @@ export class BaziService {
 
   // ========== Outfit Generation ==========
 
-  private generateOutfit(element: string, analysis?: FavorableAnalysis): OutfitRecommendation {
+  private generateOutfit(element: string, analysis?: FavorableAnalysis, gender: string = 'male'): OutfitRecommendation {
     const colors = ELEMENT_COLORS[element] || ['白色', '灰色']
     const style = OUTFIT_STYLES[element] || '简约百搭风'
-    const elementEn = ELEMENT_ENGLISH[Object.entries(ELEMENT_CN).find(([, cn]) => cn === element)?.[0] || ''] || 'Element'
+    const bgColor = pickBackgroundColor(element)
+    const season = getCurrentSeason()
+    const mainColor = ELEMENT_MAIN_COLOR[element] || '白色'
+    const genderText = gender === 'female' ? '女装' : '男装'
+    const xiShen = analysis?.assistantXiShen || '白色'
+    const xiShenColor = ELEMENT_MAIN_COLOR[xiShen] || '白色'
 
     let description = `您的八字喜用神为「${element}」`
     if (analysis) {
@@ -440,9 +483,38 @@ export class BaziService {
     }
     description += `，今日穿搭建议以${colors.join('、')}为主色调。${style}，助您运势亨通，气场全开。`
 
-    const prompt = `Top-down flat-lay fashion photography of a complete outfit arrangement on a natural linen fabric background. The outfit features ${elementEn} element color palette: ${colors.join(', ')}. Include a ${colors[0].toLowerCase()}-colored top or jacket as the main piece, paired with complementary bottom wear, a pair of elegant shoes, a minimalist bag, and subtle accessories. Soft natural daylight from above, clean and luxurious editorial style, high-end fashion magazine aesthetic. No text, no watermarks, no human figures. The overall mood should evoke ${style}. Shot from directly above, items neatly arranged with intentional spacing.`
+    const prompt = `俯拍平铺式高定时尚广告摄影，${season} ${genderText} 成衣系列，
 
-    return { style, colors, description, prompt }
+【输出尺寸规格】
+强制竖版 3:4 比例构图，顶部留白与底部留白比例为 1:2，确保画面重心稳定。
+
+【拍摄背景】
+采用 ${bgColor} 的细腻亚麻纹理背景布，背景布表面带有细微褶皱肌理，营造极简高级画布感。
+
+【主体穿搭 - 主色=用神】
+核心单品为 ${mainColor} 的 棉麻 廓形西装外套（戗驳领设计），搭配同色系高腰阔腿裤${gender === 'female' ? '（垂坠感醋酸中长裙）' : ''}，
+面料需呈现清晰的天然肌理（哑光棉麻质感）。
+
+【辅助单品 - 辅色=喜神】
+配饰部分包含一只 ${xiShenColor} 的定型手提包（梯形或托特型）和一双 ${xiShenColor} 尖头中跟鞋（高度约5cm），放置于服装右下方。
+
+【点缀细节 - 点缀色】
+首饰搭配包含一条多层链条项链、一只细金属手镯和一副猫眼墨镜，采用香槟金和玫瑰金的金属拉丝或宝石切割质感作为视觉亮点，保证搭配美观且色彩呼应。
+
+【摆放构图与光影】
+衣物与配饰采用 不对称斜角布局 的布局，所有物品投影方向统一（左前方打光），在背景布上投射出柔和块状阴影，增强立体感与落地感。
+四周留有大量留白（占比不少于35%），强调高端画册的排版呼吸感。
+
+【色彩与质感控制】
+整体色调倾向高级灰/莫兰迪色系（如遇主色为纯红或纯黑时，可适当提高饱和度至正常水平），避免荧光色或塑料质感。
+
+【画质技术约束】
+超写实商业摄影风格，8K高清，微距对焦，焦点精准锁定在项链吊坠与墨镜镜片反光处，景深略浅以虚化背景布边缘。
+
+【反向提示词】
+不要出现假人模特、不要人脸、不要杂乱背景、不要褶皱堆叠、不要平淡无阴影的顶光、不要透视畸变、不要过度饱和的廉价色彩、不要额外多出的衣物或饰品、不要手表、不要腰带。`
+
+    return { style, colors, description, prompt, backgroundColor: bgColor, season }
   }
 
   // ========== Image Generation ==========

@@ -41,7 +41,7 @@ export class BaziController {
     const { nickname, gender, birthDate, birthTime } = body
 
     // 使用 @openfate/bazi-engine 进行专业排盘
-    const baziResult = this.baziService.calculateBaZi(birthDate, birthTime)
+    const baziResult = this.baziService.calculateBaZi(birthDate, birthTime, gender)
 
     // 生成穿搭图片
     const forwardHeaders = HeaderUtils.extractForwardHeaders(
