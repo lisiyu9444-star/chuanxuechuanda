@@ -465,7 +465,174 @@ export class BaziService {
     }
   }
 
-  // ========== Outfit Generation ==========
+  // ========== Outfit Item Pools & Random Selection ==========
+
+  private static readonly FEMALE_ITEMS = {
+    outerwear: [
+      { desc: '西装外套（戗驳领收腰设计）', style: 'formal' },
+      { desc: '双排扣西装马甲（修身剪裁）', style: 'formal' },
+      { desc: '短款粗花呢外套（圆领无扣设计）', style: 'elegant' },
+      { desc: '系带风衣（中长款收腰设计）', style: 'elegant' },
+      { desc: '针织开衫（V领宽松版型）', style: 'casual' },
+      { desc: '小香风外套（编织滚边设计）', style: 'elegant' },
+      { desc: '立领盘扣上衣（改良中式版型）', style: 'oriental' },
+      { desc: '宽松棉麻衬衫（落肩设计）', style: 'casual' },
+      { desc: '真丝衬衫（飘带领设计）', style: 'elegant' },
+      { desc: '亚麻短外套（直筒版型）', style: 'casual' },
+    ],
+    bottom: [
+      { desc: '垂坠感醋酸中长裙（A字版型）', style: 'elegant' },
+      { desc: '高腰阔腿裤（垂感面料）', style: 'formal' },
+      { desc: '真丝半身长裙（百褶设计）', style: 'elegant' },
+      { desc: '直筒九分裤（露踝设计）', style: 'casual' },
+      { desc: '棉麻阔腿裤（松紧腰设计）', style: 'casual' },
+      { desc: '修身铅笔裙（膝上长度）', style: 'formal' },
+      { desc: '不规则下摆中长裙（前短后长）', style: 'elegant' },
+      { desc: '高腰直筒牛仔裤（原色水洗）', style: 'casual' },
+      { desc: '棉麻直筒裤（侧开叉设计）', style: 'casual' },
+      { desc: '缎面伞裙（过膝长度）', style: 'elegant' },
+    ],
+    shoes: [
+      { desc: '尖头中跟鞋（细跟5cm）', style: 'elegant' },
+      { desc: '方头粗跟穆勒鞋（4cm）', style: 'casual' },
+      { desc: '芭蕾平底鞋（蝴蝶结装饰）', style: 'elegant' },
+      { desc: '厚底乐福鞋（3cm增高）', style: 'casual' },
+      { desc: '猫跟鞋（3.5cm尖头设计）', style: 'formal' },
+      { desc: '编织凉鞋（平底绑带设计）', style: 'casual' },
+      { desc: '切尔西短靴（尖头细跟）', style: 'formal' },
+      { desc: '帆布平底鞋（极简设计）', style: 'casual' },
+      { desc: '一字带凉鞋（中跟5cm）', style: 'elegant' },
+      { desc: '皮质小白鞋（圆头厚底）', style: 'casual' },
+    ],
+    bag: [
+      { desc: '定型手提包（梯形硬挺结构）', style: 'formal' },
+      { desc: '链条单肩包（小号翻盖设计）', style: 'elegant' },
+      { desc: '帆布托特包（大号简约款）', style: 'casual' },
+      { desc: '水桶包（抽绳收口设计）', style: 'casual' },
+      { desc: '信封手拿包（磁扣翻盖）', style: 'elegant' },
+      { desc: '编织手提包（手工编织纹样）', style: 'elegant' },
+      { desc: '竹节手柄包（复古设计）', style: 'elegant' },
+      { desc: '迷你斜挎包（链条肩带）', style: 'casual' },
+      { desc: '皮质双肩包（迷你尺寸）', style: 'casual' },
+      { desc: '半月包（弧形单肩设计）', style: 'casual' },
+    ],
+    accessories: [
+      { desc: '多层链条项链', style: 'elegant' },
+      { desc: '珍珠耳钉（单颗8mm）', style: 'elegant' },
+      { desc: '细金属手镯（开口设计）', style: 'elegant' },
+      { desc: '猫眼墨镜（复古圆框）', style: 'elegant' },
+      { desc: '真丝丝巾（小方巾系法）', style: 'elegant' },
+      { desc: '珍珠项链（双层叠戴）', style: 'elegant' },
+      { desc: '金属耳环（几何圆环款）', style: 'casual' },
+      { desc: '编织手链（多圈缠绕款）', style: 'casual' },
+      { desc: '宝石胸针（花卉造型）', style: 'elegant' },
+      { desc: '发箍（宽版布艺款）', style: 'casual' },
+    ],
+  }
+
+  private static readonly MALE_ITEMS = {
+    outerwear: [
+      { desc: '西装外套（平驳领宽肩设计）', style: 'formal' },
+      { desc: '哈灵顿夹克（立领收腰设计）', style: 'casual' },
+      { desc: '立领棉麻夹克（极简剪裁）', style: 'casual' },
+      { desc: '粗花呢单西（修身单粒扣）', style: 'formal' },
+      { desc: '棒球夹克（螺纹收口设计）', style: 'casual' },
+      { desc: '牛仔夹克（原色直筒版型）', style: 'casual' },
+      { desc: '中式立领外套（盘扣设计）', style: 'oriental' },
+      { desc: '宽松棉麻衬衫（落肩版型）', style: 'casual' },
+      { desc: '针织polo衫（短袖翻领）', style: 'casual' },
+      { desc: '亚麻短袖衬衫（直筒版型）', style: 'casual' },
+    ],
+    bottom: [
+      { desc: '直筒西裤（中缝烫线设计）', style: 'formal' },
+      { desc: '修身九分裤（露踝设计）', style: 'casual' },
+      { desc: '宽松阔腿裤（高腰打褶）', style: 'casual' },
+      { desc: '原色牛仔裤（直筒卷边）', style: 'casual' },
+      { desc: '卡其裤（经典斜纹面料）', style: 'casual' },
+      { desc: '工装裤（侧口袋设计）', style: 'casual' },
+      { desc: '棉麻长裤（松紧腰抽绳）', style: 'casual' },
+      { desc: '运动风束脚裤（侧条纹）', style: 'casual' },
+      { desc: '灯芯绒直筒裤（复古质感）', style: 'casual' },
+      { desc: '精纺西裤（无褶简约版型）', style: 'formal' },
+    ],
+    shoes: [
+      { desc: '牛津皮鞋（圆头系带款）', style: 'formal' },
+      { desc: '德比皮鞋（开放式系带）', style: 'formal' },
+      { desc: '乐福鞋（马衔扣装饰）', style: 'elegant' },
+      { desc: '切尔西靴（尖头侧拉链）', style: 'elegant' },
+      { desc: '帆布鞋（低帮经典款）', style: 'casual' },
+      { desc: '麂皮沙漠靴（系带款）', style: 'casual' },
+      { desc: '编织凉鞋（男士宽条款）', style: 'casual' },
+      { desc: '极简小白鞋（皮质圆头）', style: 'casual' },
+      { desc: '孟克鞋（双扣带设计）', style: 'formal' },
+      { desc: '一脚蹬懒人鞋（麂皮材质）', style: 'casual' },
+    ],
+    bag: [
+      { desc: '商务公文包（方正硬挺款）', style: 'formal' },
+      { desc: '皮质邮差包（翻扣设计）', style: 'casual' },
+      { desc: '帆布双肩包（极简设计）', style: 'casual' },
+      { desc: '皮质托特包（大号手提款）', style: 'casual' },
+      { desc: '信封手拿包（磁扣款）', style: 'elegant' },
+      { desc: '尼龙斜挎包（轻便运动风）', style: 'casual' },
+      { desc: '复古手提箱（迷你硬壳款）', style: 'elegant' },
+      { desc: '皮质腰包（简约窄版）', style: 'casual' },
+      { desc: '帆布单肩包（文艺复古）', style: 'casual' },
+      { desc: '编织手提包（手工拉菲草）', style: 'casual' },
+    ],
+    accessories: [
+      { desc: '精钢机械腕表（蓝色表盘）', style: 'formal' },
+      { desc: '飞行员墨镜（金属框架）', style: 'casual' },
+      { desc: '皮质手链（编织多圈款）', style: 'casual' },
+      { desc: '金属袖扣（几何简约款）', style: 'formal' },
+      { desc: '口袋方巾（亚麻折叠款）', style: 'formal' },
+      { desc: '钛钢项链（古巴链粗款）', style: 'casual' },
+      { desc: '复古圆框墨镜（板材框架）', style: 'casual' },
+      { desc: '皮质表带腕表（棕色皮带）', style: 'elegant' },
+      { desc: '银质戒指（极简宽版）', style: 'casual' },
+      { desc: '帆布腰带（金属插扣）', style: 'casual' },
+    ],
+  }
+
+  /**
+   * 随机选择单品组合，带风格连贯性逻辑
+   * 规则：先随机选外套，以其风格为锚点，其他品类优先匹配同风格
+   * 70%概率严格匹配同风格，30%概率混搭（增加多样性）
+   */
+  private selectOutfitItems(isFemale: boolean): {
+    outerwear: string; bottom: string; shoes: string; bag: string; accessories: string; style: string
+  } {
+    const pool = isFemale ? BaziService.FEMALE_ITEMS : BaziService.MALE_ITEMS
+    const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)]
+
+    // Step 1: 随机选外套，确定风格锚点
+    const outerwear = pick(pool.outerwear)
+    const anchorStyle = outerwear.style
+
+    // Step 2: 其他品类按风格连贯性选择
+    const selectByStyle = (items: { desc: string; style: string }[], matchRate: number) => {
+      if (Math.random() < matchRate) {
+        // 优先选同风格
+        const sameStyle = items.filter(i => i.style === anchorStyle)
+        if (sameStyle.length > 0) return pick(sameStyle)
+      }
+      // 否则随机选
+      return pick(items)
+    }
+
+    const bottom = selectByStyle(pool.bottom, 0.7)
+    const shoes = selectByStyle(pool.shoes, 0.6)
+    const bag = selectByStyle(pool.bag, 0.6)
+    const accessories = selectByStyle(pool.accessories, 0.5)
+
+    return {
+      outerwear: outerwear.desc,
+      bottom: bottom.desc,
+      shoes: shoes.desc,
+      bag: bag.desc,
+      accessories: accessories.desc,
+      style: anchorStyle,
+    }
+  }
 
   private generateOutfit(element: string, analysis?: FavorableAnalysis, gender: string = 'male'): OutfitRecommendation {
     const colors = ELEMENT_COLORS[element] || ['白色', '灰色']
@@ -476,6 +643,10 @@ export class BaziService {
     const genderText = gender === 'female' ? '女装' : '男装'
     const xiShen = analysis?.assistantXiShen || '白色'
     const xiShenColor = ELEMENT_MAIN_COLOR[xiShen] || '白色'
+    const isFemale = gender === 'female'
+
+    // 随机选择单品（风格连贯）
+    const items = this.selectOutfitItems(isFemale)
 
     let description = `您的八字喜用神为「${element}」`
     if (analysis) {
@@ -483,18 +654,19 @@ export class BaziService {
     }
     description += `，今日穿搭建议以${colors.join('、')}为主色调。${style}，助您运势亨通，气场全开。`
 
-    const isFemale = gender === 'female'
-    const bottomItem = isFemale ? '垂坠感醋酸中长裙' : '直筒西裤'
-    const bagItem = isFemale ? '定型手提包（梯形或托特型）' : '商务公文包（方正硬挺款）'
-    const shoeItem = isFemale ? '尖头中跟鞋（高度约5cm）' : '牛津皮鞋（圆头系带款）'
-    const accessoryItems = isFemale
-      ? '一条多层链条项链、一只细金属手镯和一副猫眼墨镜'
-      : '一只精钢机械腕表和一副飞行员墨镜'
     const accessoryMaterial = isFemale
       ? '香槟金和玫瑰金的金属拉丝或宝石切割质感'
       : '银色精钢拉丝和哑光黑色质感'
 
-    const prompt = `俯拍平铺式高定时尚广告摄影，${season} ${genderText} 成衣系列，${isFemale ? '女性优雅风格' : '男性商务风格'}，
+    const styleMap: Record<string, string> = {
+      formal: isFemale ? '女性精致通勤风格' : '男性精致商务风格',
+      elegant: isFemale ? '女性优雅轻奢风格' : '男性优雅绅士风格',
+      casual: isFemale ? '女性轻松日常风格' : '男性轻松休闲风格',
+      oriental: isFemale ? '女性新中式风格' : '男性新中式风格',
+    }
+    const styleText = styleMap[items.style] || (isFemale ? '女性优雅风格' : '男性商务风格')
+
+    const prompt = `俯拍平铺式高定时尚广告摄影，${season} ${genderText} 成衣系列，${styleText}，
 
 【输出尺寸规格】
 强制竖版 3:4 比例构图，顶部留白与底部留白比例为 1:2，确保画面重心稳定。
@@ -503,14 +675,14 @@ export class BaziService {
 采用 ${bgColor} 的平整细腻亚麻纹理背景布，背景布完全平铺无褶皱，营造极简高级画布感。
 
 【主体穿搭 - 主色=用神】
-核心单品为 ${mainColor} 的棉麻廓形${isFemale ? '西装外套（戗驳领设计）' : '西装外套（平驳领宽肩设计）'}，搭配同色系${bottomItem}，
+核心单品为 ${mainColor} 的棉麻${items.outerwear}，搭配同色系棉麻${items.bottom}，
 面料需呈现清晰的天然肌理（哑光棉麻质感）。
 
 【辅助单品 - 辅色=喜神】
-配饰部分包含一只 ${xiShenColor} 的 ${bagItem} 和一双 ${xiShenColor} 的 ${shoeItem}，放置于服装右下方。
+配饰部分包含一只 ${xiShenColor} 的 ${items.bag} 和一双 ${xiShenColor} 的 ${items.shoes}，放置于服装右下方。
 
 【点缀细节 - 点缀色】
-${isFemale ? '首饰' : '配饰'}搭配包含${accessoryItems}，采用${accessoryMaterial}作为视觉亮点，保证搭配美观且色彩呼应。
+${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${accessoryMaterial}作为视觉亮点，保证搭配美观且色彩呼应。
 
 【摆放构图与光影】
 衣物与配饰采用不对称斜角布局，所有物品投影方向统一（左前方打光），在背景布上投射出柔和块状阴影，增强立体感与落地感。
