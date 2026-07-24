@@ -42,6 +42,25 @@ const IndexPage = () => {
   const [shichenIndex, setShichenIndex] = useState(-1)
   const [cityIndex, setCityIndex] = useState(0)
 
+  // 页面显示时恢复上次填写的记录
+  Taro.useDidShow(() => {
+    try {
+      const saved = Taro.getStorageSync('formData')
+      if (saved) {
+        setNickname(saved.nickname || '')
+        setGender(saved.gender || 'male')
+        setCalendarType(saved.calendarType || 'solar')
+        setBirthDate(saved.birthDate || '2000-01-01')
+        const si = SHICHEN_OPTIONS.findIndex(s => s.includes(saved.birthTime || ''))
+        setShichenIndex(si >= 0 ? si : -1)
+        const ci = CITIES.findIndex(c => c === saved.location)
+        setCityIndex(ci >= 0 ? ci : 0)
+      }
+    } catch (e) {
+      // ignore
+    }
+  })
+
   const handleSubmit = () => {
     if (!nickname.trim()) {
       Taro.showToast({ title: '请输入昵称', icon: 'none' })
