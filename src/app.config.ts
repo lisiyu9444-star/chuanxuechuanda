@@ -7,7 +7,7 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#ffffff',
-    navigationBarTitleText: 'AI五行穿搭',
+    navigationBarTitleText: '幸运穿搭',
     navigationBarTextStyle: 'black',
     backgroundColor: '#ffffff'
   }

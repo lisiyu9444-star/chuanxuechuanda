@@ -76,7 +76,7 @@ const IndexPage = () => {
         <View className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4">
           <Sparkles size={28} color="#ffffff" />
         </View>
-        <Text className="block text-xl font-bold text-gray-900 mb-1">AI五行穿搭</Text>
+        <Text className="block text-xl font-bold text-gray-900 mb-1">幸运穿搭</Text>
         <Text className="block text-sm text-gray-400">
           根据你的八字 · 推荐每日穿搭
         </Text>
