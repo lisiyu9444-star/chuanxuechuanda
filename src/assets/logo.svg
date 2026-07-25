@@ -1,0 +1,13 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 品牌 Logo 占位 - 请替换为实际 logo 图片 -->
+  <circle cx="60" cy="50" r="35" fill="#7C3AED" opacity="0.15"/>
+  <circle cx="60" cy="50" r="25" fill="#7C3AED" opacity="0.25"/>
+  <!-- 时尚人物剪影 -->
+  <circle cx="60" cy="38" r="12" fill="#7C3AED"/>
+  <path d="M42 65 C42 52, 78 52, 78 65 L78 75 C78 80, 42 80, 42 75 Z" fill="#7C3AED"/>
+  <!-- 装饰星星 -->
+  <path d="M85 30 L87 35 L92 35 L88 38 L90 43 L85 40 L80 43 L82 38 L78 35 L83 35 Z" fill="#F5A623"/>
+  <path d="M30 55 L31.5 58.5 L35 58.5 L32 60.5 L33.5 64 L30 62 L26.5 64 L28 60.5 L25 58.5 L28.5 58.5 Z" fill="#A3C940"/>
+  <!-- 品牌文字 -->
+  <text x="60" y="105" text-anchor="middle" font-size="16" font-weight="bold" fill="#7C3AED" font-family="sans-serif">幸运穿搭</text>
+</svg>

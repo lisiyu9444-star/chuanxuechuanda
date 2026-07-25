@@ -1,10 +1,9 @@
-import { View, Text, Picker } from '@tarojs/components'
+import { View, Text, Picker, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Rocket, Mars, Venus } from 'lucide-react-taro'
 import './index.css'
@@ -92,9 +91,7 @@ const IndexPage = () => {
     <View className="min-h-full bg-white px-6 py-6">
       {/* Header */}
       <View className="flex flex-col items-center pt-8 pb-8">
-        <View className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-4">
-          <Rocket size={28} color="#ffffff" />
-        </View>
+        <Image src={require('@/assets/logo.svg')} className="w-20 h-20 mb-4" mode="aspectFit" />
         <Text className="block text-xl font-bold text-gray-900 mb-1">幸运穿搭</Text>
         <Text className="block text-sm text-gray-400">
           根据你的八字 · 推荐每日穿搭
@@ -126,22 +123,30 @@ const IndexPage = () => {
             <Text className="block text-sm text-gray-500 mb-2">
               你的性别
             </Text>
-            <RadioGroup
-              value={gender}
-              onValueChange={(val) => setGender(val)}
-              className="flex gap-3"
-            >
-              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-[#7C3AED] data-[state=checked]:bg-purple-50">
-                <RadioGroupItem value="male" className="border-gray-300 data-[state=checked]:border-[#7C3AED] data-[state=checked]:bg-[#7C3AED]" />
-                <Mars size={16} color="#7C3AED" className="ml-2" />
-                <Text className="block ml-1 text-gray-700 text-sm">男</Text>
+            <View className="flex gap-3">
+              <View
+                className={`flex-1 flex items-center justify-center py-4 rounded-xl border-2 transition-all ${
+                  gender === 'male'
+                    ? 'border-[#7C3AED] bg-[#7C3AED]/10'
+                    : 'border-gray-100 bg-gray-50'
+                }`}
+                onClick={() => setGender('male')}
+              >
+                <Mars size={20} color={gender === 'male' ? '#7C3AED' : '#9CA3AF'} />
+                <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>男</Text>
               </View>
-              <View className="flex-1 flex items-center justify-center py-3 rounded-xl bg-gray-50 border border-gray-100 data-[state=checked]:border-[#7C3AED] data-[state=checked]:bg-purple-50">
-                <RadioGroupItem value="female" className="border-gray-300 data-[state=checked]:border-[#7C3AED] data-[state=checked]:bg-[#7C3AED]" />
-                <Venus size={16} color="#7C3AED" className="ml-2" />
-                <Text className="block ml-1 text-gray-700 text-sm">女</Text>
+              <View
+                className={`flex-1 flex items-center justify-center py-4 rounded-xl border-2 transition-all ${
+                  gender === 'female'
+                    ? 'border-[#7C3AED] bg-[#7C3AED]/10'
+                    : 'border-gray-100 bg-gray-50'
+                }`}
+                onClick={() => setGender('female')}
+              >
+                <Venus size={20} color={gender === 'female' ? '#7C3AED' : '#9CA3AF'} />
+                <Text className={`block ml-2 text-base font-medium ${gender === 'female' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>女</Text>
               </View>
-            </RadioGroup>
+            </View>
           </CardContent>
         </Card>
 
