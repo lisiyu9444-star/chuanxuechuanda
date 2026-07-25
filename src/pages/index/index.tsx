@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Rocket, Mars, Venus } from 'lucide-react-taro'
+import logoSvg from '@/assets/logo.svg'
 import './index.css'
 
 const SHICHEN_OPTIONS = [
@@ -91,7 +92,7 @@ const IndexPage = () => {
     <View className="min-h-full bg-white px-6 py-6">
       {/* Header */}
       <View className="flex flex-col items-center pt-8 pb-8">
-        <Image src={require('@/assets/logo.svg')} className="w-20 h-20 mb-4" mode="aspectFit" />
+        <Image src={logoSvg} className="w-20 h-20 mb-4" mode="aspectFit" />
         <Text className="block text-xl font-bold text-gray-900 mb-1">幸运穿搭</Text>
         <Text className="block text-sm text-gray-400">
           根据你的八字 · 推荐每日穿搭
