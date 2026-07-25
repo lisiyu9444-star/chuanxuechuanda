@@ -26,6 +26,8 @@ const LoadingPage = () => {
   const [currentStep, setCurrentStep] = useState(0)
   const [userData, setUserData] = useState<UserData | null>(null)
   const [trustCount] = useState(128456 + Math.floor(Math.random() * 1000))
+  const [showTimeout, setShowTimeout] = useState(false)
+  const [timeoutDismissed, setTimeoutDismissed] = useState(false)
   const apiCalledRef = useRef(false)
 
   useDidShow(() => {
@@ -33,6 +35,12 @@ const LoadingPage = () => {
     if (data) {
       setUserData(data)
     }
+
+    // 7秒超时提示
+    const timer = setTimeout(() => {
+      setShowTimeout(true)
+    }, 7000)
+    return () => clearTimeout(timer)
   })
 
   // Step animation
@@ -86,6 +94,21 @@ const LoadingPage = () => {
 
   return (
     <View className="min-h-full bg-white px-6 py-8 flex flex-col">
+      {/* 7秒超时提示 */}
+      {showTimeout && !timeoutDismissed && (
+        <View className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 mb-4">
+          <Text className="text-sm text-purple-700 flex-1">
+            正在努力绘图中，请稍等...
+          </Text>
+          <View
+            className="ml-3 w-6 h-6 flex items-center justify-center rounded-full bg-purple-100"
+            onClick={() => setTimeoutDismissed(true)}
+          >
+            <Text className="text-purple-500 text-xs font-bold">✕</Text>
+          </View>
+        </View>
+      )}
+
       {/* Animation Area */}
       <View className="flex flex-col items-center pt-10 pb-6">
         {/* Clean loading animation - bouncing dots */}
