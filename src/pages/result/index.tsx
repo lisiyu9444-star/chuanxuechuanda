@@ -85,11 +85,6 @@ const ResultPage = () => {
 
   return (
     <View className="min-h-full bg-white">
-      {/* Custom Nav Bar (no back button) */}
-      <View className="pt-12 pb-3 flex items-center justify-center bg-white">
-        <Text className="block text-base font-semibold text-gray-900">幸运穿搭</Text>
-      </View>
-
       <View className="px-6 pb-8">
       {/* Header */}
       <View className="flex flex-col items-center mb-5">
