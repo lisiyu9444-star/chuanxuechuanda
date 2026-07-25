@@ -92,7 +92,7 @@ const IndexPage = () => {
     <View className="min-h-full bg-white px-6 py-6">
       {/* Header */}
       <View className="flex flex-col items-center pt-8 pb-8">
-        <Image src={logoPng} className="w-56 h-48 mb-3" mode="aspectFit" />
+        <Image src={logoPng} className="w-24 h-24 mb-3" mode="aspectFit" />
         <Text className="block text-sm text-gray-400">
           根据你的八字 · 推荐每日穿搭
         </Text>
