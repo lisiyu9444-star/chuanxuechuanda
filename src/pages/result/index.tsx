@@ -3,7 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Sparkles, Lock, CircleCheck } from 'lucide-react-taro'
+import { Lock, CircleCheck, Rocket } from 'lucide-react-taro'
 import './index.css'
 
 interface BaZiResult {
@@ -130,12 +130,15 @@ const ResultPage = () => {
       {!unlocked && (
         <View className="mb-5">
           <Button
-            className="w-full bg-purple-500 text-white font-bold py-4 rounded-xl border-0 shadow-sm"
+            className="w-full text-white font-bold py-4 rounded-xl border-0 shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 50%, #C084FC 100%)',
+            }}
             onClick={handleUnlock}
           >
-            <Sparkles size={18} color="#ffffff" />
+            <Rocket size={18} color="#ffffff" />
             <Text className="ml-2 text-white font-bold">
-              观看视频解锁穿搭
+              解锁今日专属穿搭
             </Text>
           </Button>
         </View>
