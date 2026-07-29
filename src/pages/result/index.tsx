@@ -57,7 +57,12 @@ const ResultPage = () => {
     if (data) {
       setResult(data)
     }
-    // 不再从 Storage 恢复解锁状态，避免首次进入就显示已解锁
+    // 检查是否刚从分享返回
+    const justShared = Taro.getStorageSync('justShared')
+    if (justShared) {
+      setUnlocked(true)
+      Taro.removeStorageSync('justShared')
+    }
   })
 
   const handleUnlock = () => {
@@ -96,19 +101,13 @@ const ResultPage = () => {
       })
       return false // 阻止分享
     }
-    // 允许分享，触发分享组件（解锁逻辑在 useShareAppMessage 中处理）
+    // 设置标记，分享返回后解锁
+    Taro.setStorageSync('justShared', true)
     return true
   }
 
   // 小程序分享配置
   Taro.useShareAppMessage(() => {
-    // 分享时立即解锁（简化逻辑，无需鉴权）
-    if (!sharedToday) {
-      const today = new Date().toDateString()
-      Taro.setStorageSync('lastShareDate', today)
-      setSharedToday(true)
-      setUnlocked(true) // 仅 React state，不保存到 Storage
-    }
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
       path: '/pages/result/index',
