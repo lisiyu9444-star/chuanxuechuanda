@@ -34,8 +34,18 @@ const CITIES = [
   '兰州', '呼和浩特',
 ]
 
+const DEFAULT_NICKNAMES = [
+  'La Vie', "C'est la vie", 'Belle', 'Douceur', 'Étoile',
+  'Aurora', 'Luna', 'Stella', 'Flora', 'Iris',
+  '莫奈的睡莲', '梵高的星空', '德加的舞女', '日落大道', '比弗利山',
+  '塞纳河畔', '左岸咖啡', '蒙马特', '波西米亚', '西西里',
+]
+
+// 随机选择一个默认昵称
+const getRandomNickname = () => DEFAULT_NICKNAMES[Math.floor(Math.random() * DEFAULT_NICKNAMES.length)]
+
 const IndexPage = () => {
-  const [nickname, setNickname] = useState('')
+  const [nickname, setNickname] = useState(getRandomNickname())
   const [gender, setGender] = useState('male')
   const [calendarType, setCalendarType] = useState('solar')
   const [birthDate, setBirthDate] = useState('2000-01-01')
@@ -47,7 +57,7 @@ const IndexPage = () => {
     try {
       const saved = Taro.getStorageSync('formData')
       if (saved) {
-        setNickname(saved.nickname || '')
+        setNickname(saved.nickname || getRandomNickname())
         setGender(saved.gender || 'male')
         setCalendarType(saved.calendarType || 'solar')
         setBirthDate(saved.birthDate || '2000-01-01')
