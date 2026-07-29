@@ -100,18 +100,20 @@ const ResultPage = () => {
       })
       return false // 阻止分享
     }
-    // 点击即解锁（简化逻辑，无需鉴权）
-    const today = new Date().toDateString()
-    Taro.setStorageSync('lastShareDate', today)
-    Taro.setStorageSync('outfitUnlocked', true) // 保存解锁状态
-    setSharedToday(true)
-    setUnlocked(true)
-    // 允许分享，触发分享组件
+    // 允许分享，触发分享组件（解锁逻辑在 useShareAppMessage 中处理）
     return true
   }
 
   // 小程序分享配置
   Taro.useShareAppMessage(() => {
+    // 分享时立即解锁（简化逻辑，无需鉴权）
+    if (!sharedToday) {
+      const today = new Date().toDateString()
+      Taro.setStorageSync('lastShareDate', today)
+      Taro.setStorageSync('outfitUnlocked', true) // 保存解锁状态
+      setSharedToday(true)
+      setUnlocked(true)
+    }
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
       path: '/pages/result/index',
