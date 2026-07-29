@@ -46,7 +46,7 @@ const getRandomNickname = () => DEFAULT_NICKNAMES[Math.floor(Math.random() * DEF
 
 const IndexPage = () => {
   const [nickname, setNickname] = useState(getRandomNickname())
-  const [gender, setGender] = useState('male')
+  const [gender, setGender] = useState('female')
   const [calendarType, setCalendarType] = useState('solar')
   const [birthDate, setBirthDate] = useState('2000-01-01')
   const [shichenIndex, setShichenIndex] = useState(-1)
@@ -58,7 +58,7 @@ const IndexPage = () => {
       const saved = Taro.getStorageSync('formData')
       if (saved) {
         setNickname(saved.nickname || getRandomNickname())
-        setGender(saved.gender || 'male')
+        setGender(saved.gender || 'female')
         setCalendarType(saved.calendarType || 'solar')
         setBirthDate(saved.birthDate || '2000-01-01')
         const si = SHICHEN_OPTIONS.findIndex(s => s.includes(saved.birthTime || ''))
@@ -136,17 +136,6 @@ const IndexPage = () => {
             <View className="flex gap-3">
               <View
                 className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 transition-all ${
-                  gender === 'male'
-                    ? 'border-[#7C3AED] bg-[#7C3AED]/10'
-                    : 'border-gray-100 bg-gray-50'
-                }`}
-                onClick={() => setGender('male')}
-              >
-                <Mars size={20} color={gender === 'male' ? '#7C3AED' : '#9CA3AF'} />
-                <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>男</Text>
-              </View>
-              <View
-                className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 transition-all ${
                   gender === 'female'
                     ? 'border-[#7C3AED] bg-[#7C3AED]/10'
                     : 'border-gray-100 bg-gray-50'
@@ -155,6 +144,17 @@ const IndexPage = () => {
               >
                 <Venus size={20} color={gender === 'female' ? '#7C3AED' : '#9CA3AF'} />
                 <Text className={`block ml-2 text-base font-medium ${gender === 'female' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>女</Text>
+              </View>
+              <View
+                className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 transition-all ${
+                  gender === 'male'
+                    ? 'border-[#7C3AED] bg-[#7C3AED]/10'
+                    : 'border-gray-100 bg-gray-50'
+                }`}
+                onClick={() => setGender('male')}
+              >
+                <Mars size={20} color={gender === 'male' ? '#7C3AED' : '#9CA3AF'} />
+                <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>男</Text>
               </View>
             </View>
           </CardContent>
