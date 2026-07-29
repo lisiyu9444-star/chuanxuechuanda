@@ -232,7 +232,7 @@ const IndexPage = () => {
         <Card className="bg-white border-gray-100 shadow-sm">
           <CardContent className="p-4">
             <Text className="block text-sm text-gray-500 mb-2">
-              所在城市
+              出生城市
             </Text>
             <Picker
               mode="selector"
