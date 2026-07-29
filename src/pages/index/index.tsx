@@ -104,11 +104,11 @@ const IndexPage = () => {
         <Card className="bg-white border-gray-100 shadow-sm">
           <CardContent className="p-4">
             <Text className="block text-sm text-gray-500 mb-2">
-              你的昵称
+              昵称
             </Text>
             <View className="bg-gray-50 rounded-xl px-4 py-3">
               <Input
-                className="w-full bg-transparent text-gray-900 placeholder:text-gray-400"
+                className="w-full bg-transparent border-0 text-gray-900 placeholder:text-gray-400"
                 placeholder="请输入昵称"
                 value={nickname}
                 onInput={(e) => setNickname(e.detail.value)}
