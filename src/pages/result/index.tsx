@@ -94,24 +94,17 @@ const ResultPage = () => {
       })
       return false // 阻止分享
     }
-    // 允许分享，分享成功后在 onShareAppMessage 中处理
+    // 点击即解锁（简化逻辑，无需鉴权）
+    const today = new Date().toDateString()
+    Taro.setStorageSync('lastShareDate', today)
+    setSharedToday(true)
+    setUnlocked(true)
+    // 允许分享，触发分享组件
     return true
   }
 
   // 小程序分享配置
   Taro.useShareAppMessage(() => {
-    // 分享成功后标记并解锁
-    const today = new Date().toDateString()
-    Taro.setStorageSync('lastShareDate', today)
-    setSharedToday(true)
-    setUnlocked(true)
-    
-    Taro.showToast({
-      title: '分享成功，已解锁！',
-      icon: 'success',
-      duration: 2000,
-    })
-    
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
       path: '/pages/result/index',
