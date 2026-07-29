@@ -57,6 +57,11 @@ const ResultPage = () => {
     if (data) {
       setResult(data)
     }
+    // 检查是否已解锁（包括分享解锁）
+    const isUnlocked = Taro.getStorageSync('outfitUnlocked')
+    if (isUnlocked) {
+      setUnlocked(true)
+    }
   })
 
   const handleUnlock = () => {
@@ -67,6 +72,7 @@ const ResultPage = () => {
       confirmColor: '#6366f1',
       success: (res) => {
         if (res.confirm) {
+          Taro.setStorageSync('outfitUnlocked', true) // 保存解锁状态
           setUnlocked(true)
         }
       },
@@ -97,6 +103,7 @@ const ResultPage = () => {
     // 点击即解锁（简化逻辑，无需鉴权）
     const today = new Date().toDateString()
     Taro.setStorageSync('lastShareDate', today)
+    Taro.setStorageSync('outfitUnlocked', true) // 保存解锁状态
     setSharedToday(true)
     setUnlocked(true)
     // 允许分享，触发分享组件
