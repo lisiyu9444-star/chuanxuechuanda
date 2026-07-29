@@ -57,11 +57,7 @@ const ResultPage = () => {
     if (data) {
       setResult(data)
     }
-    // 检查是否已解锁（包括分享解锁）
-    const isUnlocked = Taro.getStorageSync('outfitUnlocked')
-    if (isUnlocked) {
-      setUnlocked(true)
-    }
+    // 不再从 Storage 恢复解锁状态，避免首次进入就显示已解锁
   })
 
   const handleUnlock = () => {
@@ -110,9 +106,8 @@ const ResultPage = () => {
     if (!sharedToday) {
       const today = new Date().toDateString()
       Taro.setStorageSync('lastShareDate', today)
-      Taro.setStorageSync('outfitUnlocked', true) // 保存解锁状态
       setSharedToday(true)
-      setUnlocked(true)
+      setUnlocked(true) // 仅 React state，不保存到 Storage
     }
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
