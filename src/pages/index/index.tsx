@@ -121,11 +121,11 @@ const IndexPage = () => {
         <Card className="bg-white border-gray-100 shadow-sm">
           <CardContent className="p-4">
             <Text className="block text-sm text-gray-500 mb-2">
-              你的性别
+              性别
             </Text>
             <View className="flex gap-3">
               <View
-                className={`flex-1 flex items-center justify-center py-4 rounded-xl border-2 transition-all ${
+                className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 transition-all ${
                   gender === 'male'
                     ? 'border-[#7C3AED] bg-[#7C3AED]/10'
                     : 'border-gray-100 bg-gray-50'
@@ -136,7 +136,7 @@ const IndexPage = () => {
                 <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>男</Text>
               </View>
               <View
-                className={`flex-1 flex items-center justify-center py-4 rounded-xl border-2 transition-all ${
+                className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 transition-all ${
                   gender === 'female'
                     ? 'border-[#7C3AED] bg-[#7C3AED]/10'
                     : 'border-gray-100 bg-gray-50'
