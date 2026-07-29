@@ -85,43 +85,33 @@ const ResultPage = () => {
     }
   }, [])
 
-  const handleShareUnlock = () => {
+  const handleShareClick = () => {
     if (sharedToday) {
       Taro.showToast({
         title: '今日已分享过，明日再来～',
         icon: 'none',
         duration: 2000,
       })
-      return
+      return false // 阻止分享
     }
-
-    // 触发分享
-    Taro.showShareMenu({
-      withShareTicket: true,
-      success: () => {
-        // 分享成功后标记并解锁
-        const today = new Date().toDateString()
-        Taro.setStorageSync('lastShareDate', today)
-        setSharedToday(true)
-        setUnlocked(true)
-        Taro.showToast({
-          title: '分享成功，已解锁！',
-          icon: 'success',
-          duration: 2000,
-        })
-      },
-      fail: () => {
-        Taro.showToast({
-          title: '分享失败，请重试',
-          icon: 'none',
-          duration: 2000,
-        })
-      },
-    })
+    // 允许分享，分享成功后在 onShareAppMessage 中处理
+    return true
   }
 
   // 小程序分享配置
   Taro.useShareAppMessage(() => {
+    // 分享成功后标记并解锁
+    const today = new Date().toDateString()
+    Taro.setStorageSync('lastShareDate', today)
+    setSharedToday(true)
+    setUnlocked(true)
+    
+    Taro.showToast({
+      title: '分享成功，已解锁！',
+      icon: 'success',
+      duration: 2000,
+    })
+    
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
       path: '/pages/result/index',
@@ -201,7 +191,8 @@ const ResultPage = () => {
           {/* 分享好友解锁 */}
           <Button
             className="w-full bg-white text-purple-500 border-2 border-purple-200 py-4 rounded-xl shadow-sm"
-            onClick={handleShareUnlock}
+            onClick={handleShareClick}
+            openType="share"
           >
             <Share2 size={18} color="#7C3AED" />
             <Text className="ml-2 text-purple-500 font-bold">

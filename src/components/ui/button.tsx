@@ -1,5 +1,5 @@
 import * as React from "react"
-import { View } from "@tarojs/components"
+import { View, Button as NativeButton } from "@tarojs/components"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
@@ -39,11 +39,29 @@ export interface ButtonProps
   asChild?: boolean
   disabled?: boolean
   className?: string
+  openType?: 'share' | 'contact' | 'getPhoneNumber' | 'getUserInfo' | 'launchApp' | 'openSetting' | 'feedback'
 }
 
 const Button = React.forwardRef<React.ElementRef<typeof View>, ButtonProps>(
-  ({ className, variant, size, asChild = false, disabled, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, disabled, openType, ...props }, ref) => {
     const tabIndex = (props as { tabIndex?: number }).tabIndex ?? (disabled ? -1 : 0)
+    
+    // 当 openType 存在时，使用原生 Button 组件（用于微信小程序分享等功能）
+    if (openType) {
+      return (
+        <NativeButton
+          className={cn(
+            buttonVariants({ variant, size, className }),
+            disabled && "opacity-50 pointer-events-none"
+          )}
+          ref={ref}
+          openType={openType}
+          disabled={disabled}
+          {...props}
+        />
+      )
+    }
+    
     return (
       <View
         className={cn(
