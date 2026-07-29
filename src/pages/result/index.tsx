@@ -1,9 +1,9 @@
 import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Lock, CircleCheck, Rocket } from 'lucide-react-taro'
+import { Lock, CircleCheck, Rocket, Share2 } from 'lucide-react-taro'
 import './index.css'
 
 interface BaZiResult {
@@ -73,6 +73,61 @@ const ResultPage = () => {
     })
   }
 
+  // 分享解锁相关逻辑
+  const [sharedToday, setSharedToday] = useState(false)
+
+  useEffect(() => {
+    // 检查今日是否已分享过
+    const lastShareDate = Taro.getStorageSync('lastShareDate')
+    const today = new Date().toDateString()
+    if (lastShareDate === today) {
+      setSharedToday(true)
+    }
+  }, [])
+
+  const handleShareUnlock = () => {
+    if (sharedToday) {
+      Taro.showToast({
+        title: '今日已分享过，明日再来～',
+        icon: 'none',
+        duration: 2000,
+      })
+      return
+    }
+
+    // 触发分享
+    Taro.showShareMenu({
+      withShareTicket: true,
+      success: () => {
+        // 分享成功后标记并解锁
+        const today = new Date().toDateString()
+        Taro.setStorageSync('lastShareDate', today)
+        setSharedToday(true)
+        setUnlocked(true)
+        Taro.showToast({
+          title: '分享成功，已解锁！',
+          icon: 'success',
+          duration: 2000,
+        })
+      },
+      fail: () => {
+        Taro.showToast({
+          title: '分享失败，请重试',
+          icon: 'none',
+          duration: 2000,
+        })
+      },
+    })
+  }
+
+  // 小程序分享配置
+  Taro.useShareAppMessage(() => {
+    return {
+      title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
+      path: '/pages/result/index',
+    }
+  })
+
   if (!result) {
     return (
       <View className="min-h-full bg-white flex items-center justify-center">
@@ -126,9 +181,10 @@ const ResultPage = () => {
         )}
       </View>
 
-      {/* Unlock Button */}
+      {/* Unlock Buttons */}
       {!unlocked && (
-        <View className="mb-5">
+        <View className="mb-5 flex flex-col gap-3">
+          {/* 观看视频解锁 */}
           <Button
             className="w-full text-white font-bold py-4 rounded-xl border-0 shadow-lg"
             style={{
@@ -139,6 +195,17 @@ const ResultPage = () => {
             <Rocket size={18} color="#ffffff" />
             <Text className="ml-2 text-white font-bold">
               解锁今日专属穿搭
+            </Text>
+          </Button>
+
+          {/* 分享好友解锁 */}
+          <Button
+            className="w-full bg-white text-purple-500 border-2 border-purple-200 py-4 rounded-xl shadow-sm"
+            onClick={handleShareUnlock}
+          >
+            <Share2 size={18} color="#7C3AED" />
+            <Text className="ml-2 text-purple-500 font-bold">
+              分享好友解锁
             </Text>
           </Button>
         </View>
