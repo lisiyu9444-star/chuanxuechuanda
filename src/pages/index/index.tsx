@@ -81,7 +81,7 @@ const IndexPage = () => {
       return
     }
     if (shichenIndex < 0) {
-      Taro.showToast({ title: '请选择出生时辰', icon: 'none' })
+      Taro.showToast({ title: '选择时辰，未知选午时', icon: 'none' })
       return
     }
 
@@ -221,7 +221,7 @@ const IndexPage = () => {
                 >
                   {shichenIndex >= 0
                     ? SHICHEN_OPTIONS[shichenIndex]
-                    : '请选择出生时辰'}
+                    : '选择时辰，未知选午时'}
                 </Text>
               </View>
             </Picker>
