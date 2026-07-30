@@ -126,7 +126,7 @@ const ResultPage = () => {
 
   return (
     <View className="min-h-full bg-white">
-      <View className="px-6 pb-8">
+      <View className="px-6 pb-24">
       {/* Header */}
       <View className="flex flex-col items-center mb-5">
         <Text className="block text-xl font-bold text-gray-900 mb-2">
@@ -319,17 +319,21 @@ const ResultPage = () => {
             </CardContent>
           </Card>
 
-          {/* Regenerate Button */}
-          <View className="pb-8">
-            <Button
-              className="w-full bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
-              onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
-            >
-              <Text className="text-purple-500">重新测算</Text>
-            </Button>
-          </View>
         </View>
       )}
+      </View>
+
+      {/* Fixed Bottom Button */}
+      <View
+        className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
+        style={{ bottom: 0, zIndex: 100 }}
+      >
+        <Button
+          className="w-full bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
+          onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
+        >
+          <Text className="text-purple-500">重新测算</Text>
+        </Button>
       </View>
     </View>
   )
