@@ -782,7 +782,13 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     headers: Record<string, string>,
   ): Promise<string> {
     const config = new Config()
-    const client = new ImageGenerationClient(config, headers)
+    // 过滤掉实例相关的 header，使用当前环境的实例 ID
+    const filteredHeaders = { ...headers }
+    delete filteredHeaders['x-faas-instance-name']
+    delete filteredHeaders['X-Faas-Instance-Name']
+    delete filteredHeaders['x-coze-instance-id']
+    delete filteredHeaders['X-Coze-Instance-Id']
+    const client = new ImageGenerationClient(config, filteredHeaders)
 
     const response = await client.generate({
       prompt,
