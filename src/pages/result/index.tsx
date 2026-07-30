@@ -3,7 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Lock, CircleCheck, Rocket, Share2 } from 'lucide-react-taro'
+import { Lock, CircleCheck, Share2, Play } from 'lucide-react-taro'
 import './index.css'
 
 interface BaZiResult {
@@ -178,7 +178,7 @@ const ResultPage = () => {
             }}
             onClick={handleUnlock}
           >
-            <Rocket size={18} color="#ffffff" />
+            <Play size={18} color="#ffffff" />
             <Text className="ml-2 text-white font-bold">
               解锁今日专属穿搭
             </Text>
