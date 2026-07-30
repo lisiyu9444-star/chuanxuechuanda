@@ -94,6 +94,8 @@ const IndexPage = () => {
       location: CITIES[cityIndex],
     }
 
+    // 保存表单数据到 Storage，供返回首页时恢复
+    Taro.setStorageSync('formData', userData)
     Taro.setStorageSync('userData', userData)
     Taro.navigateTo({ url: '/pages/loading/index' })
   }
