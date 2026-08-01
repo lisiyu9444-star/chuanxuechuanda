@@ -22,6 +22,7 @@ export class BaziController {
       birthDate: string
       birthTime: string
       location: string
+      calendarType?: 'solar' | 'lunar'
     },
     @Req() req,
   ): Promise<{
@@ -38,10 +39,30 @@ export class BaziController {
       imageUrl: string
     }
   }> {
-    const { nickname, gender, birthDate, birthTime } = body
+    const { nickname, gender, birthDate, birthTime, calendarType } = body
+
+    // 如果是农历，先转换为阳历
+    let solarBirthDate = birthDate
+    if (calendarType === 'lunar') {
+      try {
+        const { Lunar } = require('lunar-javascript')
+        const parts = birthDate.split('-')
+        const lunar = Lunar.fromYmd(
+          parseInt(parts[0]),
+          parseInt(parts[1]),
+          parseInt(parts[2]),
+        )
+        const solar = lunar.getSolar()
+        solarBirthDate = `${solar.getYear()}-${String(solar.getMonth()).padStart(2, '0')}-${String(solar.getDay()).padStart(2, '0')}`
+        console.log(`农历转换：${birthDate} -> ${solarBirthDate}`)
+      } catch (error) {
+        console.error('农历转换失败:', error)
+        // 转换失败时使用原始日期
+      }
+    }
 
     // 使用 @openfate/bazi-engine 进行专业排盘
-    const baziResult = this.baziService.calculateBaZi(birthDate, birthTime, gender)
+    const baziResult = this.baziService.calculateBaZi(solarBirthDate, birthTime, gender)
 
     // 生成穿搭图片
     const forwardHeaders = HeaderUtils.extractForwardHeaders(
