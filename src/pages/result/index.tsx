@@ -3,7 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { CircleCheck } from 'lucide-react-taro'
+import { CircleCheck, Share2, RefreshCw } from 'lucide-react-taro'
 import './index.css'
 
 interface BaZiResult {
@@ -319,16 +319,26 @@ const ResultPage = () => {
       )}
       </View>
 
-      {/* Fixed Bottom Button - Only show when unlocked */}
+      {/* Fixed Bottom Buttons - Only show when unlocked */}
       {unlocked && (
         <View
           className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
-          style={{ bottom: 0, zIndex: 100 }}
+          style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
         >
           <Button
-            className="w-full bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
+            className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
+            openType="share"
+          >
+            <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Share2 size={18} color="#a855f7" />
+              <Text className="text-purple-500">分享好友</Text>
+            </View>
+          </Button>
+          <Button
+            className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
             onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
           >
+            <RefreshCw size={16} color="#7C3AED" className="mr-2" />
             <Text className="text-purple-500">再测一次</Text>
           </Button>
         </View>
