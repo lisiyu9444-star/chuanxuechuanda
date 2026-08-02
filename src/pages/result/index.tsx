@@ -1,9 +1,9 @@
 import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Lock, CircleCheck, Share2, Play } from 'lucide-react-taro'
+import { CircleCheck } from 'lucide-react-taro'
 import './index.css'
 
 interface BaZiResult {
@@ -50,69 +50,70 @@ const ELEMENT_COLORS: Record<string, string> = {
 
 const ResultPage = () => {
   const [result, setResult] = useState<BaZiResult | null>(null)
-  const [unlocked, setUnlocked] = useState(false)
+  // 暂时直接进入已解锁状态，待解锁功能后续优化
+  const [unlocked] = useState(true)
 
   useDidShow(() => {
     const data = Taro.getStorageSync('baziResult')
     if (data) {
       setResult(data)
     }
-    // 检查是否刚从分享返回
-    const justShared = Taro.getStorageSync('justShared')
-    if (justShared) {
-      setUnlocked(true)
-      Taro.removeStorageSync('justShared')
-    }
+    // 暂时不需要检查分享状态，直接进入已解锁状态
+    // const justShared = Taro.getStorageSync('justShared')
+    // if (justShared) {
+    //   setUnlocked(true)
+    //   Taro.removeStorageSync('justShared')
+    // }
   })
 
-  const handleUnlock = () => {
-    Taro.showModal({
-      title: '解锁今日穿搭',
-      content: '观看短视频即可解锁你的专属穿搭推荐',
-      confirmText: '观看解锁',
-      confirmColor: '#6366f1',
-      success: (res) => {
-        if (res.confirm) {
-          Taro.setStorageSync('outfitUnlocked', true) // 保存解锁状态
-          setUnlocked(true)
-        }
-      },
-    })
-  }
+  // 视频解锁相关逻辑（暂时注释）
+  // const handleUnlock = () => {
+  //   Taro.showModal({
+  //     title: '解锁今日穿搭',
+  //     content: '观看短视频即可解锁你的专属穿搭推荐',
+  //     confirmText: '观看解锁',
+  //     confirmColor: '#6366f1',
+  //     success: (res) => {
+  //       if (res.confirm) {
+  //         Taro.setStorageSync('outfitUnlocked', true)
+  //         setUnlocked(true)
+  //       }
+  //     },
+  //   })
+  // }
 
-  // 分享解锁相关逻辑
-  const [sharedToday, setSharedToday] = useState(false)
+  // 分享解锁相关逻辑（暂时注释）
+  // const [sharedToday, setSharedToday] = useState(false)
 
-  useEffect(() => {
-    // 检查今日是否已分享过
-    const lastShareDate = Taro.getStorageSync('lastShareDate')
-    const today = new Date().toDateString()
-    if (lastShareDate === today) {
-      setSharedToday(true)
-    }
-  }, [])
+  // useEffect(() => {
+  //   // 检查今日是否已分享过
+  //   const lastShareDate = Taro.getStorageSync('lastShareDate')
+  //   const today = new Date().toDateString()
+  //   if (lastShareDate === today) {
+  //     setSharedToday(true)
+  //   }
+  // }, [])
 
-  const handleShareClick = () => {
-    if (sharedToday) {
-      Taro.showToast({
-        title: '今日已分享过，明日再来～',
-        icon: 'none',
-        duration: 2000,
-      })
-      return false // 阻止分享
-    }
-    // 设置标记，分享返回后解锁
-    Taro.setStorageSync('justShared', true)
-    return true
-  }
+  // const handleShareClick = () => {
+  //   if (sharedToday) {
+  //     Taro.showToast({
+  //       title: '今日已分享过，明日再来～',
+  //       icon: 'none',
+  //       duration: 2000,
+  //     })
+  //     return false
+  //   }
+  //   Taro.setStorageSync('justShared', true)
+  //   return true
+  // }
 
-  // 小程序分享配置
-  Taro.useShareAppMessage(() => {
-    return {
-      title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
-      path: '/pages/result/index',
-    }
-  })
+  // 小程序分享配置（暂时注释）
+  // Taro.useShareAppMessage(() => {
+  //   return {
+  //     title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
+  //     path: '/pages/result/index',
+  //   }
+  // })
 
   if (!result) {
     return (
@@ -144,14 +145,11 @@ const ResultPage = () => {
             src={result.imageUrl}
             className="w-full h-full"
             mode="aspectFill"
-            style={
-              unlocked
-                ? { filter: 'none' }
-                : { filter: 'blur(20px)' }
-            }
+            style={{ filter: 'none' }}
           />
         </View>
-        {!unlocked && (
+        {/* 待解锁遮罩层 - 暂时注释，后续优化 */}
+        {/* {!unlocked && (
           <View
             className="absolute inset-0 flex flex-col items-center justify-center"
             style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
@@ -164,13 +162,12 @@ const ResultPage = () => {
               观看视频即可解锁
             </Text>
           </View>
-        )}
+        )} */}
       </View>
 
-      {/* Unlock Buttons */}
-      {!unlocked && (
+      {/* 解锁按钮 - 暂时注释，后续优化 */}
+      {/* {!unlocked && (
         <View className="mb-5 flex flex-col gap-3">
-          {/* 观看视频解锁 */}
           <Button
             className="w-full text-white font-bold py-4 rounded-xl border-0 shadow-lg"
             style={{
@@ -184,7 +181,6 @@ const ResultPage = () => {
             </Text>
           </Button>
 
-          {/* 分享好友解锁 */}
           <Button
             className="w-full bg-white text-purple-500 border-2 border-purple-200 py-4 rounded-xl shadow-sm"
             onClick={handleShareClick}
@@ -196,7 +192,7 @@ const ResultPage = () => {
             </Text>
           </Button>
         </View>
-      )}
+      )} */}
 
       {/* Unlocked Content */}
       {unlocked && (
