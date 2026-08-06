@@ -123,7 +123,7 @@ const LoadingPage = () => {
           {LOADING_STEPS[currentStep]}
         </Text>
         <Text className="block text-sm text-gray-400">
-          推演中，请稍后...
+          正在努力绘图中，约 30s～60s...
         </Text>
 
         {/* Progress Bar */}
