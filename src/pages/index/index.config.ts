@@ -3,11 +3,13 @@ export default typeof definePageConfig === 'function'
     navigationBarTitleText: '幸运穿搭',
     navigationBarBackgroundColor: '#ffffff',
     navigationBarTextStyle: 'black',
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    enableShareAppMessage: true
   })
   : {
     navigationBarTitleText: '幸运穿搭',
     navigationBarBackgroundColor: '#ffffff',
     navigationBarTextStyle: 'black',
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    enableShareAppMessage: true
   }
