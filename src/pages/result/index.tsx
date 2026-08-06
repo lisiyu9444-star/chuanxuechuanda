@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CircleCheck, Share2, RefreshCw } from 'lucide-react-taro'
+import shareCoverPng from '@/assets/share-cover.png'
 import './index.css'
 
 interface BaZiResult {
@@ -107,13 +108,14 @@ const ResultPage = () => {
   //   return true
   // }
 
-  // 小程序分享配置（暂时注释）
-  // Taro.useShareAppMessage(() => {
-  //   return {
-  //     title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
-  //     path: '/pages/result/index',
-  //   }
-  // })
+  // 小程序分享配置
+  Taro.useShareAppMessage(() => {
+    return {
+      title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
+      path: '/pages/result/index',
+      imageUrl: shareCoverPng,
+    }
+  })
 
   if (!result) {
     return (
