@@ -137,9 +137,10 @@ const ResultPage = () => {
     Network.request({ url: '/api/config/features' })
       .then((res) => {
         console.log('Features API response:', res.data)
-        if (res.data?.data) {
-          setShareEnabled(res.data.data.shareEnabled !== false)
-          setShowBaZiContent(res.data.data.showBaZiContent !== false)
+        if (res.data?.data?.features) {
+          const features = res.data.data.features
+          setShareEnabled(features.enableShareUnlock !== false)
+          setShowBaZiContent(features.showResultDetails !== false)
         }
       })
       .catch((err) => {

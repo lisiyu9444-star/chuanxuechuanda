@@ -46,8 +46,8 @@ const LoadingPage = () => {
           method: 'GET',
         })
         console.log('Features config:', res.data)
-        if (res.data?.data) {
-          setFeatures(res.data.data)
+        if (res.data?.data?.features) {
+          setFeatures(res.data.data.features)
         }
       } catch (error) {
         console.error('Failed to load features:', error)
@@ -139,10 +139,7 @@ const LoadingPage = () => {
 
         {/* Current Step Text */}
         <Text className="block text-base font-medium text-gray-900 mb-1">
-          {LOADING_STEPS[currentStep]}
-        </Text>
-        <Text className="block text-sm text-gray-400">
-          正在努力绘图中，约 30s～60s...
+          笔触勾画中，请稍后...
         </Text>
 
         {/* Progress Bar */}

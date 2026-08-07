@@ -83,8 +83,8 @@ const IndexPage = () => {
     // 获取功能开关配置
     Network.request({ url: '/api/config/features' }).then((res: any) => {
       console.log('Features config:', res.data)
-      if (res.data?.data) {
-        setFeatures(res.data.data)
+      if (res.data?.data?.features) {
+        setFeatures(res.data.data.features)
       }
     }).catch(err => {
       console.error('Failed to load features:', err)
