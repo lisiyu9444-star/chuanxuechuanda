@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CircleCheck, Share2, RefreshCw } from 'lucide-react-taro'
+import { Network } from '@/network'
 import shareCoverPng from '@/assets/share-cover.png'
 import './index.css'
 
@@ -53,18 +54,26 @@ const ResultPage = () => {
   const [result, setResult] = useState<BaZiResult | null>(null)
   // 暂时直接进入已解锁状态，待解锁功能后续优化
   const [unlocked] = useState(true)
+  // 功能开关：分享功能是否开启
+  const [shareEnabled, setShareEnabled] = useState(true)
 
   useDidShow(() => {
     const data = Taro.getStorageSync('baziResult')
     if (data) {
       setResult(data)
     }
-    // 暂时不需要检查分享状态，直接进入已解锁状态
-    // const justShared = Taro.getStorageSync('justShared')
-    // if (justShared) {
-    //   setUnlocked(true)
-    //   Taro.removeStorageSync('justShared')
-    // }
+    // 获取功能开关配置
+    Network.request({
+      url: '/api/config/features',
+      method: 'GET',
+    }).then((res: any) => {
+      if (res.data?.shareEnabled !== undefined) {
+        setShareEnabled(res.data.shareEnabled)
+      }
+    }).catch(() => {
+      // 获取失败默认开启
+      setShareEnabled(true)
+    })
   })
 
   // 视频解锁相关逻辑（暂时注释）
@@ -327,17 +336,19 @@ const ResultPage = () => {
           className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
           style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
         >
+          {shareEnabled && (
+            <Button
+              className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
+              openType="share"
+            >
+              <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Share2 size={18} color="#a855f7" />
+                <Text className="text-purple-500">分享好友</Text>
+              </View>
+            </Button>
+          )}
           <Button
-            className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
-            openType="share"
-          >
-            <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Share2 size={18} color="#a855f7" />
-              <Text className="text-purple-500">分享好友</Text>
-            </View>
-          </Button>
-          <Button
-            className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
+            className={shareEnabled ? "flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl" : "w-full bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"}
             onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
           >
             <RefreshCw size={16} color="#7C3AED" className="mr-2" />
