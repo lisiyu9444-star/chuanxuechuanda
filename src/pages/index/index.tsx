@@ -114,7 +114,7 @@ const IndexPage = () => {
       <View className="flex flex-col items-center pt-8 pb-8">
         <Image src={logoPng} className="w-24 h-24 mb-3" mode="aspectFit" />
         <Text className="block text-sm text-gray-400">
-          根据你的八字 · 推荐每日穿搭
+          根据你的生辰 · 推荐每日穿搭
         </Text>
       </View>
 
