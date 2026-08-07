@@ -117,7 +117,7 @@ const LoadingPage = () => {
       {showTimeout && !timeoutDismissed && (
         <View className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 mb-4">
           <Text className="text-sm text-purple-700 flex-1">
-            绘图需要时间啦，稍等片刻
+            绘图需要时间啦，约30s左右
           </Text>
           <View
             className="ml-3 w-6 h-6 flex items-center justify-center rounded-full bg-purple-100"
