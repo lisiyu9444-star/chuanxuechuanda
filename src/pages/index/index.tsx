@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Rocket, Mars, Venus } from 'lucide-react-taro'
+import { Network } from '@/network'
 import logoPng from '@/assets/logo-brand.png'
 import shareCoverPng from '@/assets/share-cover.png'
 import './index.css'
@@ -52,6 +53,7 @@ const IndexPage = () => {
   const [birthDate, setBirthDate] = useState('2000-01-01')
   const [shichenIndex, setShichenIndex] = useState(-1)
   const [cityIndex, setCityIndex] = useState(0)
+  const [features, setFeatures] = useState({ showHomeSubtitle: true })
 
   // 分享配置
   useShareAppMessage(() => ({
@@ -60,7 +62,7 @@ const IndexPage = () => {
     imageUrl: shareCoverPng,
   }))
 
-  // 页面显示时恢复上次填写的记录
+  // 页面显示时恢复上次填写的记录并获取功能开关
   Taro.useDidShow(() => {
     try {
       const saved = Taro.getStorageSync('formData')
@@ -77,6 +79,16 @@ const IndexPage = () => {
     } catch (e) {
       // ignore
     }
+
+    // 获取功能开关配置
+    Network.request({ url: '/api/config/features' }).then((res: any) => {
+      console.log('Features config:', res.data)
+      if (res.data?.data) {
+        setFeatures(res.data.data)
+      }
+    }).catch(err => {
+      console.error('Failed to load features:', err)
+    })
   })
 
   const handleSubmit = () => {
@@ -113,9 +125,11 @@ const IndexPage = () => {
       {/* Header */}
       <View className="flex flex-col items-center pt-8 pb-8">
         <Image src={logoPng} className="w-24 h-24 mb-3" mode="aspectFit" />
-        <Text className="block text-sm text-gray-400">
-          根据你的生辰 · 推荐每日穿搭
-        </Text>
+        {features.showHomeSubtitle && (
+          <Text className="block text-sm text-gray-400">
+            根据你的生辰 · 推荐每日穿搭
+          </Text>
+        )}
       </View>
 
       {/* Form */}

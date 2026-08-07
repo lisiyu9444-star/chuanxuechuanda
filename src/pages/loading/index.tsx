@@ -28,6 +28,8 @@ const LoadingPage = () => {
   const [trustCount] = useState(128456 + Math.floor(Math.random() * 1000))
   const [showTimeout, setShowTimeout] = useState(false)
   const [timeoutDismissed, setTimeoutDismissed] = useState(false)
+  const [features, setFeatures] = useState({ showLoadingSteps: true })
+  const { showLoadingSteps } = features
   const apiCalledRef = useRef(false)
 
   useDidShow(() => {
@@ -35,6 +37,23 @@ const LoadingPage = () => {
     if (data) {
       setUserData(data)
     }
+
+    // 获取功能开关配置
+    const loadFeatures = async () => {
+      try {
+        const res = await Network.request({
+          url: '/api/config/features',
+          method: 'GET',
+        })
+        console.log('Features config:', res.data)
+        if (res.data?.data) {
+          setFeatures(res.data.data)
+        }
+      } catch (error) {
+        console.error('Failed to load features:', error)
+      }
+    }
+    loadFeatures()
 
     // 7秒超时提示
     const timer = setTimeout(() => {
@@ -176,37 +195,39 @@ const LoadingPage = () => {
       )}
 
       {/* Progress Steps */}
-      <View className="flex-1 flex flex-col justify-end pb-8">
-        <View className="flex flex-col gap-3 mb-6">
-          {LOADING_STEPS.map((step, index) => (
-            <View key={step} className="flex items-center gap-3">
-              <View
-                className={`w-2 h-2 rounded-full ${
-                  index <= currentStep
-                    ? 'bg-purple-500'
-                    : 'bg-gray-200'
-                }`}
-              />
-              <Text
-                className={`text-sm ${
-                  index <= currentStep
-                    ? 'text-gray-700 font-medium'
-                    : 'text-gray-400'
-                }`}
-              >
-                {step}
-              </Text>
-            </View>
-          ))}
-        </View>
+      {showLoadingSteps && (
+        <View className="flex-1 flex flex-col justify-end pb-8">
+          <View className="flex flex-col gap-3 mb-6">
+            {LOADING_STEPS.map((step, index) => (
+              <View key={step} className="flex items-center gap-3">
+                <View
+                  className={`w-2 h-2 rounded-full ${
+                    index <= currentStep
+                      ? 'bg-purple-500'
+                      : 'bg-gray-200'
+                  }`}
+                />
+                <Text
+                  className={`text-sm ${
+                    index <= currentStep
+                      ? 'text-gray-700 font-medium'
+                      : 'text-gray-400'
+                  }`}
+                >
+                  {step}
+                </Text>
+              </View>
+            ))}
+          </View>
 
-        {/* Trust Indicator */}
-        <View className="flex justify-center">
-          <Text className="text-xs text-gray-400">
-            已有 {trustCount.toLocaleString()} 人完成测算
-          </Text>
+          {/* Trust Indicator */}
+          <View className="flex justify-center">
+            <Text className="text-xs text-gray-400">
+              已有 {trustCount.toLocaleString()} 人完成测算
+            </Text>
+          </View>
         </View>
-      </View>
+      )}
     </View>
   )
 }

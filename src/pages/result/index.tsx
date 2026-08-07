@@ -1,6 +1,6 @@
 import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CircleCheck, Share2, RefreshCw } from 'lucide-react-taro'
@@ -56,6 +56,8 @@ const ResultPage = () => {
   const [unlocked] = useState(true)
   // 功能开关：分享功能是否开启
   const [shareEnabled, setShareEnabled] = useState(true)
+  // 功能开关：是否显示八字相关内容（八字概览、喜用神分析、穿搭推荐）
+  const [showBaZiContent, setShowBaZiContent] = useState(true)
 
   useDidShow(() => {
     const data = Taro.getStorageSync('baziResult')
@@ -70,9 +72,13 @@ const ResultPage = () => {
       if (res.data?.shareEnabled !== undefined) {
         setShareEnabled(res.data.shareEnabled)
       }
+      if (res.data?.showBaZiContent !== undefined) {
+        setShowBaZiContent(res.data.showBaZiContent)
+      }
     }).catch(() => {
       // 获取失败默认开启
       setShareEnabled(true)
+      setShowBaZiContent(true)
     })
   })
 
@@ -126,8 +132,24 @@ const ResultPage = () => {
     }
   })
 
+  // Fetch feature flags
+  useEffect(() => {
+    Network.request({ url: '/api/config/features' })
+      .then((res) => {
+        console.log('Features API response:', res.data)
+        if (res.data?.data) {
+          setShareEnabled(res.data.data.shareEnabled !== false)
+          setShowBaZiContent(res.data.data.showBaZiContent !== false)
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch features:', err)
+      })
+  }, [])
+
   if (!result) {
-    return (
+
+  return (
       <View className="min-h-full bg-white flex items-center justify-center">
         <Text className="text-gray-400">加载中...</Text>
       </View>
@@ -214,7 +236,9 @@ const ResultPage = () => {
             <Text className="text-sm text-green-500">已解锁</Text>
           </View>
 
-          {/* BaZi Summary */}
+          {/* BaZi Summary - Controlled by backend */}
+          {showBaZiContent && (
+          <>
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
               <View className="flex items-center justify-between mb-3">
@@ -325,7 +349,8 @@ const ResultPage = () => {
               </View>
             </CardContent>
           </Card>
-
+          </>
+          )}
         </View>
       )}
       </View>
