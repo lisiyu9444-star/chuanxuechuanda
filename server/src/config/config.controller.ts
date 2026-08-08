@@ -21,13 +21,13 @@ export class ConfigController {
         // ============================================
         features: {
           // 首页
-          showHomeSubtitle: false,      // 首页副标题"根据你的生辰推荐每日穿搭"
+          showHomeSubtitle: true,      // 首页副标题"根据你的生辰推荐每日穿搭"
 
           // Loading 页面
-          showLoadingSteps: false,      // loading 步骤文案（四柱/旺缺/喜用神/穿搭）
+          showLoadingSteps: true,      // loading 步骤文案（四柱/旺缺/喜用神/穿搭）
 
           // 结果页
-          showResultDetails: false,     // 结果页详情（八字概览/喜用神分析/穿搭推荐）
+          showResultDetails: true,     // 结果页详情（八字概览/喜用神分析/穿搭推荐）
 
           // 功能开关
           enableVideoUnlock: true,     // 视频解锁功能
