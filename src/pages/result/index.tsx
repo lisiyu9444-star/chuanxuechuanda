@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CircleCheck, Share2, RefreshCw } from 'lucide-react-taro'
 import { Network } from '@/network'
-import shareImageData from '@/config/share-image.json'
 import './index.css'
 
 interface BaZiResult {
@@ -128,7 +127,7 @@ const ResultPage = () => {
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
       path: '/pages/result/index',
-      imageUrl: shareImageData.imageUrl,
+      imageUrl: '/share-cover.jpg',
     }
   })
 
