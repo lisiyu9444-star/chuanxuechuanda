@@ -3,9 +3,7 @@ import Taro, { useShareAppMessage } from '@tarojs/taro'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Rocket, Mars, Venus } from 'lucide-react-taro'
+import { Rocket, Venus, Mars, ChevronDown } from 'lucide-react-taro'
 import { Network } from '@/network'
 import logoPng from '@/assets/logo-brand.png'
 import './index.css'
@@ -42,7 +40,6 @@ const DEFAULT_NICKNAMES = [
   '塞纳河畔', '左岸咖啡', '蒙马特', '波西米亚', '西西里',
 ]
 
-// 随机选择一个默认昵称
 const getRandomNickname = () => DEFAULT_NICKNAMES[Math.floor(Math.random() * DEFAULT_NICKNAMES.length)]
 
 const IndexPage = () => {
@@ -54,14 +51,12 @@ const IndexPage = () => {
   const [cityIndex, setCityIndex] = useState(0)
   const [features, setFeatures] = useState({ showHomeSubtitle: true })
 
-  // 分享配置
   useShareAppMessage(() => ({
     title: '测一测你的幸运穿搭',
     path: '/pages/index/index',
-    imageUrl: '/assets/share-cover.jpg',
+    imageUrl: '/share-cover.jpg',
   }))
 
-  // 页面显示时恢复上次填写的记录并获取功能开关
   Taro.useDidShow(() => {
     try {
       const saved = Taro.getStorageSync('formData')
@@ -79,7 +74,6 @@ const IndexPage = () => {
       // ignore
     }
 
-    // 获取功能开关配置
     Network.request({ url: '/api/config/features' }).then((res: any) => {
       console.log('Features config:', res.data)
       if (res.data?.data?.features) {
@@ -113,7 +107,6 @@ const IndexPage = () => {
       location: CITIES[cityIndex],
     }
 
-    // 保存表单数据到 Storage，供返回首页时恢复
     Taro.setStorageSync('formData', userData)
     Taro.setStorageSync('userData', userData)
     Taro.navigateTo({ url: '/pages/loading/index' })
@@ -132,145 +125,123 @@ const IndexPage = () => {
       </View>
 
       {/* Form */}
-      <View className="flex flex-col gap-4">
+      <View className="flex flex-col gap-5">
         {/* Nickname */}
-        <Card className="bg-white border-gray-100 shadow-sm">
-          <CardContent className="p-4">
-            <Text className="block text-sm text-gray-500 mb-2">
-              昵称
-            </Text>
-            <View className="bg-gray-50 rounded-xl px-4 py-3">
-              <Input
-                className="w-full bg-transparent border-0 text-gray-900 placeholder:text-gray-400"
-                placeholder="请输入昵称"
-                value={nickname}
-                onInput={(e) => setNickname(e.detail.value)}
-              />
-            </View>
-          </CardContent>
-        </Card>
+        <View>
+          <Text className="block text-sm text-gray-500 mb-2">昵称</Text>
+          <View className="bg-gray-50 rounded-xl px-4 py-3">
+            <Input
+              className="w-full bg-transparent border-0 text-gray-900 placeholder:text-gray-400"
+              placeholder="请输入昵称"
+              value={nickname}
+              onInput={(e) => setNickname(e.detail.value)}
+            />
+          </View>
+        </View>
 
         {/* Gender */}
-        <Card className="bg-white border-gray-100 shadow-sm">
-          <CardContent className="p-4">
-            <Text className="block text-sm text-gray-500 mb-2">
-              性别
-            </Text>
-            <View className="flex gap-3">
-              <View
-                className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 transition-all ${
-                  gender === 'female'
-                    ? 'border-[#7C3AED] bg-[#7C3AED]/10'
-                    : 'border-gray-100 bg-gray-50'
-                }`}
-                onClick={() => setGender('female')}
-              >
-                <Venus size={20} color={gender === 'female' ? '#7C3AED' : '#9CA3AF'} />
-                <Text className={`block ml-2 text-base font-medium ${gender === 'female' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>女</Text>
-              </View>
-              <View
-                className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 transition-all ${
-                  gender === 'male'
-                    ? 'border-[#7C3AED] bg-[#7C3AED]/10'
-                    : 'border-gray-100 bg-gray-50'
-                }`}
-                onClick={() => setGender('male')}
-              >
-                <Mars size={20} color={gender === 'male' ? '#7C3AED' : '#9CA3AF'} />
-                <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>男</Text>
-              </View>
+        <View>
+          <Text className="block text-sm text-gray-500 mb-2">性别</Text>
+          <View className="flex gap-3">
+            <View
+              className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
+                gender === 'female'
+                  ? 'border-[#7C3AED] bg-purple-50'
+                  : 'border-gray-200 bg-gray-50'
+              }`}
+              onClick={() => setGender('female')}
+            >
+              <Venus size={20} color={gender === 'female' ? '#7C3AED' : '#9CA3AF'} />
+              <Text className={`block ml-2 text-base font-medium ${gender === 'female' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>女</Text>
             </View>
-          </CardContent>
-        </Card>
+            <View
+              className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
+                gender === 'male'
+                  ? 'border-[#7C3AED] bg-purple-50'
+                  : 'border-gray-200 bg-gray-50'
+              }`}
+              onClick={() => setGender('male')}
+            >
+              <Mars size={20} color={gender === 'male' ? '#7C3AED' : '#9CA3AF'} />
+              <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>男</Text>
+            </View>
+          </View>
+        </View>
 
         {/* Calendar Type + Birth Date */}
-        <Card className="bg-white border-gray-100 shadow-sm">
-          <CardContent className="p-4">
-            <Text className="block text-sm text-gray-500 mb-2">
-              出生日期
-            </Text>
-            <ToggleGroup
-              type="single"
-              value={calendarType}
-              onValueChange={(val) => val && setCalendarType(val as string)}
-              className="mb-3"
+        <View>
+          <Text className="block text-sm text-gray-500 mb-2">出生日期</Text>
+          <View className="flex gap-3 mb-3">
+            <View
+              className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
+                calendarType === 'solar'
+                  ? 'border-[#7C3AED] bg-purple-50'
+                  : 'border-gray-200 bg-gray-50'
+              }`}
+              onClick={() => setCalendarType('solar')}
             >
-              <ToggleGroupItem value="solar" className="flex-1 text-sm">阳历</ToggleGroupItem>
-              <ToggleGroupItem value="lunar" className="flex-1 text-sm">农历</ToggleGroupItem>
-            </ToggleGroup>
-            <Picker
-              mode="date"
-              start="1940-01-01"
-              end="2025-12-31"
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.detail.value)}
+              <Text className={`block text-base font-medium ${calendarType === 'solar' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>阳历</Text>
+            </View>
+            <View
+              className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
+                calendarType === 'lunar'
+                  ? 'border-[#7C3AED] bg-purple-50'
+                  : 'border-gray-200 bg-gray-50'
+              }`}
+              onClick={() => setCalendarType('lunar')}
             >
-              <View className="bg-gray-50 rounded-xl px-4 py-3">
-                <Text
-                  className={
-                    birthDate
-                      ? 'block text-gray-900'
-                      : 'block text-gray-400'
-                  }
-                >
-                  {birthDate || '请选择出生日期'}
-                </Text>
-              </View>
-            </Picker>
-          </CardContent>
-        </Card>
+              <Text className={`block text-base font-medium ${calendarType === 'lunar' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>农历</Text>
+            </View>
+          </View>
+          <Picker
+            mode="date"
+            start="1940-01-01"
+            end="2025-12-31"
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.detail.value)}
+          >
+            <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+              <Text className={`block ${birthDate ? 'text-gray-900' : 'text-gray-400'}`}>
+                {birthDate || '请选择出生日期'}
+              </Text>
+              <ChevronDown size={18} color="#9CA3AF" />
+            </View>
+          </Picker>
+        </View>
 
-        {/* Birth Time (时辰) */}
-        <Card className="bg-white border-gray-100 shadow-sm">
-          <CardContent className="p-4">
-            <Text className="block text-sm text-gray-500 mb-2">
-              出生时辰
-            </Text>
-            <Picker
-              mode="selector"
-              range={SHICHEN_OPTIONS}
-              value={shichenIndex}
-              onChange={(e) =>
-                setShichenIndex(Number(e.detail.value))
-              }
-            >
-              <View className="bg-gray-50 rounded-xl px-4 py-3">
-                <Text
-                  className={
-                    shichenIndex >= 0
-                      ? 'block text-gray-900'
-                      : 'block text-gray-400'
-                  }
-                >
-                  {shichenIndex >= 0
-                    ? SHICHEN_OPTIONS[shichenIndex]
-                    : '选择时辰，未知选午时'}
-                </Text>
-              </View>
-            </Picker>
-          </CardContent>
-        </Card>
+        {/* Birth Time */}
+        <View>
+          <Text className="block text-sm text-gray-500 mb-2">出生时辰</Text>
+          <Picker
+            mode="selector"
+            range={SHICHEN_OPTIONS}
+            value={shichenIndex}
+            onChange={(e) => setShichenIndex(Number(e.detail.value))}
+          >
+            <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+              <Text className={`block ${shichenIndex >= 0 ? 'text-gray-900' : 'text-gray-400'}`}>
+                {shichenIndex >= 0 ? SHICHEN_OPTIONS[shichenIndex] : '选择时辰，未知选午时'}
+              </Text>
+              <ChevronDown size={18} color="#9CA3AF" />
+            </View>
+          </Picker>
+        </View>
 
-        {/* Location - City Picker */}
-        <Card className="bg-white border-gray-100 shadow-sm">
-          <CardContent className="p-4">
-            <Text className="block text-sm text-gray-500 mb-2">
-              出生城市
-            </Text>
-            <Picker
-              mode="selector"
-              range={CITIES}
-              value={cityIndex}
-              onChange={(e) => setCityIndex(Number(e.detail.value))}
-            >
-              <View className="bg-gray-50 rounded-xl px-4 py-3">
-                <Text className="block text-gray-900">
-                  {CITIES[cityIndex]}
-                </Text>
-              </View>
-            </Picker>
-          </CardContent>
-        </Card>
+        {/* City */}
+        <View>
+          <Text className="block text-sm text-gray-500 mb-2">出生城市</Text>
+          <Picker
+            mode="selector"
+            range={CITIES}
+            value={cityIndex}
+            onChange={(e) => setCityIndex(Number(e.detail.value))}
+          >
+            <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+              <Text className="block text-gray-900">{CITIES[cityIndex]}</Text>
+              <ChevronDown size={18} color="#9CA3AF" />
+            </View>
+          </Picker>
+        </View>
 
         {/* Submit Button */}
         <View className="pt-2 pb-8">
