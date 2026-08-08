@@ -12,5 +12,5 @@
     "minified": false
   },
   "compileType": "miniprogram",
-  "packOptions": { "ignore": [{ "type": "folder", "value": "./assets" }] }
+  "packOptions": { "ignore": [{ "type": "folder", "value": "./assets/tabbar" }] }
 }
