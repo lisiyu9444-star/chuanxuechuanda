@@ -98,7 +98,9 @@ export default defineConfig<'vite'>(async (merge, _env) => {
       TARO_ENV: JSON.stringify(process.env.TARO_ENV),
     },
     copy: {
-      patterns: [],
+      patterns: [
+        { from: path.resolve(__dirname, '../copy/'), to: path.resolve(__dirname, '../dist/') },
+      ],
       options: {},
     },
     ...(process.env.TARO_ENV === 'tt' && {

@@ -70,8 +70,8 @@
     "@tarojs/plugin-mini-ci": "4.1.9",
     "@tarojs/vite-runner": "4.1.9",
     "@types/minimatch": "^5",
-    "@types/react": "^18.0.0",
     "@types/node": "^24",
+    "@types/react": "^18.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "babel-preset-taro": "4.1.9",
     "concurrently": "^9.2.1",
@@ -94,6 +94,7 @@
     "tt-ide-cli": "^0.1.31",
     "typescript": "^5.4.5",
     "vite": "^4.2.0",
+    "vite-plugin-static-copy": "^4.1.1",
     "weapp-tailwindcss": "^4.10.3"
   },
   "packageManager": "pnpm@9.0.0",
