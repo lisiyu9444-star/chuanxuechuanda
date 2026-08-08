@@ -8,7 +8,6 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Rocket, Mars, Venus } from 'lucide-react-taro'
 import { Network } from '@/network'
 import logoPng from '@/assets/logo-brand.png'
-import shareCoverPng from '@/assets/share-cover.png'
 import './index.css'
 
 const SHICHEN_OPTIONS = [
@@ -59,7 +58,7 @@ const IndexPage = () => {
   useShareAppMessage(() => ({
     title: '测一测你的幸运穿搭',
     path: '/pages/index/index',
-    imageUrl: shareCoverPng,
+    imageUrl: '/assets/share-cover.png',
   }))
 
   // 页面显示时恢复上次填写的记录并获取功能开关
