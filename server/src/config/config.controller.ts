@@ -1,40 +1,45 @@
-import { Controller, Get, HttpCode } from '@nestjs/common'
+import { Controller, Get, Post, Body, HttpCode } from '@nestjs/common'
+import { ConfigService } from './config.service'
 
 @Controller('config')
 export class ConfigController {
+  constructor(private configService: ConfigService) {}
+
   @Get('features')
   @HttpCode(200)
   async getFeatures() {
+    // 确保默认配置已初始化
+    await this.configService.initializeDefaultFeatures()
+
+    const features = await this.configService.getAllFeatures()
+
     return {
       data: {
-        // 功能开关配置 - 通过环境变量控制
-        // ============================================
-        // 审核版本：在扣子平台"环境变量"中设置为 false
-        // 正式版本：在扣子平台"环境变量"中设置为 true 或删除变量
-        //
-        // 环境变量列表：
-        // - SHOW_HOME_SUBTITLE    (首页副标题)
-        // - SHOW_LOADING_STEPS    (loading 步骤文案)
-        // - SHOW_RESULT_DETAILS   (结果页详情)
-        // - ENABLE_VIDEO_UNLOCK   (视频解锁)
-        // - ENABLE_SHARE_UNLOCK   (分享解锁)
-        //
-        // 默认值：true（正式版本）
-        // ============================================
-        features: {
-          // 首页
-          showHomeSubtitle: process.env.SHOW_HOME_SUBTITLE !== 'false',
+        features,
+      },
+    }
+  }
 
-          // Loading 页面
-          showLoadingSteps: process.env.SHOW_LOADING_STEPS !== 'false',
+  @Post('features/update')
+  @HttpCode(200)
+  async updateFeature(@Body() body: { key: string; value: boolean }) {
+    const { key, value } = body
 
-          // 结果页
-          showResultDetails: process.env.SHOW_RESULT_DETAILS !== 'false',
-
-          // 功能开关
-          enableVideoUnlock: process.env.ENABLE_VIDEO_UNLOCK !== 'false',
-          enableShareUnlock: process.env.ENABLE_SHARE_UNLOCK !== 'false',
+    if (!key || typeof value !== 'boolean') {
+      return {
+        data: {
+          success: false,
+          message: '参数错误：key 和 value 为必填项',
         },
+      }
+    }
+
+    await this.configService.updateFeature(key, value)
+
+    return {
+      data: {
+        success: true,
+        message: `配置 ${key} 已更新为 ${value}`,
       },
     }
   }
