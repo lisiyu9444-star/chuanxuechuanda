@@ -7,31 +7,33 @@ export class ConfigController {
   async getFeatures() {
     return {
       data: {
-        // 功能开关配置
+        // 功能开关配置 - 通过环境变量控制
         // ============================================
-        // 审核版本配置（提交审核时）：
-        // - showHomeSubtitle: false        (隐藏首页副标题)
-        // - showLoadingSteps: false        (隐藏 loading 步骤文案)
-        // - showResultDetails: false       (隐藏结果页详情)
-        // - enableVideoUnlock: false       (隐藏视频解锁)
-        // - enableShareUnlock: false       (隐藏分享解锁)
+        // 审核版本：在扣子平台"环境变量"中设置为 false
+        // 正式版本：在扣子平台"环境变量"中设置为 true 或删除变量
         //
-        // 正式版本配置（审核通过后）：
-        // - 全部设为 true
+        // 环境变量列表：
+        // - SHOW_HOME_SUBTITLE    (首页副标题)
+        // - SHOW_LOADING_STEPS    (loading 步骤文案)
+        // - SHOW_RESULT_DETAILS   (结果页详情)
+        // - ENABLE_VIDEO_UNLOCK   (视频解锁)
+        // - ENABLE_SHARE_UNLOCK   (分享解锁)
+        //
+        // 默认值：true（正式版本）
         // ============================================
         features: {
           // 首页
-          showHomeSubtitle: true,      // 首页副标题"根据你的生辰推荐每日穿搭"
+          showHomeSubtitle: process.env.SHOW_HOME_SUBTITLE !== 'false',
 
           // Loading 页面
-          showLoadingSteps: true,      // loading 步骤文案（四柱/旺缺/喜用神/穿搭）
+          showLoadingSteps: process.env.SHOW_LOADING_STEPS !== 'false',
 
           // 结果页
-          showResultDetails: true,     // 结果页详情（八字概览/喜用神分析/穿搭推荐）
+          showResultDetails: process.env.SHOW_RESULT_DETAILS !== 'false',
 
           // 功能开关
-          enableVideoUnlock: true,     // 视频解锁功能
-          enableShareUnlock: true,     // 分享解锁功能
+          enableVideoUnlock: process.env.ENABLE_VIDEO_UNLOCK !== 'false',
+          enableShareUnlock: process.env.ENABLE_SHARE_UNLOCK !== 'false',
         },
       },
     }
