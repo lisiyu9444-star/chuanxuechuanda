@@ -884,18 +884,23 @@ export class BaziService {
     const xiShenColor = ELEMENT_MAIN_COLOR[xiShen] || '白色'
     const isFemale = gender === 'female'
 
-    // 高饱和度颜色列表（这些颜色不适合大面积用于配饰）
-    const HIGH_SATURATION_COLORS = ['青绿色', '赤红色', '暖黄色', '深蓝色', '红色', '蓝色', '绿色', '黄色', '橙色', '紫色']
-    // 中性色列表（配饰安全色）
+    // 颜色冲突对（互补色/对比色）
+    const COLOR_CONFLICTS = [
+      ['红色', '绿色'], ['蓝色', '橙色'], ['黄色', '紫色'],
+      ['青绿色', '赤红色'], ['深蓝色', '暖黄色'], ['青绿', '红'],
+      ['蓝', '橙'], ['黄', '紫']
+    ]
+    // 中性色列表（冲突时的安全色）
     const NEUTRAL_ACCESSORY_COLORS = ['米白色', '浅灰色', '驼色', '裸色', '黑色']
 
-    // 判断主色是否为高饱和度，如果是，配饰使用中性色
-    const isMainColorSaturated = HIGH_SATURATION_COLORS.some(c => mainColor.includes(c))
-    // 判断喜神颜色是否为高饱和度
-    const isXiShenSaturated = HIGH_SATURATION_COLORS.some(c => xiShenColor.includes(c))
+    // 检查主色和喜神颜色是否冲突
+    const hasColorConflict = COLOR_CONFLICTS.some(([a, b]) => 
+      (mainColor.includes(a) && xiShenColor.includes(b)) ||
+      (mainColor.includes(b) && xiShenColor.includes(a))
+    )
 
-    // 配饰颜色：主色或喜神颜色高饱和时，使用中性色
-    const accessoryColor = (isMainColorSaturated || isXiShenSaturated)
+    // 配饰颜色：只有颜色冲突时才使用中性色，否则使用喜神颜色
+    const accessoryColor = hasColorConflict
       ? NEUTRAL_ACCESSORY_COLORS[Math.floor(Math.random() * NEUTRAL_ACCESSORY_COLORS.length)]
       : xiShenColor
 
