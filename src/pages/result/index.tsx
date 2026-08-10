@@ -59,9 +59,37 @@ const ResultPage = () => {
   const [showBaZiContent, setShowBaZiContent] = useState(true)
 
   useDidShow(() => {
-    const data = Taro.getStorageSync('baziResult')
-    if (data) {
-      setResult(data)
+    // 检查是否从分享链接打开
+    const router = Taro.getCurrentInstance().router
+    const shareId = router?.params?.shareId
+
+    if (shareId) {
+      // 从分享链接打开，加载分享者的数据
+      console.log('Loading shared result with shareId:', shareId)
+      Network.request({
+        url: `/api/share/${shareId}`,
+        method: 'GET',
+      }).then((res: any) => {
+        console.log('Shared result response:', res.data)
+        if (res.data?.data?.result) {
+          setResult(res.data.data.result)
+        } else {
+          // 分享数据不存在，加载本地数据
+          const data = Taro.getStorageSync('baziResult')
+          if (data) setResult(data)
+        }
+      }).catch((err) => {
+        console.error('Failed to load shared result:', err)
+        // 加载本地数据
+        const data = Taro.getStorageSync('baziResult')
+        if (data) setResult(data)
+      })
+    } else {
+      // 正常打开，加载本地数据
+      const data = Taro.getStorageSync('baziResult')
+      if (data) {
+        setResult(data)
+      }
     }
     // 获取功能开关配置
     Network.request({
@@ -123,10 +151,27 @@ const ResultPage = () => {
   // }
 
   // 小程序分享配置
-  Taro.useShareAppMessage(() => {
+  Taro.useShareAppMessage(async () => {
+    let shareId = ''
+    // 保存结果到服务器，获取分享 ID
+    if (result) {
+      try {
+        const saveRes = await Network.request({
+          url: '/api/share/save',
+          method: 'POST',
+          data: { result },
+        })
+        console.log('Share save response:', saveRes.data)
+        if (saveRes.data?.data?.shareId) {
+          shareId = saveRes.data.data.shareId
+        }
+      } catch (err) {
+        console.error('Failed to save share data:', err)
+      }
+    }
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
-      path: '/pages/result/index',
+      path: shareId ? `/pages/result/index?shareId=${shareId}` : '/pages/result/index',
       imageUrl: '/share-cover.jpg',
     }
   })

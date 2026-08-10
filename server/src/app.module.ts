@@ -4,10 +4,11 @@ import { AppService } from '@/app.service'
 import { BaziController } from '@/bazi/bazi.controller'
 import { BaziService } from '@/bazi/bazi.service'
 import { ConfigController } from '@/config/config.controller'
+import { ShareController } from '@/share/share.controller'
 
 @Module({
   imports: [],
-  controllers: [AppController, BaziController, ConfigController],
+  controllers: [AppController, BaziController, ConfigController, ShareController],
   providers: [AppService, BaziService],
 })
 export class AppModule {}
