@@ -644,6 +644,34 @@ export class BaziService {
       { desc: '流苏手拿包（丝质穗饰）', style: 'oriental' },
       { desc: '水墨印花布包（棉麻材质）', style: 'oriental' },
     ],
+    accessories: [
+      // formal（正式风）
+      { desc: '精钢腕表（方形表盘）', style: 'formal' },
+      { desc: '钻石耳钉（单颗6mm）', style: 'formal' },
+      { desc: '金属袖扣（几何简约款）', style: 'formal' },
+      { desc: '皮质腰带（金属方扣）', style: 'formal' },
+      { desc: '胸针（金属徽章款）', style: 'formal' },
+      // elegant（优雅风）
+      { desc: '多层链条项链', style: 'elegant' },
+      { desc: '珍珠耳钉（单颗8mm）', style: 'elegant' },
+      { desc: '细金属手镯（开口设计）', style: 'elegant' },
+      { desc: '猫眼墨镜（复古圆框）', style: 'elegant' },
+      { desc: '真丝丝巾（小方巾系法）', style: 'elegant' },
+      { desc: '珍珠项链（双层叠戴）', style: 'elegant' },
+      { desc: '宝石胸针（花卉造型）', style: 'elegant' },
+      // casual（休闲风）
+      { desc: '金属耳环（几何圆环款）', style: 'casual' },
+      { desc: '编织手链（多圈缠绕款）', style: 'casual' },
+      { desc: '发箍（宽版布艺款）', style: 'casual' },
+      { desc: '帆布腰带（金属插扣）', style: 'casual' },
+      { desc: '运动风腕表（硅胶表带）', style: 'casual' },
+      // oriental（东方风）
+      { desc: '玉镯（圆形翡翠款）', style: 'oriental' },
+      { desc: '流苏耳环（长款丝线款）', style: 'oriental' },
+      { desc: '盘扣发簪（木质雕刻款）', style: 'oriental' },
+      { desc: '中国结手链（红绳编织）', style: 'oriental' },
+      { desc: '水墨纹丝巾（方形系法）', style: 'oriental' },
+    ],
   }
 
   private static readonly MALE_ITEMS = {
@@ -758,6 +786,32 @@ export class BaziService {
       { desc: '流苏手拿包（丝质穗饰）', style: 'oriental' },
       { desc: '水墨印花布包（棉麻材质）', style: 'oriental' },
     ],
+    accessories: [
+      // formal（正式风）
+      { desc: '精钢机械腕表（蓝色表盘）', style: 'formal' },
+      { desc: '金属袖扣（几何简约款）', style: 'formal' },
+      { desc: '口袋方巾（亚麻折叠款）', style: 'formal' },
+      { desc: '皮质腰带（金属方扣）', style: 'formal' },
+      { desc: '领带夹（金属简约款）', style: 'formal' },
+      // elegant（优雅风）
+      { desc: '皮质表带腕表（棕色皮带）', style: 'elegant' },
+      { desc: '银质戒指（极简宽版）', style: 'elegant' },
+      { desc: '丝质口袋巾（花卉图案）', style: 'elegant' },
+      { desc: '金属手镯（开口设计）', style: 'elegant' },
+      { desc: '真丝围巾（小方巾系法）', style: 'elegant' },
+      // casual（休闲风）
+      { desc: '飞行员墨镜（金属框架）', style: 'casual' },
+      { desc: '皮质手链（编织多圈款）', style: 'casual' },
+      { desc: '钛钢项链（古巴链粗款）', style: 'casual' },
+      { desc: '复古圆框墨镜（板材框架）', style: 'casual' },
+      { desc: '帆布腰带（金属插扣）', style: 'casual' },
+      // oriental（东方风）
+      { desc: '玉佩挂件（翡翠雕刻款）', style: 'oriental' },
+      { desc: '盘扣手链（木质雕刻）', style: 'oriental' },
+      { desc: '中国结挂件（红绳编织）', style: 'oriental' },
+      { desc: '水墨纹丝巾（方形系法）', style: 'oriental' },
+      { desc: '竹节手镯（天然竹材）', style: 'oriental' },
+    ],
   }
 
   /**
@@ -766,7 +820,7 @@ export class BaziService {
    * 70%概率严格匹配同风格，30%概率混搭（增加多样性）
    */
   private selectOutfitItems(isFemale: boolean): {
-    outerwear: string; bottom: string; shoes: string; bag: string; style: string
+    outerwear: string; bottom: string; shoes: string; bag: string; accessories: string; style: string
   } {
     const pool = isFemale ? BaziService.FEMALE_ITEMS : BaziService.MALE_ITEMS
     const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)]
@@ -804,12 +858,14 @@ export class BaziService {
     const bottom = selectByStyle(pool.bottom, 0.7)
     const shoes = selectByStyle(pool.shoes, 0.6)
     const bag = selectByStyle(pool.bag, 0.6)
+    const accessories = selectByStyle(pool.accessories, 0.5)
 
     return {
       outerwear: outerwear.desc,
       bottom: bottom.desc,
       shoes: shoes.desc,
       bag: bag.desc,
+      accessories: accessories.desc,
       style: anchorStyle,
     }
   }
@@ -837,6 +893,10 @@ export class BaziService {
     }
     description += `，今日穿搭建议以${colors.join('、')}为主色调。${style}，助您运势亨通，气场全开。`
 
+    const accessoryMaterial = isFemale
+      ? '香槟金和玫瑰金的金属拉丝或宝石切割质感'
+      : '银色精钢拉丝和哑光黑色质感'
+
     const styleMap: Record<string, string> = {
       formal: isFemale ? '女性精致通勤风格' : '男性精致商务风格',
       elegant: isFemale ? '女性优雅轻奢风格' : '男性优雅绅士风格',
@@ -860,6 +920,9 @@ export class BaziService {
 【辅助单品 - 辅色=喜神】
 配饰部分包含一只 ${xiShenColor} 的 ${items.bag} 和一双 ${xiShenColor} 的 ${items.shoes}，放置于服装右下方。
 
+【点缀细节 - 点缀色】
+${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${accessoryMaterial}作为视觉亮点，保证搭配美观且色彩呼应。
+
 【摆放构图与光影】
 衣物与配饰采用不对称斜角布局，所有物品投影方向统一（左前方打光），在背景布上投射出柔和块状阴影，增强立体感与落地感。
 四周留有大量留白（占比不少于35%），强调高端画册的排版呼吸感。
@@ -868,7 +931,7 @@ export class BaziService {
 整体色调倾向高级灰/莫兰迪色系（如遇主色为纯红或纯黑时，可适当提高饱和度至正常水平），避免荧光色或塑料质感。
 
 【画质技术约束】
-超写实商业摄影风格，8K高清，微距对焦，焦点精准锁定在${isFemale ? '外套领口' : '外套领口'}与${isFemale ? '包袋五金' : '包袋五金'}细节处，景深略浅以虚化背景布边缘。
+超写实商业摄影风格，8K高清，微距对焦，焦点精准锁定在${isFemale ? '项链吊坠' : '腕表表盘'}与${isFemale ? '墨镜镜片' : '墨镜镜片'}反光处，景深略浅以虚化背景布边缘。
 
 【反向提示词】
 不要出现假人模特、不要人脸、不要杂乱背景、不要褶皱堆叠、不要平淡无阴影的顶光、不要透视畸变、不要过度饱和的廉价色彩、不要额外多出的衣物或饰品${isFemale ? '' : '、不要女性化单品、不要裙装、不要高跟鞋'}。`
@@ -917,7 +980,7 @@ export class BaziService {
 - 上衣/外套：完整展示领口、袖口、纽扣等细节
 - 下装：完整展示腰头、裤腿/裙摆
 - 鞋子：必须完整展示，不可裁切脚部
-- 包袋：必须佩戴并清晰可见
+- 所有配饰（腰带、项链、耳环、手链、包袋等）：必须全部佩戴并清晰可见，不可遗漏任何一件
 - 服装合身度适中，展现面料质感
 - 保持服装的颜色、款式、面料与参考图完全一致
 
@@ -928,7 +991,7 @@ export class BaziService {
 - 8K 高清，商业摄影质感
 
 【反向提示词】
-不要展示面部、不要裁切脚部或鞋子、不要夸张姿势、不要复杂背景、不要过度修图、不要改变服装颜色或款式、不要多人、不要文字水印。`
+不要展示面部、不要裁切脚部或鞋子、不要遗漏配饰、不要夸张姿势、不要复杂背景、不要过度修图、不要改变服装颜色或款式、不要多人、不要文字水印。`
 
     const response = await client.generate({
       prompt: tryOnPrompt,
