@@ -829,6 +829,17 @@ export class BaziService {
     const outerwear = pick(pool.outerwear)
     const anchorStyle = outerwear.style
 
+    // 风格兼容矩阵：定义哪些风格可以混搭
+    // formal 不能混搭 casual
+    // oriental 不能混搭 casual
+    // casual 不能混搭 oriental 和 formal
+    const STYLE_COMPATIBILITY: Record<string, string[]> = {
+      formal: ['formal', 'elegant', 'oriental'],
+      elegant: ['elegant', 'formal', 'casual', 'oriental'],
+      casual: ['casual', 'elegant'],
+      oriental: ['oriental', 'elegant', 'formal'],
+    }
+
     // Step 2: 其他品类按风格连贯性选择
     const selectByStyle = (items: { desc: string; style: string }[], matchRate: number) => {
       if (Math.random() < matchRate) {
@@ -836,7 +847,11 @@ export class BaziService {
         const sameStyle = items.filter(i => i.style === anchorStyle)
         if (sameStyle.length > 0) return pick(sameStyle)
       }
-      // 否则随机选
+      // 否则从兼容风格中随机选
+      const compatibleStyles = STYLE_COMPATIBILITY[anchorStyle] || [anchorStyle]
+      const compatibleItems = items.filter(i => compatibleStyles.includes(i.style))
+      if (compatibleItems.length > 0) return pick(compatibleItems)
+      // 兜底：随机选
       return pick(items)
     }
 
