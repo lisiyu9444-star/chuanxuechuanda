@@ -88,4 +88,40 @@ export class BaziController {
       },
     }
   }
+
+  @Post('try-on')
+  @HttpCode(200)
+  async generateTryOn(
+    @Body()
+    body: {
+      imageUrl: string
+      outfit: OutfitRecommendation
+      gender: string
+    },
+    @Req() req,
+  ): Promise<{
+    data: {
+      tryOnUrl: string
+    }
+  }> {
+    const { imageUrl, outfit, gender } = body
+
+    const forwardHeaders = HeaderUtils.extractForwardHeaders(
+      req.headers as Record<string, string>,
+    )
+
+    const tryOnUrl = await this.baziService.generateTryOnImage(
+      imageUrl,
+      outfit,
+      outfit.backgroundColor || '#F5F1E8',
+      gender,
+      forwardHeaders,
+    )
+
+    return {
+      data: {
+        tryOnUrl,
+      },
+    }
+  }
 }

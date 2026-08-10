@@ -941,6 +941,70 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 
   // ========== Image Generation ==========
 
+  /**
+   * 生成上身试穿图（图生图）
+   * @param referenceImageUrl 平铺图 URL
+   * @param outfit 穿搭单品描述
+   * @param bgColor 背景色
+   * @param gender 性别
+   * @param headers 请求头
+   * @returns 试穿图 URL
+   */
+  async generateTryOnImage(
+    referenceImageUrl: string,
+    outfit: OutfitRecommendation,
+    bgColor: string,
+    gender: string,
+    headers: Record<string, string>,
+  ): Promise<string> {
+    const config = new Config()
+    const filteredHeaders = { ...headers }
+    delete filteredHeaders['x-faas-instance-name']
+    delete filteredHeaders['X-Faas-Instance-Name']
+    delete filteredHeaders['x-coze-instance-id']
+    delete filteredHeaders['X-Coze-Instance-Id']
+    const client = new ImageGenerationClient(config, filteredHeaders)
+
+    const tryOnPrompt = `时尚杂志级模特上身试穿摄影，基于提供的平铺穿搭图进行真人试穿展示。
+
+【模特要求】
+- ${gender === 'female' ? '亚洲女性模特，25-30 岁，身材匀称' : '亚洲男性模特，25-30 岁，身材挺拔'}
+- 模特不露脸，脸部用阴影或角度遮挡
+- 自然站立姿势，正面或微侧身
+- 表情自然放松，展现服装气质
+- 发型简洁，不遮挡服装细节
+
+【服装展示】
+- 穿搭风格：${outfit.style}
+- 穿搭描述：${outfit.description}
+- 推荐配色：${outfit.colors.join('、')}
+- 服装合身度适中，展现面料质感
+- 保持服装的颜色、款式、面料与参考图完全一致
+
+【拍摄风格】
+- 纯色背景（${bgColor}），与平铺图背景一致
+- 专业影棚灯光，柔和均匀
+- 全身构图，头顶留白 10%，脚底留白 5%
+- 8K 高清，商业摄影质感
+
+【反向提示词】
+不要露脸、不要夸张姿势、不要复杂背景、不要过度修图、不要改变服装颜色或款式、不要多人、不要文字水印。`
+
+    const response = await client.generate({
+      prompt: tryOnPrompt,
+      size: '2K',
+      image: referenceImageUrl,
+    })
+
+    const helper = client.getResponseHelper(response)
+
+    if (helper.success && helper.imageUrls.length > 0) {
+      return helper.imageUrls[0]
+    }
+
+    throw new Error(`Try-on image generation failed: ${helper.errorMessages.join(', ')}`)
+  }
+
   async generateOutfitImage(
     prompt: string,
     headers: Record<string, string>,

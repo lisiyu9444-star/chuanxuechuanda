@@ -3,7 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { CircleCheck, Share2, RefreshCw } from 'lucide-react-taro'
+import { Share2, RefreshCw, Lock, Loader } from 'lucide-react-taro'
 import { Network } from '@/network'
 import './index.css'
 
@@ -37,6 +37,7 @@ interface BaZiResult {
     colors: string[]
     description: string
     prompt: string
+    backgroundColor?: string
   }
   imageUrl: string
 }
@@ -51,8 +52,12 @@ const ELEMENT_COLORS: Record<string, string> = {
 
 const ResultPage = () => {
   const [result, setResult] = useState<BaZiResult | null>(null)
-  // 暂时直接进入已解锁状态，待解锁功能后续优化
-  const [unlocked] = useState(true)
+  // 图片 Tab 切换：'flat' = 平铺图, 'tryon' = 上身图
+  const [activeTab, setActiveTab] = useState<'flat' | 'tryon'>('flat')
+  // 上身图 URL（生成后缓存）
+  const [tryOnUrl, setTryOnUrl] = useState<string>('')
+  // 上身图生成中
+  const [tryOnLoading, setTryOnLoading] = useState(false)
   // 功能开关：分享功能是否开启
   const [shareEnabled, setShareEnabled] = useState(true)
   // 功能开关：是否显示八字相关内容（八字概览、喜用神分析、穿搭推荐）
@@ -150,6 +155,40 @@ const ResultPage = () => {
   //   return true
   // }
 
+  // 上身图生成
+  const handleTryOn = async () => {
+    if (!result || tryOnLoading || tryOnUrl) return
+
+    setTryOnLoading(true)
+    try {
+      const res = await Network.request({
+        url: '/api/bazi/try-on',
+        method: 'POST',
+        data: {
+          imageUrl: result.imageUrl,
+          outfit: result.outfit,
+          gender: result.gender,
+        },
+      })
+      console.log('Try-on response:', res.data)
+      if (res.data?.data?.tryOnUrl) {
+        setTryOnUrl(res.data.data.tryOnUrl)
+      } else {
+        Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
+      }
+    } catch (err) {
+      console.error('Try-on failed:', err)
+      Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
+    } finally {
+      setTryOnLoading(false)
+    }
+  }
+
+  // Tab 切换处理
+  const handleTabChange = (tab: 'flat' | 'tryon') => {
+    setActiveTab(tab)
+  }
+
   // 小程序分享配置
   Taro.useShareAppMessage(async () => {
     let shareId = ''
@@ -223,70 +262,75 @@ const ResultPage = () => {
         </Text>
       </View>
 
-      {/* Image Area */}
-      <View className="relative w-full rounded-2xl overflow-hidden mb-5 bg-gray-100">
-        <View className="w-full" style={{ height: '600px' }}>
-          <Image
-            src={result.imageUrl}
-            className="w-full h-full"
-            mode="aspectFill"
-            style={{ filter: 'none' }}
-          />
-        </View>
-        {/* 待解锁遮罩层 - 暂时注释，后续优化 */}
-        {/* {!unlocked && (
+      {/* Image Area with Tab Switching */}
+      <View className="mb-5">
+        {/* Tab Header */}
+        <View className="flex gap-2 mb-3">
           <View
-            className="absolute inset-0 flex flex-col items-center justify-center"
-            style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+            className={`flex-1 py-2 rounded-lg flex items-center justify-center ${activeTab === 'flat' ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50 border border-gray-100'}`}
+            onClick={() => handleTabChange('flat')}
           >
-            <Lock size={32} color="#6366f1" />
-            <Text className="block text-gray-900 mt-3 text-base font-medium">
-              你的专属穿搭已生成
-            </Text>
-            <Text className="block text-gray-400 mt-1 text-sm">
-              观看视频即可解锁
+            <Text className={`text-sm ${activeTab === 'flat' ? 'text-purple-600 font-medium' : 'text-gray-500'}`}>
+              平铺图
             </Text>
           </View>
-        )} */}
+          <View
+            className={`flex-1 py-2 rounded-lg flex items-center justify-center ${activeTab === 'tryon' ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50 border border-gray-100'}`}
+            onClick={() => handleTabChange('tryon')}
+          >
+            <Text className={`text-sm ${activeTab === 'tryon' ? 'text-purple-600 font-medium' : 'text-gray-500'}`}>
+              上身图
+            </Text>
+          </View>
+        </View>
+
+        {/* Image Display */}
+        <View className="relative w-full rounded-2xl overflow-hidden bg-gray-100">
+          <View className="w-full" style={{ height: '600px' }}>
+            {activeTab === 'flat' ? (
+              <Image
+                src={result.imageUrl}
+                className="w-full h-full"
+                mode="aspectFill"
+              />
+            ) : tryOnUrl ? (
+              <Image
+                src={tryOnUrl}
+                className="w-full h-full"
+                mode="aspectFill"
+              />
+            ) : tryOnLoading ? (
+              <View className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
+                <Loader size={40} color="#a855f7" className="animate-spin" />
+                <Text className="block text-purple-600 mt-4 text-base font-medium">
+                  正在生成上身图...
+                </Text>
+                <Text className="block text-gray-400 mt-2 text-sm">
+                  需要等待30s左右，请耐心等待
+                </Text>
+              </View>
+            ) : (
+              <View
+                className="w-full h-full flex flex-col items-center justify-center"
+                onClick={handleTryOn}
+              >
+                <View className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mb-4">
+                  <Lock size={28} color="#a855f7" />
+                </View>
+                <Text className="block text-gray-700 text-base font-medium mb-2">
+                  点击生成上身试穿图
+                </Text>
+                <Text className="block text-gray-400 text-sm text-center px-8">
+                  基于平铺图生成模特上身效果{'\n'}约需等待30s左右
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
       </View>
 
-      {/* 解锁按钮 - 暂时注释，后续优化 */}
-      {/* {!unlocked && (
-        <View className="mb-5 flex flex-col gap-3">
-          <Button
-            className="w-full text-white font-bold py-4 rounded-xl border-0 shadow-lg"
-            style={{
-              background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 50%, #C084FC 100%)',
-            }}
-            onClick={handleUnlock}
-          >
-            <Play size={18} color="#ffffff" />
-            <Text className="ml-2 text-white font-bold">
-              解锁今日专属穿搭
-            </Text>
-          </Button>
-
-          <Button
-            className="w-full bg-white text-purple-500 border-2 border-purple-200 py-4 rounded-xl shadow-sm"
-            onClick={handleShareClick}
-            openType="share"
-          >
-            <Share2 size={18} color="#7C3AED" />
-            <Text className="ml-2 text-purple-500 font-bold">
-              分享好友解锁
-            </Text>
-          </Button>
-        </View>
-      )} */}
-
       {/* Unlocked Content */}
-      {unlocked && (
-        <View className="flex flex-col gap-4">
-          {/* Unlocked indicator */}
-          <View className="flex items-center justify-center gap-2 py-1">
-            <CircleCheck size={16} color="#22c55e" />
-            <Text className="text-sm text-green-500">已解锁</Text>
-          </View>
+      <View className="flex flex-col gap-4">
 
           {/* BaZi Summary - Controlled by backend */}
           {showBaZiContent && (
@@ -404,35 +448,32 @@ const ResultPage = () => {
           </>
           )}
         </View>
-      )}
       </View>
 
-      {/* Fixed Bottom Buttons - Only show when unlocked */}
-      {unlocked && (
-        <View
-          className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
-          style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
-        >
-          {shareEnabled && (
-            <Button
-              className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
-              openType="share"
-            >
-              <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Share2 size={18} color="#a855f7" />
-                <Text className="text-purple-500">分享好友</Text>
-              </View>
-            </Button>
-          )}
+      {/* Fixed Bottom Buttons */}
+      <View
+        className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
+        style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
+      >
+        {shareEnabled && (
           <Button
-            className={shareEnabled ? "flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl" : "w-full bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"}
-            onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
+            className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
+            openType="share"
           >
-            <RefreshCw size={16} color="#7C3AED" className="mr-2" />
-            <Text className="text-purple-500">再测一次</Text>
+            <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Share2 size={18} color="#a855f7" />
+              <Text className="text-purple-500">分享好友</Text>
+            </View>
           </Button>
-        </View>
-      )}
+        )}
+        <Button
+          className={shareEnabled ? "flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl" : "w-full bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"}
+          onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
+        >
+          <RefreshCw size={16} color="#7C3AED" className="mr-2" />
+          <Text className="text-purple-500">再测一次</Text>
+        </Button>
+      </View>
     </View>
   )
 }
