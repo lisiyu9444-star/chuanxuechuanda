@@ -884,6 +884,21 @@ export class BaziService {
     const xiShenColor = ELEMENT_MAIN_COLOR[xiShen] || '白色'
     const isFemale = gender === 'female'
 
+    // 高饱和度颜色列表（这些颜色不适合大面积用于配饰）
+    const HIGH_SATURATION_COLORS = ['青绿色', '赤红色', '暖黄色', '深蓝色', '红色', '蓝色', '绿色', '黄色', '橙色', '紫色']
+    // 中性色列表（配饰安全色）
+    const NEUTRAL_ACCESSORY_COLORS = ['米白色', '浅灰色', '驼色', '裸色', '黑色']
+
+    // 判断主色是否为高饱和度，如果是，配饰使用中性色
+    const isMainColorSaturated = HIGH_SATURATION_COLORS.some(c => mainColor.includes(c))
+    // 判断喜神颜色是否为高饱和度
+    const isXiShenSaturated = HIGH_SATURATION_COLORS.some(c => xiShenColor.includes(c))
+
+    // 配饰颜色：主色或喜神颜色高饱和时，使用中性色
+    const accessoryColor = (isMainColorSaturated || isXiShenSaturated)
+      ? NEUTRAL_ACCESSORY_COLORS[Math.floor(Math.random() * NEUTRAL_ACCESSORY_COLORS.length)]
+      : xiShenColor
+
     // 随机选择单品（风格连贯）
     const items = this.selectOutfitItems(isFemale)
 
@@ -918,7 +933,7 @@ export class BaziService {
 面料需呈现清晰的天然肌理（哑光棉麻质感）。
 
 【辅助单品 - 辅色=喜神】
-配饰部分包含一只 ${xiShenColor} 的 ${items.bag} 和一双 ${xiShenColor} 的 ${items.shoes}，放置于服装右下方。
+配饰部分包含一只 ${accessoryColor} 的 ${items.bag} 和一双 ${accessoryColor} 的 ${items.shoes}，放置于服装右下方。
 
 【点缀细节 - 点缀色】
 ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${accessoryMaterial}作为视觉亮点，保证搭配美观且色彩呼应。
