@@ -1,5 +1,5 @@
 import { View, Text, Picker, Image } from '@tarojs/components'
-import Taro, { useShareAppMessage } from '@tarojs/taro'
+import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -54,6 +54,11 @@ const IndexPage = () => {
   useShareAppMessage(() => ({
     title: '测一测你的幸运穿搭',
     path: '/pages/index/index',
+    imageUrl: '/share-cover.jpg',
+  }))
+
+  useShareTimeline(() => ({
+    title: '测一测你的幸运穿搭',
     imageUrl: '/share-cover.jpg',
   }))
 

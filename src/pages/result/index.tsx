@@ -131,6 +131,13 @@ const ResultPage = () => {
     }
   })
 
+  Taro.useShareTimeline(() => {
+    return {
+      title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
+      imageUrl: '/share-cover.jpg',
+    }
+  })
+
   // Fetch feature flags
   useEffect(() => {
     Network.request({ url: '/api/config/features' })

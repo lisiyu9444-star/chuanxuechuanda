@@ -4,12 +4,14 @@ export default typeof definePageConfig === 'function'
     navigationBarBackgroundColor: '#ffffff',
     navigationBarTextStyle: 'black',
     backgroundColor: '#ffffff',
-    enableShareAppMessage: true
+    enableShareAppMessage: true,
+    enableShareTimeline: true
   })
   : {
     navigationBarTitleText: '幸运穿搭',
     navigationBarBackgroundColor: '#ffffff',
     navigationBarTextStyle: 'black',
     backgroundColor: '#ffffff',
-    enableShareAppMessage: true
+    enableShareAppMessage: true,
+    enableShareTimeline: true
   }
