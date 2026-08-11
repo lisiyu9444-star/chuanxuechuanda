@@ -62,17 +62,19 @@ const ResultPage = () => {
   const [shareEnabled, setShareEnabled] = useState(true)
   // 功能开关：是否显示八字相关内容（八字概览、喜用神分析、穿搭推荐）
   const [showBaZiContent, setShowBaZiContent] = useState(true)
+  // 分享 ID（用于朋友圈分享）
+  const [shareId, setShareId] = useState('')
 
   useDidShow(() => {
     // 检查是否从分享链接打开
     const router = Taro.getCurrentInstance().router
-    const shareId = router?.params?.shareId
+    const urlShareId = router?.params?.shareId
 
-    if (shareId) {
+    if (urlShareId) {
       // 从分享链接打开，加载分享者的数据
-      console.log('Loading shared result with shareId:', shareId)
+      console.log('Loading shared result with shareId:', urlShareId)
       Network.request({
-        url: `/api/share/${shareId}`,
+        url: `/api/share/${urlShareId}`,
         method: 'GET',
       }).then((res: any) => {
         console.log('Shared result response:', res.data)
@@ -113,6 +115,32 @@ const ResultPage = () => {
       setShowBaZiContent(true)
     })
   })
+
+  // 保存分享数据到服务器（用于朋友圈分享）
+  const saveShareData = async () => {
+    if (result && !shareId) {
+      try {
+        const saveRes = await Network.request({
+          url: '/api/share/save',
+          method: 'POST',
+          data: { result },
+        })
+        console.log('Share save response:', saveRes.data)
+        if (saveRes.data?.data?.shareId) {
+          setShareId(saveRes.data.data.shareId)
+        }
+      } catch (err) {
+        console.error('Failed to save share data:', err)
+      }
+    }
+  }
+
+  // 当 result 加载完成后，自动保存分享数据
+  useEffect(() => {
+    if (result) {
+      saveShareData()
+    }
+  }, [result])
 
   // 视频解锁相关逻辑（暂时注释）
   // const handleUnlock = () => {
@@ -190,24 +218,7 @@ const ResultPage = () => {
   }
 
   // 小程序分享配置
-  Taro.useShareAppMessage(async () => {
-    let shareId = ''
-    // 保存结果到服务器，获取分享 ID
-    if (result) {
-      try {
-        const saveRes = await Network.request({
-          url: '/api/share/save',
-          method: 'POST',
-          data: { result },
-        })
-        console.log('Share save response:', saveRes.data)
-        if (saveRes.data?.data?.shareId) {
-          shareId = saveRes.data.data.shareId
-        }
-      } catch (err) {
-        console.error('Failed to save share data:', err)
-      }
-    }
+  Taro.useShareAppMessage(() => {
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
       path: shareId ? `/pages/result/index?shareId=${shareId}` : '/pages/result/index',
@@ -218,6 +229,7 @@ const ResultPage = () => {
   Taro.useShareTimeline(() => {
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
+      query: shareId ? `shareId=${shareId}` : '',
       // 不设置 imageUrl，微信会自动截取当前页面作为分享图
     }
   })
