@@ -151,24 +151,24 @@ const IndexPage = () => {
             <View
               className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
                 gender === 'female'
-                  ? 'border-[#7C3AED] bg-purple-50'
+                  ? 'border-gray-900 bg-gray-50'
                   : 'border-gray-200 bg-gray-50'
               }`}
               onClick={() => setGender('female')}
             >
-              <Venus size={20} color={gender === 'female' ? '#7C3AED' : '#9CA3AF'} />
-              <Text className={`block ml-2 text-base font-medium ${gender === 'female' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>女</Text>
+              <Venus size={20} color={gender === 'female' ? '#1F2937' : '#9CA3AF'} />
+              <Text className={`block ml-2 text-base font-medium ${gender === 'female' ? 'text-gray-900' : 'text-gray-500'}`}>女</Text>
             </View>
             <View
               className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
                 gender === 'male'
-                  ? 'border-[#7C3AED] bg-purple-50'
+                  ? 'border-gray-900 bg-gray-50'
                   : 'border-gray-200 bg-gray-50'
               }`}
               onClick={() => setGender('male')}
             >
-              <Mars size={20} color={gender === 'male' ? '#7C3AED' : '#9CA3AF'} />
-              <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>男</Text>
+              <Mars size={20} color={gender === 'male' ? '#1F2937' : '#9CA3AF'} />
+              <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-gray-900' : 'text-gray-500'}`}>男</Text>
             </View>
           </View>
         </View>
@@ -180,22 +180,22 @@ const IndexPage = () => {
             <View
               className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
                 calendarType === 'solar'
-                  ? 'border-[#7C3AED] bg-purple-50'
+                  ? 'border-gray-900 bg-gray-50'
                   : 'border-gray-200 bg-gray-50'
               }`}
               onClick={() => setCalendarType('solar')}
             >
-              <Text className={`block text-base font-medium ${calendarType === 'solar' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>阳历</Text>
+              <Text className={`block text-base font-medium ${calendarType === 'solar' ? 'text-gray-900' : 'text-gray-500'}`}>阳历</Text>
             </View>
             <View
               className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
                 calendarType === 'lunar'
-                  ? 'border-[#7C3AED] bg-purple-50'
+                  ? 'border-gray-900 bg-gray-50'
                   : 'border-gray-200 bg-gray-50'
               }`}
               onClick={() => setCalendarType('lunar')}
             >
-              <Text className={`block text-base font-medium ${calendarType === 'lunar' ? 'text-[#7C3AED]' : 'text-gray-500'}`}>农历</Text>
+              <Text className={`block text-base font-medium ${calendarType === 'lunar' ? 'text-gray-900' : 'text-gray-500'}`}>农历</Text>
             </View>
           </View>
           <Picker
@@ -252,7 +252,7 @@ const IndexPage = () => {
         <View className="pt-2 pb-8">
           <Button
             className="w-full text-white font-bold py-4 rounded-xl text-base border-0 shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #9333EA 50%, #A855F7 100%)' }}
+            style={{ background: '#1F2937' }}
             onClick={handleSubmit}
           >
             <Rocket size={18} color="#ffffff" />

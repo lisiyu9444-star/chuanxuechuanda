@@ -116,15 +116,15 @@ const LoadingPage = () => {
     <View className="min-h-full bg-white px-6 py-8 flex flex-col">
       {/* 7秒超时提示 */}
       {showTimeout && !timeoutDismissed && (
-        <View className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 mb-4">
-          <Text className="text-sm text-purple-700 flex-1">
+        <View className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4">
+          <Text className="text-sm text-gray-700 flex-1">
             绘图需要时间啦，约30s左右
           </Text>
           <View
-            className="ml-3 w-6 h-6 flex items-center justify-center rounded-full bg-purple-100"
+            className="ml-3 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100"
             onClick={() => setTimeoutDismissed(true)}
           >
-            <Text className="text-purple-500 text-xs font-bold">✕</Text>
+            <Text className="text-gray-500 text-xs font-bold">✕</Text>
           </View>
         </View>
       )}
@@ -133,9 +133,9 @@ const LoadingPage = () => {
       <View className="flex flex-col items-center pt-10 pb-6">
         {/* Clean loading animation - bouncing dots */}
         <View className="flex items-center gap-2 mb-6">
-          <View className="w-3 h-3 rounded-full bg-purple-500 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
-          <View className="w-3 h-3 rounded-full bg-purple-400 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
-          <View className="w-3 h-3 rounded-full bg-purple-400 animate-bounce-dot" style={{ animationDelay: '300ms' }} />
+          <View className="w-3 h-3 rounded-full bg-gray-500 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
+          <View className="w-3 h-3 rounded-full bg-gray-700 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
+          <View className="w-3 h-3 rounded-full bg-gray-700 animate-bounce-dot" style={{ animationDelay: '300ms' }} />
         </View>
 
         {/* Current Step Text */}
@@ -201,7 +201,7 @@ const LoadingPage = () => {
                 <View
                   className={`w-2 h-2 rounded-full ${
                     index <= currentStep
-                      ? 'bg-purple-500'
+                      ? 'bg-gray-500'
                       : 'bg-gray-200'
                   }`}
                 />
