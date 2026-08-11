@@ -5,10 +5,6 @@ interface SharedResult {
   id: string
   nickname: string
   gender: string
-  birthDate: string
-  birthTime: string
-  birthCity: string
-  baziResult: string
   outfitResult: string
   imageUrl: string
   tryOnUrl?: string
@@ -23,10 +19,6 @@ export class ShareController {
   saveShare(@Body() body: {
     nickname: string
     gender: string
-    birthDate: string
-    birthTime: string
-    birthCity: string
-    baziResult: string
     outfitResult: string
     imageUrl: string
     tryOnUrl?: string
@@ -37,18 +29,14 @@ export class ShareController {
       const expiresAt = now + 30 * 24 * 60 * 60 * 1000 // 30 天过期
 
       const stmt = db.prepare(`
-        INSERT INTO shares (id, nickname, gender, birthDate, birthTime, birthCity, baziResult, outfitResult, imageUrl, tryOnUrl, createdAt, expiresAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO shares (id, nickname, gender, outfitResult, imageUrl, tryOnUrl, createdAt, expiresAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `)
 
       stmt.run(
         id,
         body.nickname,
         body.gender,
-        body.birthDate,
-        body.birthTime,
-        body.birthCity,
-        body.baziResult,
         body.outfitResult,
         body.imageUrl,
         body.tryOnUrl || null,
@@ -110,18 +98,19 @@ export class ShareController {
         throw new HttpException('分享不存在或已过期', HttpStatus.NOT_FOUND)
       }
 
+      // 组装前端期望的数据结构
+      const result = {
+        nickname: share.nickname,
+        gender: share.gender,
+        outfitResult: share.outfitResult ? JSON.parse(share.outfitResult) : null,
+        imageUrl: share.imageUrl,
+      }
+
       return {
         code: 200,
         data: {
-          nickname: share.nickname,
-          gender: share.gender,
-          birthDate: share.birthDate,
-          birthTime: share.birthTime,
-          birthCity: share.birthCity,
-          baziResult: share.baziResult,
-          outfitResult: share.outfitResult,
-          imageUrl: share.imageUrl,
-          tryOnUrl: share.tryOnUrl
+          result,
+          tryOnUrl: share.tryOnUrl || null,
         },
         msg: '获取成功'
       }

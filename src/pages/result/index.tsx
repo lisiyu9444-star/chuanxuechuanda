@@ -120,14 +120,29 @@ const ResultPage = () => {
     })
   })
 
-  // 保存分享数据到服务器（用于朋友圈分享）
-  const saveShareData = async () => {
-    if (result && !shareId) {
-      try {
-        const shareData = {
-          result,
-          tryOnUrl: tryOnUrl || undefined,
-        }
+  // 保存/更新分享数据到服务器
+  const saveShareData = async (currentTryOnUrl?: string) => {
+    if (!result) return
+
+    try {
+      const shareData = {
+        nickname: result.nickname || '',
+        gender: result.gender || 'male',
+        outfit: result.outfit || null,
+        imageUrl: result.imageUrl || '',
+        tryOnUrl: currentTryOnUrl || tryOnUrl || undefined,
+      }
+
+      if (shareId) {
+        // 已有 shareId，更新现有分享数据
+        await Network.request({
+          url: `/api/share/${shareId}`,
+          method: 'PUT',
+          data: shareData,
+        })
+        console.log('Share data updated:', shareId)
+      } else {
+        // 首次保存，创建分享数据
         const saveRes = await Network.request({
           url: '/api/share/save',
           method: 'POST',
@@ -137,9 +152,9 @@ const ResultPage = () => {
         if (saveRes.data?.data?.shareId) {
           setShareId(saveRes.data.data.shareId)
         }
-      } catch (err) {
-        console.error('Failed to save share data:', err)
       }
+    } catch (err) {
+      console.error('Failed to save/update share data:', err)
     }
   }
 
@@ -152,21 +167,8 @@ const ResultPage = () => {
 
   // 当上身图生成完成后，更新分享数据
   useEffect(() => {
-    if (result && tryOnUrl && shareId) {
-      // 上身图已生成，且有 shareId，更新分享数据
-      const updateShareData = async () => {
-        try {
-          await Network.request({
-            url: `/api/share/${shareId}`,
-            method: 'PUT',
-            data: { tryOnUrl },
-          })
-          console.log('Share data updated with tryOnUrl')
-        } catch (err) {
-          console.error('Failed to update share data:', err)
-        }
-      }
-      updateShareData()
+    if (result && tryOnUrl) {
+      saveShareData(tryOnUrl)
     }
   }, [tryOnUrl])
 
