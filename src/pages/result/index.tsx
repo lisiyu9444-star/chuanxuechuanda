@@ -544,21 +544,25 @@ const ResultPage = () => {
         style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
       >
         {shareEnabled && (
-          <View className="flex-1 bg-white border border-gray-200 py-3 rounded-xl" style={{ borderColor: `${themeColor}33` }}>
-            <Button openType="share" className="w-full h-full" style={{ background: 'transparent', border: 'none', padding: 0 }}>
-              <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Share2 size={18} color={themeColor} />
-                <Text className="text-gray-700">分享好友</Text>
-              </View>
-            </Button>
-          </View>
+          <Button
+            className="flex-1 bg-white border py-3 rounded-xl"
+            style={{ borderColor: `${themeColor}33` }}
+            openType="share"
+          >
+            <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Share2 size={18} color={themeColor} />
+              <Text className="text-gray-700">分享好友</Text>
+            </View>
+          </Button>
         )}
-        <View className={shareEnabled ? "flex-1 bg-white border border-gray-200 py-3 rounded-xl" : "w-full bg-white border border-gray-200 py-3 rounded-xl"} style={{ borderColor: `${themeColor}33` }} onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}>
-          <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <RefreshCw size={16} color={themeColor} />
-            <Text className="text-gray-700">再测一次</Text>
-          </View>
-        </View>
+        <Button
+          className={shareEnabled ? "flex-1 bg-white border py-3 rounded-xl" : "w-full bg-white border py-3 rounded-xl"}
+          style={{ borderColor: `${themeColor}33` }}
+          onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
+        >
+          <RefreshCw size={16} color={themeColor} className="mr-2" />
+          <Text className="text-gray-700">再测一次</Text>
+        </Button>
       </View>
     </View>
   )
