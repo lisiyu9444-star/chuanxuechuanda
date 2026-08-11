@@ -125,20 +125,22 @@ const LoadingPage = () => {
 
   return (
     <View className="min-h-full bg-white px-6 py-8 flex flex-col">
-      {/* 7秒超时提示 */}
-      {showTimeout && !timeoutDismissed && (
-        <View className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4">
-          <Text className="text-sm text-gray-700 flex-1">
-            绘图需要时间啦，约30s左右
-          </Text>
-          <View
-            className="ml-3 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100"
-            onClick={() => setTimeoutDismissed(true)}
-          >
-            <Text className="text-gray-500 text-xs font-bold">✕</Text>
-          </View>
+      {/* 超时提示 - 预留空间 + 淡入 */}
+      <View
+        className={`flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 transition-all duration-500 ${
+          showTimeout && !timeoutDismissed ? 'opacity-100 mb-4' : 'opacity-0 mb-0 h-0 overflow-hidden'
+        }`}
+      >
+        <Text className="text-sm text-gray-700 flex-1">
+          绘图需要时间啦，约30s左右
+        </Text>
+        <View
+          className="ml-3 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100"
+          onClick={() => setTimeoutDismissed(true)}
+        >
+          <Text className="text-gray-500 text-xs font-bold">✕</Text>
         </View>
-      )}
+      </View>
 
       {/* Animation Area */}
       <View className="flex flex-col items-center pt-10 pb-6">
