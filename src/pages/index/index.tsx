@@ -124,7 +124,7 @@ const IndexPage = () => {
         <Image src={logoPng} className="w-24 h-24 mb-3" mode="aspectFit" />
         {features.showHomeSubtitle && (
           <Text className="block text-sm text-gray-400">
-            根据你的生辰 · 推荐每日穿搭
+            填写个人信息 · 推荐每日穿搭
           </Text>
         )}
       </View>
