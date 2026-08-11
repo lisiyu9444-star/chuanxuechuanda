@@ -353,11 +353,11 @@ const ResultPage = () => {
               />
             ) : tryOnLoading ? (
               <View className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
-                <Loader size={40} color="#a855f7" className="animate-spin" />
-                <Text className="block text-purple-600 mt-4 text-base font-medium">
+                <Loader size={40} color={themeColor} className="animate-spin" />
+                <Text className="block mt-4 text-base font-medium" style={{ color: themeColor }}>
                   正在生成上身图...
                 </Text>
-                <Text className="block text-gray-400 mt-2 text-sm">
+                <Text className="block mt-2 text-sm" style={{ color: themeColor, opacity: 0.7 }}>
                   需要等待30s左右，请耐心等待
                 </Text>
               </View>
@@ -497,7 +497,10 @@ const ResultPage = () => {
                       <Text className="block text-gray-700 text-sm">
                         今日用神「{result.dailyYongShen}」· 喜神「{result.dailyXiShen}」
                       </Text>
-                      <Text className="block text-gray-400 text-xs mt-1">
+                      <Text
+                        className="block text-xs mt-1"
+                        style={{ color: themeColor, opacity: 0.7 }}
+                      >
                         {result.dailyYongShen === result.favorableElement
                           ? '今日五行与命盘一致，穿搭主色调保持不变'
                           : '今日五行能量变化，穿搭主色调已相应调整'}
