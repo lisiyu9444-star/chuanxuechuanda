@@ -79,7 +79,7 @@ const ResultPage = () => {
       }).then((res: any) => {
         console.log('Shared result response:', res.data)
         // 检查是否过期
-        if (res.data?.data?.expired) {
+        if (res.data?.expired) {
           Taro.showToast({ title: '分享链接已过期', icon: 'none' })
           // 跳转到首页
           setTimeout(() => {
@@ -87,11 +87,11 @@ const ResultPage = () => {
           }, 1500)
           return
         }
-        if (res.data?.data?.result) {
-          setResult(res.data.data.result)
+        if (res.data?.result) {
+          setResult(res.data.result)
           // 如果分享数据中包含上身图，直接设置
-          if (res.data.data.tryOnUrl) {
-            setTryOnUrl(res.data.data.tryOnUrl)
+          if (res.data.tryOnUrl) {
+            setTryOnUrl(res.data.tryOnUrl)
           }
         } else {
           // 分享数据不存在，加载本地数据
@@ -111,22 +111,6 @@ const ResultPage = () => {
         setResult(data)
       }
     }
-    // 获取功能开关配置
-    Network.request({
-      url: '/api/config/features',
-      method: 'GET',
-    }).then((res: any) => {
-      if (res.data?.shareEnabled !== undefined) {
-        setShareEnabled(res.data.shareEnabled)
-      }
-      if (res.data?.showBaZiContent !== undefined) {
-        setShowBaZiContent(res.data.showBaZiContent)
-      }
-    }).catch(() => {
-      // 获取失败默认开启
-      setShareEnabled(true)
-      setShowBaZiContent(true)
-    })
   })
 
   // 保存/更新分享数据到服务器
@@ -157,8 +141,8 @@ const ResultPage = () => {
           data: shareData,
         })
         console.log('Share save response:', saveRes.data)
-        if (saveRes.data?.data?.shareId) {
-          setShareId(saveRes.data.data.shareId)
+        if (saveRes.data?.shareId) {
+          setShareId(saveRes.data.shareId)
         }
       }
     } catch (err) {
@@ -168,7 +152,7 @@ const ResultPage = () => {
 
   // 当 result 加载完成后，自动保存分享数据
   useEffect(() => {
-    if (result) {
+    if (result && !shareId) {
       saveShareData()
     }
   }, [result])

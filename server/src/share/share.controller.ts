@@ -29,7 +29,7 @@ export class ShareController {
 
   @Post('save')
   @HttpCode(HttpStatus.OK)
-  async saveShare(@Body() body: { nickname: string; gender: string; result: any; imageUrl?: string }) {
+  async saveShare(@Body() body: { nickname: string; gender: string; result: any; imageUrl?: string; tryOnUrl?: string }) {
     const shareId = `share_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     const now = Date.now()
     const expiresAt = now + 180 * 24 * 60 * 60 * 1000
@@ -40,7 +40,7 @@ export class ShareController {
       gender: body.gender || 'male',
       result: JSON.stringify(body.result),
       imageUrl: body.imageUrl || null,
-      tryOnUrl: null,
+      tryOnUrl: body.tryOnUrl || null,
       createdAt: now,
       expiresAt: expiresAt,
     }
