@@ -40,6 +40,10 @@ interface BaZiResult {
     backgroundColor?: string
   }
   imageUrl: string
+  ganZhiDate?: {
+    month: string
+    day: string
+  }
 }
 
 const ELEMENT_COLORS: Record<string, string> = {
@@ -294,6 +298,11 @@ const ResultPage = () => {
         <Text className="block text-sm text-gray-400">
           {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
         </Text>
+        {result.ganZhiDate?.month && result.ganZhiDate?.day && (
+          <Text className="block text-sm text-gray-500 mt-1">
+            {result.ganZhiDate.month}月 {result.ganZhiDate.day}日
+          </Text>
+        )}
       </View>
 
       {/* Image Area with Tab Switching */}

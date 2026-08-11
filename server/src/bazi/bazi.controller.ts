@@ -5,7 +5,7 @@ import {
   HttpCode,
   Req,
 } from '@nestjs/common'
-import { BaziService, FourPillar, FavorableAnalysis, OutfitRecommendation } from './bazi.service'
+import { BaziService, FourPillar, FavorableAnalysis, OutfitRecommendation, getCurrentGanZhiDate } from './bazi.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
 
 @Controller('bazi')
@@ -37,6 +37,10 @@ export class BaziController {
       favorableAnalysis: FavorableAnalysis
       outfit: OutfitRecommendation
       imageUrl: string
+      ganZhiDate?: {
+        month: string
+        day: string
+      }
     }
   }> {
     const { nickname, gender, birthDate, birthTime, calendarType } = body
@@ -73,6 +77,9 @@ export class BaziController {
       forwardHeaders,
     )
 
+    // 获取当前干支历日期
+    const ganZhiDate = getCurrentGanZhiDate()
+
     return {
       data: {
         nickname,
@@ -85,6 +92,7 @@ export class BaziController {
         favorableAnalysis: baziResult.favorableAnalysis,
         outfit: baziResult.outfit,
         imageUrl,
+        ganZhiDate,
       },
     }
   }

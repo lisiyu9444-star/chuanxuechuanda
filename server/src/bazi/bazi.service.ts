@@ -231,6 +231,22 @@ function getCurrentSeason(): string {
   return '冬季'
 }
 
+/** 获取当前日期的干支历月日 */
+export function getCurrentGanZhiDate(): { month: string; day: string } {
+  try {
+    const { Lunar } = require('lunar-javascript')
+    const now = new Date()
+    const lunar = Lunar.fromDate(now)
+    return {
+      month: lunar.getMonthInGanZhi(),
+      day: lunar.getDayInGanZhi(),
+    }
+  } catch (error) {
+    console.error('获取干支历日期失败:', error)
+    return { month: '', day: '' }
+  }
+}
+
 /** 根据用神选取背景色（70%中性色，30%撞色） */
 function pickBackgroundColor(element: string): string {
   const bg = BACKGROUND_COLORS[element]
