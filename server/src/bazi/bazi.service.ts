@@ -1022,6 +1022,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     const response = await client.generate({
       prompt: tryOnPrompt,
       size: '2K',
+      aspectRatio: '9:16',
       image: referenceImageUrl,
     })
 
@@ -1050,6 +1051,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     const response = await client.generate({
       prompt,
       size: '2K',
+      aspectRatio: '3:4',
     })
 
     const helper = client.getResponseHelper(response)
