@@ -16,13 +16,16 @@ const db = new DatabaseConstructor(DB_PATH)
 // 启用 WAL 模式（更好的并发性能）
 db.pragma('journal_mode = WAL')
 
+// 删除旧表（如果存在），使用新结构
+db.exec(`DROP TABLE IF EXISTS shares`)
+
 // 创建分享表
 db.exec(`
   CREATE TABLE IF NOT EXISTS shares (
     id TEXT PRIMARY KEY,
     nickname TEXT NOT NULL,
     gender TEXT NOT NULL,
-    outfitResult TEXT NOT NULL,
+    outfit TEXT NOT NULL,
     imageUrl TEXT NOT NULL,
     tryOnUrl TEXT,
     createdAt INTEGER NOT NULL,

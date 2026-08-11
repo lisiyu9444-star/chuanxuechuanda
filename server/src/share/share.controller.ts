@@ -5,7 +5,7 @@ interface SharedResult {
   id: string
   nickname: string
   gender: string
-  outfitResult: string
+  outfit: string
   imageUrl: string
   tryOnUrl?: string
   createdAt: number
@@ -19,7 +19,7 @@ export class ShareController {
   saveShare(@Body() body: {
     nickname: string
     gender: string
-    outfitResult: string
+    outfit: unknown
     imageUrl: string
     tryOnUrl?: string
   }) {
@@ -29,7 +29,7 @@ export class ShareController {
       const expiresAt = now + 30 * 24 * 60 * 60 * 1000 // 30 天过期
 
       const stmt = db.prepare(`
-        INSERT INTO shares (id, nickname, gender, outfitResult, imageUrl, tryOnUrl, createdAt, expiresAt)
+        INSERT INTO shares (id, nickname, gender, outfit, imageUrl, tryOnUrl, createdAt, expiresAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `)
 
@@ -37,7 +37,7 @@ export class ShareController {
         id,
         body.nickname,
         body.gender,
-        body.outfitResult,
+        JSON.stringify(body.outfit || null),
         body.imageUrl,
         body.tryOnUrl || null,
         now,
@@ -102,7 +102,7 @@ export class ShareController {
       const result = {
         nickname: share.nickname,
         gender: share.gender,
-        outfitResult: share.outfitResult ? JSON.parse(share.outfitResult) : null,
+        outfit: share.outfit ? JSON.parse(share.outfit) : null,
         imageUrl: share.imageUrl,
       }
 
