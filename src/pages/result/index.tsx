@@ -65,7 +65,6 @@ const ResultPage = () => {
   // 上身图生成中
   const [tryOnLoading, setTryOnLoading] = useState(false)
   // 功能开关：分享功能是否开启
-  const [shareEnabled, setShareEnabled] = useState(true)
   // 功能开关：是否显示八字相关内容（八字概览、喜用神分析、穿搭推荐）
   const [showBaZiContent, setShowBaZiContent] = useState(true)
   // 分享 ID（用于朋友圈分享）
@@ -274,7 +273,6 @@ const ResultPage = () => {
         console.log('Features API response:', res.data)
         if (res.data?.data?.features) {
           const features = res.data.data.features
-          setShareEnabled(features.enableShareUnlock !== false)
           setShowBaZiContent(features.showResultDetails !== false)
         }
       })
@@ -543,25 +541,25 @@ const ResultPage = () => {
         className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
         style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
       >
-        {shareEnabled && (
-          <Button
-            className="flex-1 bg-white border py-3 rounded-xl"
-            style={{ borderColor: `${themeColor}33` }}
-            openType="share"
-          >
-            <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Share2 size={18} color={themeColor} />
-              <Text className="text-gray-700">分享好友</Text>
-            </View>
-          </Button>
-        )}
         <Button
-          className={shareEnabled ? "flex-1 bg-white border py-3 rounded-xl" : "w-full bg-white border py-3 rounded-xl"}
+          className="flex-1 bg-white border py-3 rounded-xl"
+          style={{ borderColor: `${themeColor}33` }}
+          openType="share"
+        >
+          <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <Share2 size={18} color={themeColor} />
+            <Text className="text-gray-700">分享好友</Text>
+          </View>
+        </Button>
+        <Button
+          className="flex-1 bg-white border py-3 rounded-xl"
           style={{ borderColor: `${themeColor}33` }}
           onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
         >
-          <RefreshCw size={16} color={themeColor} className="mr-2" />
-          <Text className="text-gray-700">再测一次</Text>
+          <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <RefreshCw size={18} color={themeColor} />
+            <Text className="text-gray-700">再测一次</Text>
+          </View>
         </Button>
       </View>
     </View>
