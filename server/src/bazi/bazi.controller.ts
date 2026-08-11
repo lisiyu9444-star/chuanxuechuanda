@@ -41,6 +41,8 @@ export class BaziController {
         month: string
         day: string
       }
+      dailyYongShen?: string
+      dailyXiShen?: string
     }
   }> {
     const { nickname, gender, birthDate, birthTime, calendarType } = body
@@ -93,6 +95,8 @@ export class BaziController {
         outfit: baziResult.outfit,
         imageUrl,
         ganZhiDate,
+        dailyYongShen: baziResult.dailyYongShen,
+        dailyXiShen: baziResult.dailyXiShen,
       },
     }
   }

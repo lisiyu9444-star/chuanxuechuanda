@@ -49,6 +49,8 @@ interface BaZiResult {
   favorableElement: string
   favorableAnalysis: FavorableAnalysis
   outfit: OutfitRecommendation
+  dailyYongShen?: string
+  dailyXiShen?: string
 }
 
 // ========== Constants ==========
@@ -247,6 +249,74 @@ export function getCurrentGanZhiDate(): { month: string; day: string } {
   }
 }
 
+/** 获取当日日柱天干的五行 */
+export function getDailyStemElement(): string {
+  try {
+    const { Lunar } = require('lunar-javascript')
+    const now = new Date()
+    const lunar = Lunar.fromDate(now)
+    const dayGanZhi = lunar.getDayInGanZhi()  // 如"甲子"
+    const dayStem = dayGanZhi[0]  // 如"甲"
+    return STEM_TO_ELEMENT[dayStem] || '木'
+  } catch (error) {
+    console.error('获取日干五行失败:', error)
+    return '木'
+  }
+}
+
+/**
+ * 根据命盘用神/喜神和日干五行，计算当日用神/喜神
+ * 逻辑：
+ * 1. 日干生用神 → 用神=日干，喜神=生日干者
+ * 2. 日干=用神 → 不变
+ * 3. 用神生日干 → 用神=日干，喜神=用神
+ * 4. 日干克用神 → 用神=喜神，喜神=日干
+ * 5. 用神克日干 → 不变
+ * 6. 日干生喜神 → 用神=喜神，喜神=日干
+ * 7. 日干=喜神 → 用神=喜神，喜神=用神
+ * 8. 其他 → 不变
+ */
+export function getDailyFavorableElements(
+  natalYongShen: string,
+  natalXiShen: string,
+  dayElement: string,
+): { yongShen: string; xiShen: string } {
+  // 优先级 1：日干 vs 用神
+  if (GENERATES[dayElement] === natalYongShen) {
+    // 日干生用神 → 用神=日干，喜神=生日干者
+    return { yongShen: dayElement, xiShen: GENERATED_BY[dayElement] }
+  }
+  if (dayElement === natalYongShen) {
+    // 日干=用神 → 不变
+    return { yongShen: natalYongShen, xiShen: natalXiShen }
+  }
+  if (GENERATES[natalYongShen] === dayElement) {
+    // 用神生日干 → 用神=日干，喜神=用神
+    return { yongShen: dayElement, xiShen: natalYongShen }
+  }
+  if (OVERCOMES[dayElement] === natalYongShen) {
+    // 日干克用神 → 用神=喜神，喜神=日干
+    return { yongShen: natalXiShen, xiShen: dayElement }
+  }
+  if (OVERCOMES[natalYongShen] === dayElement) {
+    // 用神克日干 → 不变
+    return { yongShen: natalYongShen, xiShen: natalXiShen }
+  }
+
+  // 优先级 2：日干 vs 喜神
+  if (GENERATES[dayElement] === natalXiShen) {
+    // 日干生喜神 → 用神=喜神，喜神=日干
+    return { yongShen: natalXiShen, xiShen: dayElement }
+  }
+  if (dayElement === natalXiShen) {
+    // 日干=喜神 → 用神=喜神，喜神=用神
+    return { yongShen: natalXiShen, xiShen: natalYongShen }
+  }
+
+  // 其他 → 不变
+  return { yongShen: natalYongShen, xiShen: natalXiShen }
+}
+
 /** 根据用神选取背景色（70%中性色，30%撞色） */
 function pickBackgroundColor(element: string): string {
   const bg = BACKGROUND_COLORS[element]
@@ -332,12 +402,21 @@ export class BaziService {
     // 专业喜用神判定
     const favorableAnalysis = this.calculateFavorableElement(chart)
     const favorableElement = favorableAnalysis.coreYongShen
+    const xiShenElement = favorableAnalysis.assistantXiShen
 
-    const outfit = this.generateOutfit(favorableElement, favorableAnalysis, gender)
+    // 计算当日用神/喜神（基于日干五行）
+    const dayElement = getDailyStemElement()
+    const dailyElements = getDailyFavorableElements(favorableElement, xiShenElement, dayElement)
+    const dailyYongShen = dailyElements.yongShen
+    const dailyXiShen = dailyElements.xiShen
+
+    // 使用当日用神生成穿搭
+    const outfit = this.generateOutfit(dailyYongShen, favorableAnalysis, gender)
 
     return {
       dayMaster, dayMasterElement, fourPillars, fiveElements,
       favorableElement, favorableAnalysis, outfit,
+      dailyYongShen, dailyXiShen,
     }
   }
 

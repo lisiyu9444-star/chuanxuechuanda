@@ -44,6 +44,8 @@ interface BaZiResult {
     month: string
     day: string
   }
+  dailyYongShen?: string
+  dailyXiShen?: string
 }
 
 const ELEMENT_COLORS: Record<string, string> = {
@@ -464,6 +466,38 @@ const ResultPage = () => {
                   {result.favorableAnalysis.logicSummary}
                 </Text>
               </View>
+              {/* 每日用神 */}
+              {result.dailyYongShen && result.dailyYongShen !== result.favorableElement && (
+                <View className="mt-3 bg-purple-50 rounded-lg p-3 border border-purple-100">
+                  <View className="flex items-center gap-2 mb-2">
+                    <View
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: `${ELEMENT_COLORS[result.dailyYongShen] || '#a855f7'}20`,
+                        borderWidth: '2px',
+                        borderStyle: 'solid',
+                        borderColor: ELEMENT_COLORS[result.dailyYongShen] || '#a855f7',
+                      }}
+                    >
+                      <Text
+                        className="block text-sm font-bold"
+                        style={{ color: ELEMENT_COLORS[result.dailyYongShen] || '#a855f7' }}
+                      >
+                        {result.dailyYongShen}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text className="block text-xs font-medium text-purple-700">今日用神</Text>
+                      <Text className="block text-xs text-purple-500">
+                        喜神「{result.dailyXiShen}」
+                      </Text>
+                    </View>
+                  </View>
+                  <Text className="block text-xs text-purple-600 leading-relaxed">
+                    今日五行能量变化，穿搭主色调已相应调整
+                  </Text>
+                </View>
+              )}
             </CardContent>
           </Card>
 
