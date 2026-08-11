@@ -357,7 +357,7 @@ const ResultPage = () => {
                 <Text className="block mt-4 text-base font-medium" style={{ color: themeColor }}>
                   正在生成上身图...
                 </Text>
-                <Text className="block mt-2 text-sm" style={{ color: themeColor, opacity: 0.7 }}>
+                <Text className="block mt-2 text-sm text-gray-400">
                   需要等待30s左右，请耐心等待
                 </Text>
               </View>
@@ -367,7 +367,7 @@ const ResultPage = () => {
                 onClick={handleTryOn}
               >
                 <View className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mb-4">
-                  <Lock size={28} color="#a855f7" />
+                  <Lock size={28} color="#6b7280" />
                 </View>
                 <Text className="block text-gray-700 text-base font-medium mb-2">
                   点击生成上身试穿图
@@ -551,7 +551,7 @@ const ResultPage = () => {
           >
             <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <Share2 size={18} color={themeColor} />
-              <Text style={{ color: themeColor }}>分享好友</Text>
+              <Text className="text-gray-700">分享好友</Text>
             </View>
           </Button>
         )}
@@ -561,7 +561,7 @@ const ResultPage = () => {
           onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
         >
           <RefreshCw size={16} color={themeColor} className="mr-2" />
-          <Text style={{ color: themeColor }}>再测一次</Text>
+          <Text className="text-gray-700">再测一次</Text>
         </Button>
       </View>
     </View>
