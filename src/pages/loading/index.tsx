@@ -24,6 +24,8 @@ const LOADING_STEPS = [
 
 const LoadingPage = () => {
   const [currentStep, setCurrentStep] = useState(0)
+  const [progressValue, setProgressValue] = useState(0)
+  const startTimeRef = useRef(Date.now())
   const [userData, setUserData] = useState<UserData | null>(null)
   const [trustCount] = useState(128456 + Math.floor(Math.random() * 1000))
   const [showTimeout, setShowTimeout] = useState(false)
@@ -96,6 +98,7 @@ const LoadingPage = () => {
 
         const result = res.data?.data
         if (result) {
+          setProgressValue(100)
           Taro.setStorageSync('baziResult', result)
           Taro.redirectTo({ url: '/pages/result/index' })
         }
@@ -110,7 +113,15 @@ const LoadingPage = () => {
   }, [userData])
 
   const genderText = userData?.gender === 'male' ? '男' : '女'
-  const progressValue = ((currentStep + 1) / LOADING_STEPS.length) * 100
+  // 基于时间的进度条，30 秒走完
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const elapsed = (Date.now() - startTimeRef.current) / 1000
+      const progress = Math.min((elapsed / 30) * 100, 95) // 最多到 95%，留 5% 给完成
+      setProgressValue(progress)
+    }, 100)
+    return () => clearInterval(timer)
+  }, [])
 
   return (
     <View className="min-h-full bg-white px-6 py-8 flex flex-col">
