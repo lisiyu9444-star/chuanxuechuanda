@@ -1002,11 +1002,7 @@ export class BaziService {
     // 随机选择单品（风格连贯）
     const items = this.selectOutfitItems(isFemale)
 
-    let description = `您的八字喜用神为「${element}」`
-    if (analysis) {
-      description += `（${analysis.strength}，${analysis.logicSummary}）`
-    }
-    description += `，今日穿搭建议以${colors.join('、')}为主色调。${style}，助您运势亨通，气场全开。`
+    let description = `今日穿搭建议以${colors.join('、')}为主色调。${style}，助您运势亨通，气场全开。`
 
     const accessoryMaterial = isFemale
       ? '香槟金和玫瑰金的金属拉丝或宝石切割质感'

@@ -467,13 +467,13 @@ const ResultPage = () => {
                 </Text>
               </View>
               {/* 每日用神 */}
-              {result.dailyYongShen && result.dailyYongShen !== result.favorableElement && (
-                <View className="mt-3 bg-purple-50 rounded-lg p-3 border border-purple-100">
+              {result.dailyYongShen && (
+                <View className="mt-3 bg-gray-50 rounded-lg p-3">
                   <View className="flex items-center gap-2 mb-2">
                     <View
                       className="w-8 h-8 rounded-full flex items-center justify-center"
                       style={{
-                        backgroundColor: `${ELEMENT_COLORS[result.dailyYongShen] || '#a855f7'}20`,
+                        backgroundColor: `${ELEMENT_COLORS[result.dailyYongShen] || '#a855f7'}15`,
                         borderWidth: '2px',
                         borderStyle: 'solid',
                         borderColor: ELEMENT_COLORS[result.dailyYongShen] || '#a855f7',
@@ -486,16 +486,17 @@ const ResultPage = () => {
                         {result.dailyYongShen}
                       </Text>
                     </View>
-                    <View>
-                      <Text className="block text-xs font-medium text-purple-700">今日用神</Text>
-                      <Text className="block text-xs text-purple-500">
-                        喜神「{result.dailyXiShen}」
+                    <View className="flex-1">
+                      <Text className="block text-gray-700 text-sm">
+                        今日用神「{result.dailyYongShen}」· 喜神「{result.dailyXiShen}」
+                      </Text>
+                      <Text className="block text-gray-400 text-xs mt-1">
+                        {result.dailyYongShen === result.favorableElement
+                          ? '今日五行与命盘一致，穿搭主色调保持不变'
+                          : '今日五行能量变化，穿搭主色调已相应调整'}
                       </Text>
                     </View>
                   </View>
-                  <Text className="block text-xs text-purple-600 leading-relaxed">
-                    今日五行能量变化，穿搭主色调已相应调整
-                  </Text>
                 </View>
               )}
             </CardContent>
