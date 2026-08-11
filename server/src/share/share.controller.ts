@@ -41,6 +41,7 @@ interface SharedResult {
     prompt: string
   }
   imageUrl: string
+  tryOnUrl?: string
   createdAt: number
 }
 

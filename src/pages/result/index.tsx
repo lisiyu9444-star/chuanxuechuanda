@@ -80,6 +80,10 @@ const ResultPage = () => {
         console.log('Shared result response:', res.data)
         if (res.data?.data?.result) {
           setResult(res.data.data.result)
+          // 如果分享数据中包含上身图，直接设置
+          if (res.data.data.tryOnUrl) {
+            setTryOnUrl(res.data.data.tryOnUrl)
+          }
         } else {
           // 分享数据不存在，加载本地数据
           const data = Taro.getStorageSync('baziResult')
@@ -120,10 +124,14 @@ const ResultPage = () => {
   const saveShareData = async () => {
     if (result && !shareId) {
       try {
+        const shareData = {
+          result,
+          tryOnUrl: tryOnUrl || undefined,
+        }
         const saveRes = await Network.request({
           url: '/api/share/save',
           method: 'POST',
-          data: { result },
+          data: shareData,
         })
         console.log('Share save response:', saveRes.data)
         if (saveRes.data?.data?.shareId) {
@@ -141,6 +149,26 @@ const ResultPage = () => {
       saveShareData()
     }
   }, [result])
+
+  // 当上身图生成完成后，更新分享数据
+  useEffect(() => {
+    if (result && tryOnUrl && shareId) {
+      // 上身图已生成，且有 shareId，更新分享数据
+      const updateShareData = async () => {
+        try {
+          await Network.request({
+            url: '/api/share/save',
+            method: 'POST',
+            data: { result, tryOnUrl },
+          })
+          console.log('Share data updated with tryOnUrl')
+        } catch (err) {
+          console.error('Failed to update share data:', err)
+        }
+      }
+      updateShareData()
+    }
+  }, [tryOnUrl])
 
   // 视频解锁相关逻辑（暂时注释）
   // const handleUnlock = () => {
