@@ -211,14 +211,14 @@ const ResultPage = () => {
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
       path: shareId ? `/pages/result/index?shareId=${shareId}` : '/pages/result/index',
-      imageUrl: '/share-cover.jpg',
+      // 不设置 imageUrl，微信会自动截取当前页面作为分享图
     }
   })
 
   Taro.useShareTimeline(() => {
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
-      imageUrl: '/share-cover.jpg',
+      // 不设置 imageUrl，微信会自动截取当前页面作为分享图
     }
   })
 
