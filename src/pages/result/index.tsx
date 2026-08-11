@@ -58,12 +58,17 @@ const ResultPage = () => {
   const [tryOnUrl, setTryOnUrl] = useState<string>('')
   // 上身图生成中
   const [tryOnLoading, setTryOnLoading] = useState(false)
+  // 当前显示的图片是否已加载完成（用于分享截图）
+  const [imageLoaded, setImageLoaded] = useState(false)
   // 功能开关：分享功能是否开启
   const [shareEnabled, setShareEnabled] = useState(true)
   // 功能开关：是否显示八字相关内容（八字概览、喜用神分析、穿搭推荐）
   const [showBaZiContent, setShowBaZiContent] = useState(true)
 
   useDidShow(() => {
+    // 重置图片加载状态
+    setImageLoaded(false)
+
     // 检查是否从分享链接打开
     const router = Taro.getCurrentInstance().router
     const shareId = router?.params?.shareId
@@ -187,10 +192,17 @@ const ResultPage = () => {
   // Tab 切换处理
   const handleTabChange = (tab: 'flat' | 'tryon') => {
     setActiveTab(tab)
+    setImageLoaded(false) // 切换 Tab 时重置图片加载状态
   }
 
   // 小程序分享配置
   Taro.useShareAppMessage(async () => {
+    // 图片未加载完成时，阻止分享（避免分享空白截图）
+    if (!imageLoaded) {
+      Taro.showToast({ title: '图片加载中，请稍后分享', icon: 'none' })
+      return false as any
+    }
+
     let shareId = ''
     // 保存结果到服务器，获取分享 ID
     if (result) {
@@ -216,6 +228,10 @@ const ResultPage = () => {
   })
 
   Taro.useShareTimeline(() => {
+    // 图片未加载完成时，阻止分享
+    if (!imageLoaded) {
+      return false as any
+    }
     return {
       title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
       // 不设置 imageUrl，微信会自动截取当前页面作为分享图
@@ -289,15 +305,19 @@ const ResultPage = () => {
           <View className="w-full" style={{ height: '600px' }}>
             {activeTab === 'flat' ? (
               <Image
+                key={result.imageUrl}
                 src={result.imageUrl}
                 className="w-full h-full"
                 mode="aspectFill"
+                onLoad={() => setImageLoaded(true)}
               />
             ) : tryOnUrl ? (
               <Image
+                key={tryOnUrl}
                 src={tryOnUrl}
                 className="w-full h-full"
                 mode="aspectFill"
+                onLoad={() => setImageLoaded(true)}
               />
             ) : tryOnLoading ? (
               <View className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
@@ -459,10 +479,13 @@ const ResultPage = () => {
           <Button
             className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
             openType="share"
+            disabled={!imageLoaded}
           >
             <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Share2 size={18} color="#a855f7" />
-              <Text className="text-purple-500">分享好友</Text>
+              <Share2 size={18} color={imageLoaded ? "#a855f7" : "#d1d5db"} />
+              <Text className={imageLoaded ? "text-purple-500" : "text-gray-400"}>
+                {imageLoaded ? "分享好友" : "图片加载中..."}
+              </Text>
             </View>
           </Button>
         )}
