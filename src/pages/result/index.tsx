@@ -384,7 +384,7 @@ const ResultPage = () => {
       <View className="flex flex-col gap-4">
 
           {/* BaZi Summary - Controlled by backend */}
-          {showBaZiContent && (
+          {showBaZiContent && result.fourPillars && result.fourPillars.length > 0 && (
           <>
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
