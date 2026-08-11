@@ -128,7 +128,7 @@ const ResultPage = () => {
       const shareData = {
         nickname: result.nickname || '',
         gender: result.gender || 'male',
-        outfit: result.outfit || null,
+        outfitResult: result.outfit ? JSON.stringify(result.outfit) : null,
         imageUrl: result.imageUrl || '',
         tryOnUrl: currentTryOnUrl || tryOnUrl || undefined,
       }

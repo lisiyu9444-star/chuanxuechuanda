@@ -102,7 +102,7 @@ export class ShareController {
       const result = {
         nickname: share.nickname,
         gender: share.gender,
-        outfitResult: share.outfitResult ? JSON.parse(share.outfitResult) : null,
+        outfit: share.outfitResult ? JSON.parse(share.outfitResult) : null,
         imageUrl: share.imageUrl,
       }
 
