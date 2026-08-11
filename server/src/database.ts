@@ -21,8 +21,7 @@ db.exec(`
     id TEXT PRIMARY KEY,
     nickname TEXT NOT NULL,
     gender TEXT NOT NULL,
-    outfit TEXT NOT NULL,
-    imageUrl TEXT NOT NULL,
+    result TEXT NOT NULL,
     tryOnUrl TEXT,
     createdAt INTEGER NOT NULL,
     expiresAt INTEGER NOT NULL

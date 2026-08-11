@@ -5,8 +5,7 @@ interface SharedResult {
   id: string
   nickname: string
   gender: string
-  outfit: string  // JSON 字符串，包含完整的 outfit 对象
-  imageUrl: string
+  result: string  // JSON 字符串，包含完整的 result 对象
   tryOnUrl?: string
   createdAt: number
   expiresAt: number
@@ -19,8 +18,7 @@ export class ShareController {
   saveShare(@Body() body: {
     nickname: string
     gender: string
-    outfit: any  // outfit 对象
-    imageUrl: string
+    result: any  // 完整的 result 对象
     tryOnUrl?: string
   }) {
     try {
@@ -29,16 +27,15 @@ export class ShareController {
       const expiresAt = now + 180 * 24 * 60 * 60 * 1000 // 180 天过期
 
       const stmt = db.prepare(`
-        INSERT INTO shares (id, nickname, gender, outfit, imageUrl, tryOnUrl, createdAt, expiresAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO shares (id, nickname, gender, result, tryOnUrl, createdAt, expiresAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `)
 
       stmt.run(
         id,
         body.nickname,
         body.gender,
-        JSON.stringify(body.outfit),
-        body.imageUrl,
+        JSON.stringify(body.result),
         body.tryOnUrl || null,
         now,
         expiresAt
@@ -59,14 +56,46 @@ export class ShareController {
   @Put(':id')
   updateShare(
     @Param('id') id: string,
-    @Body() body: { tryOnUrl: string }
+    @Body() body: {
+      nickname?: string
+      gender?: string
+      result?: any
+      tryOnUrl?: string
+    }
   ) {
     try {
-      const stmt = db.prepare(`
-        UPDATE shares SET tryOnUrl = ? WHERE id = ?
-      `)
+      // 构建动态更新语句
+      const updates: string[] = []
+      const values: any[] = []
 
-      const result = stmt.run(body.tryOnUrl, id)
+      if (body.nickname !== undefined) {
+        updates.push('nickname = ?')
+        values.push(body.nickname)
+      }
+      if (body.gender !== undefined) {
+        updates.push('gender = ?')
+        values.push(body.gender)
+      }
+      if (body.result !== undefined) {
+        updates.push('result = ?')
+        values.push(JSON.stringify(body.result))
+      }
+      if (body.tryOnUrl !== undefined) {
+        updates.push('tryOnUrl = ?')
+        values.push(body.tryOnUrl)
+      }
+
+      if (updates.length === 0) {
+        return {
+          code: 200,
+          data: { success: true },
+          msg: '无需更新'
+        }
+      }
+
+      values.push(id)
+      const stmt = db.prepare(`UPDATE shares SET ${updates.join(', ')} WHERE id = ?`)
+      const result = stmt.run(...values)
 
       if (result.changes === 0) {
         throw new HttpException('分享不存在', HttpStatus.NOT_FOUND)
@@ -111,19 +140,12 @@ export class ShareController {
         }
       }
 
-      // 解析 outfit
-      let outfit = null
+      // 解析 result
+      let result = null
       try {
-        outfit = share.outfit ? JSON.parse(share.outfit) : null
+        result = share.result ? JSON.parse(share.result) : null
       } catch (e) {
-        console.error('[Share] Failed to parse outfit:', e)
-      }
-
-      const result = {
-        nickname: share.nickname,
-        gender: share.gender,
-        outfit: outfit,
-        imageUrl: share.imageUrl,
+        console.error('[Share] Failed to parse result:', e)
       }
 
       return {

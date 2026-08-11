@@ -137,8 +137,7 @@ const ResultPage = () => {
       const shareData = {
         nickname: result.nickname || '',
         gender: result.gender || 'male',
-        outfit: result.outfit || null,
-        imageUrl: result.imageUrl || '',
+        result: result,  // 保存完整的八字结果
         tryOnUrl: currentTryOnUrl || tryOnUrl || undefined,
       }
 
