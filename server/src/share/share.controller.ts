@@ -1,112 +1,134 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Put,
-  Body,
-  Param,
-  HttpCode,
-  NotFoundException,
-} from '@nestjs/common'
+import { Controller, Post, Get, Put, Body, Param, HttpException, HttpStatus } from '@nestjs/common'
+import db from '../database'
 
 interface SharedResult {
   id: string
   nickname: string
   gender: string
-  dayMaster: string
-  dayMasterElement: string
-  fourPillars: Array<{
-    name: string
-    stem: string
-    branch: string
-    ganZhi: string
-    stemElement: string
-    branchElement: string
-    naYin: string
-    tenGod: string
-  }>
-  fiveElements: Array<{ name: string; count: number }>
-  favorableElement: string
-  favorableAnalysis: {
-    dayMaster: string
-    strength: string
-    coreYongShen: string
-    assistantXiShen: string
-    taboo: string
-    logicSummary: string
-  }
-  outfit: {
-    style: string
-    colors: string[]
-    description: string
-    prompt: string
-  }
+  birthDate: string
+  birthTime: string
+  birthCity: string
+  baziResult: string
+  outfitResult: string
   imageUrl: string
   tryOnUrl?: string
   createdAt: number
+  expiresAt: number
 }
-
-// 内存存储（生产环境建议使用数据库）
-const sharedResults = new Map<string, SharedResult>()
 
 @Controller('share')
 export class ShareController {
+  // 创建分享
   @Post('save')
-  @HttpCode(200)
-  async saveResult(@Body() body: Omit<SharedResult, 'id' | 'createdAt'>) {
-    const id = this.generateId()
-    const result: SharedResult = {
-      ...body,
-      id,
-      createdAt: Date.now(),
-    }
-    sharedResults.set(id, result)
-    
-    // 清理过期数据（超过 24 小时的）
-    this.cleanupExpiredData()
-    
-    return { data: { shareId: id } }
-  }
+  saveShare(@Body() body: {
+    nickname: string
+    gender: string
+    birthDate: string
+    birthTime: string
+    birthCity: string
+    baziResult: string
+    outfitResult: string
+    imageUrl: string
+    tryOnUrl?: string
+  }) {
+    try {
+      const id = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const now = Date.now()
+      const expiresAt = now + 30 * 24 * 60 * 60 * 1000 // 30 天过期
 
-  @Get(':id')
-  @HttpCode(200)
-  async getResult(@Param('id') id: string) {
-    const result = sharedResults.get(id)
-    if (!result) {
-      throw new NotFoundException('分享结果不存在或已过期')
-    }
-    return { data: result }
-  }
+      const stmt = db.prepare(`
+        INSERT INTO shares (id, nickname, gender, birthDate, birthTime, birthCity, baziResult, outfitResult, imageUrl, tryOnUrl, createdAt, expiresAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `)
 
-  @Put(':id')
-  @HttpCode(200)
-  async updateResult(@Param('id') id: string, @Body() body: Partial<SharedResult>) {
-    const existing = sharedResults.get(id)
-    if (!existing) {
-      throw new NotFoundException('分享结果不存在或已过期')
-    }
-    const updated = { ...existing, ...body }
-    sharedResults.set(id, updated)
-    return { data: { success: true } }
-  }
+      stmt.run(
+        id,
+        body.nickname,
+        body.gender,
+        body.birthDate,
+        body.birthTime,
+        body.birthCity,
+        body.baziResult,
+        body.outfitResult,
+        body.imageUrl,
+        body.tryOnUrl || null,
+        now,
+        expiresAt
+      )
 
-  private generateId(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    let result = ''
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return result
-  }
-
-  private cleanupExpiredData() {
-    const now = Date.now()
-    const expiryTime = 24 * 60 * 60 * 1000 // 24 小时
-    
-    for (const [id, result] of sharedResults.entries()) {
-      if (now - result.createdAt > expiryTime) {
-        sharedResults.delete(id)
+      return {
+        code: 200,
+        data: { shareId: id },
+        msg: '保存成功'
       }
+    } catch (error) {
+      console.error('[Share] Save error:', error)
+      throw new HttpException('保存失败', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  // 更新分享（用于更新上身图）
+  @Put(':id')
+  updateShare(
+    @Param('id') id: string,
+    @Body() body: { tryOnUrl: string }
+  ) {
+    try {
+      const stmt = db.prepare(`
+        UPDATE shares SET tryOnUrl = ? WHERE id = ?
+      `)
+
+      const result = stmt.run(body.tryOnUrl, id)
+
+      if (result.changes === 0) {
+        throw new HttpException('分享不存在', HttpStatus.NOT_FOUND)
+      }
+
+      return {
+        code: 200,
+        data: { success: true },
+        msg: '更新成功'
+      }
+    } catch (error) {
+      console.error('[Share] Update error:', error)
+      if (error instanceof HttpException) throw error
+      throw new HttpException('更新失败', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  // 获取分享
+  @Get(':id')
+  getShare(@Param('id') id: string) {
+    try {
+      const stmt = db.prepare(`
+        SELECT * FROM shares WHERE id = ? AND expiresAt > ?
+      `)
+
+      const share = stmt.get(id, Date.now()) as SharedResult | undefined
+
+      if (!share) {
+        throw new HttpException('分享不存在或已过期', HttpStatus.NOT_FOUND)
+      }
+
+      return {
+        code: 200,
+        data: {
+          nickname: share.nickname,
+          gender: share.gender,
+          birthDate: share.birthDate,
+          birthTime: share.birthTime,
+          birthCity: share.birthCity,
+          baziResult: share.baziResult,
+          outfitResult: share.outfitResult,
+          imageUrl: share.imageUrl,
+          tryOnUrl: share.tryOnUrl
+        },
+        msg: '获取成功'
+      }
+    } catch (error) {
+      console.error('[Share] Get error:', error)
+      if (error instanceof HttpException) throw error
+      throw new HttpException('获取失败', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 }
