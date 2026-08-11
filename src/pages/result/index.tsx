@@ -157,9 +157,9 @@ const ResultPage = () => {
       const updateShareData = async () => {
         try {
           await Network.request({
-            url: '/api/share/save',
-            method: 'POST',
-            data: { result, tryOnUrl },
+            url: `/api/share/${shareId}`,
+            method: 'PUT',
+            data: { tryOnUrl },
           })
           console.log('Share data updated with tryOnUrl')
         } catch (err) {

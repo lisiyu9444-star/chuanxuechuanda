@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Put,
   Body,
   Param,
   HttpCode,
@@ -75,6 +76,18 @@ export class ShareController {
       throw new NotFoundException('分享结果不存在或已过期')
     }
     return { data: result }
+  }
+
+  @Put(':id')
+  @HttpCode(200)
+  async updateResult(@Param('id') id: string, @Body() body: Partial<SharedResult>) {
+    const existing = sharedResults.get(id)
+    if (!existing) {
+      throw new NotFoundException('分享结果不存在或已过期')
+    }
+    const updated = { ...existing, ...body }
+    sharedResults.set(id, updated)
+    return { data: { success: true } }
   }
 
   private generateId(): string {
