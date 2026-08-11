@@ -987,6 +987,9 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 
     const tryOnPrompt = `时尚杂志级模特上身试穿摄影，基于提供的平铺穿搭图进行真人试穿展示。
 
+【输出尺寸规格】
+强制竖版 9:16 比例构图，全身人像比例，确保从头到脚完整展示。
+
 【模特要求】
 - ${gender === 'female' ? '亚洲女性模特，25-30 岁，身材匀称' : '亚洲男性模特，25-30 岁，身材挺拔'}
 - 构图裁切至下巴以下，不展示面部（非涂抹遮挡，而是画面裁切）
@@ -1022,7 +1025,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     const response = await client.generate({
       prompt: tryOnPrompt,
       size: '2K',
-      aspectRatio: '9:16',
+      
       image: referenceImageUrl,
     })
 
@@ -1051,7 +1054,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     const response = await client.generate({
       prompt,
       size: '2K',
-      aspectRatio: '3:4',
+      
     })
 
     const helper = client.getResponseHelper(response)
