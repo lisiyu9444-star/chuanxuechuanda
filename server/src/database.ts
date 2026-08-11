@@ -1,19 +1,18 @@
-// 使用 require 导入 better-sqlite3（CommonJS 模块）
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const DatabaseConstructor = require('better-sqlite3')
-import { join } from 'path'
-import { mkdirSync } from 'fs'
+import * as path from 'path'
+import * as fs from 'fs'
+import Database = require('better-sqlite3')
 
-// 数据库文件路径（存储在 server 目录下）
-const DB_PATH = join(__dirname, '..', 'data', 'lucky-outfit.db')
+const DB_PATH = path.join(process.cwd(), 'data', 'shares.db')
 
 // 确保 data 目录存在
-mkdirSync(join(__dirname, '..', 'data'), { recursive: true })
+const dataDir = path.join(process.cwd(), 'data')
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true })
+}
 
-// 创建数据库连接
-const db = new DatabaseConstructor(DB_PATH)
+const db: Database.Database = new Database(DB_PATH)
 
-// 启用 WAL 模式（更好的并发性能）
+// 启用 WAL 模式，提高并发性能
 db.pragma('journal_mode = WAL')
 
 // 创建分享表
@@ -22,7 +21,7 @@ db.exec(`
     id TEXT PRIMARY KEY,
     nickname TEXT NOT NULL,
     gender TEXT NOT NULL,
-    outfitResult TEXT NOT NULL,
+    outfit TEXT NOT NULL,
     imageUrl TEXT NOT NULL,
     tryOnUrl TEXT,
     createdAt INTEGER NOT NULL,
@@ -30,22 +29,11 @@ db.exec(`
   )
 `)
 
-// 创建索引
-db.exec(`
-  CREATE INDEX IF NOT EXISTS idx_shares_expires ON shares(expiresAt)
-`)
-
-// 定期清理过期数据（每小时）
-const cleanupExpired = () => {
-  const now = Date.now()
-  db.prepare('DELETE FROM shares WHERE expiresAt < ?').run(now)
-  console.log('[Database] Cleaned up expired shares')
+// 启动时清理过期数据
+const cleanupStmt = db.prepare('DELETE FROM shares WHERE expiresAt < ?')
+const cleanupResult = cleanupStmt.run(Date.now())
+if (cleanupResult.changes > 0) {
+  console.log(`[Database] Cleaned up ${cleanupResult.changes} expired shares`)
 }
-
-// 启动时清理一次
-cleanupExpired()
-
-// 每小时清理一次
-setInterval(cleanupExpired, 60 * 60 * 1000)
 
 export default db

@@ -5,7 +5,7 @@ interface SharedResult {
   id: string
   nickname: string
   gender: string
-  outfitResult: string
+  outfit: string  // JSON 字符串，包含完整的 outfit 对象
   imageUrl: string
   tryOnUrl?: string
   createdAt: number
@@ -19,17 +19,17 @@ export class ShareController {
   saveShare(@Body() body: {
     nickname: string
     gender: string
-    outfitResult: string
+    outfit: any  // outfit 对象
     imageUrl: string
     tryOnUrl?: string
   }) {
     try {
       const id = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       const now = Date.now()
-      const expiresAt = now + 30 * 24 * 60 * 60 * 1000 // 30 天过期
+      const expiresAt = now + 180 * 24 * 60 * 60 * 1000 // 180 天过期
 
       const stmt = db.prepare(`
-        INSERT INTO shares (id, nickname, gender, outfitResult, imageUrl, tryOnUrl, createdAt, expiresAt)
+        INSERT INTO shares (id, nickname, gender, outfit, imageUrl, tryOnUrl, createdAt, expiresAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `)
 
@@ -37,7 +37,7 @@ export class ShareController {
         id,
         body.nickname,
         body.gender,
-        body.outfitResult,
+        JSON.stringify(body.outfit),
         body.imageUrl,
         body.tryOnUrl || null,
         now,
@@ -89,28 +89,48 @@ export class ShareController {
   getShare(@Param('id') id: string) {
     try {
       const stmt = db.prepare(`
-        SELECT * FROM shares WHERE id = ? AND expiresAt > ?
+        SELECT * FROM shares WHERE id = ?
       `)
 
-      const share = stmt.get(id, Date.now()) as SharedResult | undefined
+      const share = stmt.get(id) as SharedResult | undefined
 
       if (!share) {
-        throw new HttpException('分享不存在或已过期', HttpStatus.NOT_FOUND)
+        return {
+          code: 200,
+          data: { expired: true },
+          msg: '分享不存在或已过期'
+        }
       }
 
-      // 组装前端期望的数据结构
+      // 检查是否过期
+      if (share.expiresAt < Date.now()) {
+        return {
+          code: 200,
+          data: { expired: true },
+          msg: '分享已过期'
+        }
+      }
+
+      // 解析 outfit
+      let outfit = null
+      try {
+        outfit = share.outfit ? JSON.parse(share.outfit) : null
+      } catch (e) {
+        console.error('[Share] Failed to parse outfit:', e)
+      }
+
       const result = {
         nickname: share.nickname,
         gender: share.gender,
-        outfit: share.outfitResult ? JSON.parse(share.outfitResult) : null,
+        outfit: outfit,
         imageUrl: share.imageUrl,
       }
 
       return {
         code: 200,
         data: {
-          result,
-          tryOnUrl: share.tryOnUrl || null,
+          result: result,
+          tryOnUrl: share.tryOnUrl
         },
         msg: '获取成功'
       }
