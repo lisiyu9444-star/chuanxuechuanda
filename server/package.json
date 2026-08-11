@@ -21,7 +21,6 @@
     "better-sqlite3": "^13.0.3",
     "coze-coding-dev-sdk": "^0.7.24",
     "dotenv": "^17.2.3",
-    "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
     "express": "5.2.1",

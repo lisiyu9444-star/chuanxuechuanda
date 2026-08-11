@@ -218,9 +218,6 @@ importers:
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
-      drizzle-kit:
-        specifier: ^0.31.8
-        version: 0.31.8
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(pg@8.17.2)
@@ -258,6 +255,9 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.6
+      drizzle-kit:
+        specifier: ^0.31.8
+        version: 0.31.8
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
