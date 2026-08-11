@@ -82,6 +82,7 @@ const LoadingPage = () => {
         const res = await Network.request({
           url: '/api/bazi/calculate',
           method: 'POST',
+          timeout: 120000, // 120 秒超时，AI 生图需要较长时间
           data: {
             nickname: userData.nickname,
             gender: userData.gender,
