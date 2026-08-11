@@ -145,7 +145,7 @@ const LoadingPage = () => {
 
         {/* Progress Bar */}
         <View className="w-full mt-5 px-4">
-          <Progress value={progressValue} className="h-2 bg-gray-100" />
+          <Progress value={progressValue} className="h-2" style={{ "--primary": "#1F2937", "--secondary": "#E5E7EB" } as React.CSSProperties} />
         </View>
       </View>
 
