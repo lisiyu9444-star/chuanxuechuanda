@@ -78,6 +78,15 @@ const ResultPage = () => {
         method: 'GET',
       }).then((res: any) => {
         console.log('Shared result response:', res.data)
+        // 检查是否过期
+        if (res.data?.data?.expired) {
+          Taro.showToast({ title: '分享链接已过期', icon: 'none' })
+          // 跳转到首页
+          setTimeout(() => {
+            Taro.switchTab({ url: '/pages/index/index' })
+          }, 1500)
+          return
+        }
         if (res.data?.data?.result) {
           setResult(res.data.data.result)
           // 如果分享数据中包含上身图，直接设置
