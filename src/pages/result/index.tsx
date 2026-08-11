@@ -71,6 +71,11 @@ const ResultPage = () => {
   // 分享 ID（用于朋友圈分享）
   const [shareId, setShareId] = useState('')
 
+  // 获取今日用神主题色
+  const themeColor = result?.dailyYongShen
+    ? ELEMENT_COLORS[result.dailyYongShen] || '#9333ea'
+    : '#9333ea'
+
   useDidShow(() => {
     // 检查是否从分享链接打开
     const router = Taro.getCurrentInstance().router
@@ -312,18 +317,20 @@ const ResultPage = () => {
         {/* Tab Header */}
         <View className="flex gap-2 mb-3">
           <View
-            className={`flex-1 py-2 rounded-lg flex items-center justify-center ${activeTab === 'flat' ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50 border border-gray-100'}`}
+            className={`flex-1 py-2 rounded-lg flex items-center justify-center ${activeTab === 'flat' ? 'border' : 'bg-gray-50 border border-gray-100'}`}
+            style={activeTab === 'flat' ? { backgroundColor: `${themeColor}08`, borderColor: `${themeColor}33` } : {}}
             onClick={() => handleTabChange('flat')}
           >
-            <Text className={`text-sm ${activeTab === 'flat' ? 'text-purple-600 font-medium' : 'text-gray-500'}`}>
+            <Text className={`text-sm ${activeTab === 'flat' ? 'font-medium' : 'text-gray-500'}`} style={activeTab === 'flat' ? { color: themeColor } : {}}>
               平铺图
             </Text>
           </View>
           <View
-            className={`flex-1 py-2 rounded-lg flex items-center justify-center ${activeTab === 'tryon' ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50 border border-gray-100'}`}
+            className={`flex-1 py-2 rounded-lg flex items-center justify-center ${activeTab === 'tryon' ? 'border' : 'bg-gray-50 border border-gray-100'}`}
+            style={activeTab === 'tryon' ? { backgroundColor: `${themeColor}08`, borderColor: `${themeColor}33` } : {}}
             onClick={() => handleTabChange('tryon')}
           >
-            <Text className={`text-sm ${activeTab === 'tryon' ? 'text-purple-600 font-medium' : 'text-gray-500'}`}>
+            <Text className={`text-sm ${activeTab === 'tryon' ? 'font-medium' : 'text-gray-500'}`} style={activeTab === 'tryon' ? { color: themeColor } : {}}>
               上身图
             </Text>
           </View>
@@ -535,21 +542,23 @@ const ResultPage = () => {
       >
         {shareEnabled && (
           <Button
-            className="flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"
+            className="flex-1 bg-white border py-3 rounded-xl"
+            style={{ borderColor: `${themeColor}33` }}
             openType="share"
           >
             <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Share2 size={18} color="#a855f7" />
-              <Text className="text-purple-500">分享好友</Text>
+              <Share2 size={18} color={themeColor} />
+              <Text style={{ color: themeColor }}>分享好友</Text>
             </View>
           </Button>
         )}
         <Button
-          className={shareEnabled ? "flex-1 bg-white text-purple-500 border border-purple-200 py-3 rounded-xl" : "w-full bg-white text-purple-500 border border-purple-200 py-3 rounded-xl"}
+          className={shareEnabled ? "flex-1 bg-white border py-3 rounded-xl" : "w-full bg-white border py-3 rounded-xl"}
+          style={{ borderColor: `${themeColor}33` }}
           onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
         >
-          <RefreshCw size={16} color="#7C3AED" className="mr-2" />
-          <Text className="text-purple-500">再测一次</Text>
+          <RefreshCw size={16} color={themeColor} className="mr-2" />
+          <Text style={{ color: themeColor }}>再测一次</Text>
         </Button>
       </View>
     </View>
