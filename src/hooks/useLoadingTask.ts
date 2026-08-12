@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useDidHide, useUnload } from '@tarojs/taro'
+import Taro, { useDidHide, useUnload } from '@tarojs/taro'
 import { Network } from '@/network'
 
 interface UseLoadingTaskOptions<TParams, TResult> {
@@ -176,6 +176,20 @@ export function useLoadingTask<TParams = any, TResult = any>(
     console.log('[useLoadingTask] Page unloading')
     cancel()
   })
+
+  // 监听应用级别的 onHide（用户退出小程序、切换到后台）
+  useEffect(() => {
+    const handleAppHide = () => {
+      console.log('[useLoadingTask] App hidden, cancelling task')
+      cancel()
+    }
+
+    Taro.eventCenter.on('onHide', handleAppHide)
+
+    return () => {
+      Taro.eventCenter.off('onHide', handleAppHide)
+    }
+  }, [])
 
   // 自动执行
   useEffect(() => {
