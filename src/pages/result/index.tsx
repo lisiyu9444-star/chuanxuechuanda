@@ -500,7 +500,7 @@ const ResultPage = () => {
                         style={{ color: themeColor, opacity: 0.7 }}
                       >
                         {result.dailyYongShen === result.favorableElement
-                          ? '今日五行与命盘一致，穿搭主色调保持不变'
+                          ? '今日用神回归，穿搭主色调保持不变'
                           : '今日五行能量变化，穿搭主色调已相应调整'}
                       </Text>
                     </View>
