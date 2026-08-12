@@ -3,7 +3,7 @@ import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Rocket, Venus, Mars, ChevronDown } from 'lucide-react-taro'
+import { Venus, Mars, ChevronDown } from 'lucide-react-taro'
 import { Network } from '@/network'
 import logoPng from '@/assets/logo-brand.png'
 import './index.css'
@@ -255,8 +255,7 @@ const IndexPage = () => {
             style={{ background: '#1F2937' }}
             onClick={handleSubmit}
           >
-            <Rocket size={18} color="#ffffff" />
-            <Text className="ml-2 text-white font-bold">开始勾画</Text>
+            <Text className="text-white font-bold">查看今日穿搭</Text>
           </Button>
         </View>
       </View>
