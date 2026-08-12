@@ -1,5 +1,5 @@
 import { View, Text } from '@tarojs/components'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, useDidHide } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -33,6 +33,7 @@ const LoadingPage = () => {
   const [features, setFeatures] = useState({ showLoadingSteps: true })
   const { showLoadingSteps } = features
   const apiCalledRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useDidShow(() => {
     const data = Taro.getStorageSync('userData')
@@ -79,12 +80,16 @@ const LoadingPage = () => {
     if (!userData || apiCalledRef.current) return
     apiCalledRef.current = true
 
+    // 创建 AbortController 用于取消请求
+    abortControllerRef.current = new AbortController()
+
     const callApi = async () => {
       try {
         const res = await Network.request({
           url: '/api/bazi/calculate',
           method: 'POST',
           timeout: 120000, // 120 秒超时，AI 生图需要较长时间
+          signal: abortControllerRef.current?.signal,
           data: {
             nickname: userData.nickname,
             gender: userData.gender,
@@ -102,7 +107,12 @@ const LoadingPage = () => {
           Taro.setStorageSync('baziResult', result)
           Taro.redirectTo({ url: '/pages/result/index' })
         }
-      } catch (error) {
+      } catch (error: any) {
+        // 判断是否为取消操作
+        if (error?.errMsg?.includes('abort') || error?.name === 'AbortError') {
+          console.log('Request cancelled by user')
+          return // 不显示错误提示
+        }
         console.error('BaZi calculation failed:', error)
         Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
         apiCalledRef.current = false
@@ -111,6 +121,14 @@ const LoadingPage = () => {
 
     callApi()
   }, [userData])
+
+  // 页面隐藏时取消请求
+  useDidHide(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      console.log('Loading page hidden, request cancelled')
+    }
+  })
 
   const genderText = userData?.gender === 'male' ? '男' : '女'
   // 基于时间的进度条，30 秒走完
