@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Share2, RefreshCw, Lock, Loader } from 'lucide-react-taro'
 import { Network } from '@/network'
+import { useLoadingTask } from '@/hooks/useLoadingTask'
 import './index.css'
 
 interface BaZiResult {
@@ -62,13 +63,33 @@ const ResultPage = () => {
   const [activeTab, setActiveTab] = useState<'flat' | 'tryon'>('flat')
   // 上身图 URL（生成后缓存）
   const [tryOnUrl, setTryOnUrl] = useState<string>('')
-  // 上身图生成中
-  const [tryOnLoading, setTryOnLoading] = useState(false)
   // 功能开关：分享功能是否开启
   // 功能开关：是否显示八字相关内容（八字概览、喜用神分析、穿搭推荐）
   const [showBaZiContent, setShowBaZiContent] = useState(true)
   // 分享 ID（用于朋友圈分享）
   const [shareId, setShareId] = useState('')
+
+  // 上身图生成任务（使用 useLoadingTask 管理）
+  const {
+    execute: generateTryOn,
+    loading: tryOnLoading,
+  } = useLoadingTask({
+    url: '/api/bazi/try-on',
+    method: 'POST',
+    autoExecute: false,
+    onSuccess: (data: any) => {
+      console.log('Try-on success:', data)
+      if (data?.tryOnUrl) {
+        setTryOnUrl(data.tryOnUrl)
+      } else {
+        Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
+      }
+    },
+    onError: (err) => {
+      console.error('Try-on failed:', err)
+      Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
+    },
+  })
 
   // 获取今日用神主题色
   const themeColor = result?.dailyYongShen
@@ -215,38 +236,17 @@ const ResultPage = () => {
   //   return true
   // }
 
-  // 上身图生成
-  const handleTryOn = async () => {
-    if (!result || tryOnLoading || tryOnUrl) return
-
-    setTryOnLoading(true)
-    try {
-      const res = await Network.request({
-        url: '/api/bazi/try-on',
-        method: 'POST',
-        data: {
-          imageUrl: result.imageUrl,
-          outfit: result.outfit,
-          gender: result.gender,
-        },
-      })
-      console.log('Try-on response:', res.data)
-      if (res.data?.data?.tryOnUrl) {
-        setTryOnUrl(res.data.data.tryOnUrl)
-      } else {
-        Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
-      }
-    } catch (err) {
-      console.error('Try-on failed:', err)
-      Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
-    } finally {
-      setTryOnLoading(false)
-    }
-  }
-
   // Tab 切换处理
   const handleTabChange = (tab: 'flat' | 'tryon') => {
     setActiveTab(tab)
+    // 切换到上身图时，如果还没有生成，则开始生成
+    if (tab === 'tryon' && !tryOnUrl && !tryOnLoading && result) {
+      generateTryOn({
+        imageUrl: result.imageUrl,
+        outfit: result.outfit,
+        gender: result.gender,
+      })
+    }
   }
 
   // 小程序分享配置
@@ -362,7 +362,11 @@ const ResultPage = () => {
             ) : (
               <View
                 className="w-full h-full flex flex-col items-center justify-center"
-                onClick={handleTryOn}
+                onClick={() => generateTryOn({
+                  imageUrl: result.imageUrl,
+                  outfit: result.outfit,
+                  gender: result.gender,
+                })}
               >
                 <View className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mb-4">
                   <Lock size={28} color="#6b7280" />
