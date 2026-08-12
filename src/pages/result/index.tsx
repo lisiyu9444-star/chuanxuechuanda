@@ -52,7 +52,7 @@ const ELEMENT_COLORS: Record<string, string> = {
   '木': '#22c55e',
   '火': '#ef4444',
   '土': '#f59e0b',
-  '金': '#6b7280',
+  '金': '#fbbf24',
   '水': '#3b82f6',
 }
 
