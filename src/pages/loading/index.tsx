@@ -34,6 +34,7 @@ const LoadingPage = () => {
   const { showLoadingSteps } = features
   const apiCalledRef = useRef(false)
   const isPageVisibleRef = useRef(true)
+  const taskIdRef = useRef<string | null>(null)
 
   useDidShow(() => {
     const data = Taro.getStorageSync('userData')
@@ -97,13 +98,18 @@ const LoadingPage = () => {
         })
         console.log('BaZi API response:', res.data)
 
+        // 保存 taskId 用于取消
+        const result = res.data?.data
+        if (result?.taskId) {
+          taskIdRef.current = result.taskId
+        }
+
         // 检查页面是否仍然可见，避免取消后仍然跳转
         if (!isPageVisibleRef.current) {
           console.log('Page hidden, skip navigation')
           return
         }
 
-        const result = res.data?.data
         if (result) {
           setProgressValue(100)
           Taro.setStorageSync('baziResult', result)
@@ -124,10 +130,20 @@ const LoadingPage = () => {
     callApi()
   }, [userData])
 
-  // 页面隐藏时设置标志位
+  // 页面隐藏时取消任务
   useDidHide(() => {
     isPageVisibleRef.current = false
-    console.log('Loading page hidden, will skip navigation')
+    // 调用后端取消接口
+    if (taskIdRef.current) {
+      console.log('Loading page hidden, cancelling task:', taskIdRef.current)
+      Network.request({
+        url: '/api/bazi/cancel',
+        method: 'POST',
+        data: { taskId: taskIdRef.current },
+      }).catch(err => {
+        console.error('Failed to cancel task:', err)
+      })
+    }
   })
 
   // 页面显示时重置标志

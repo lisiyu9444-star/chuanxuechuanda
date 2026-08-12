@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 import { BaziService, FourPillar, FavorableAnalysis, OutfitRecommendation, getCurrentGanZhiDate } from './bazi.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
+import { v4 as uuidv4 } from 'uuid'
 
 @Controller('bazi')
 export class BaziController {
@@ -27,6 +28,7 @@ export class BaziController {
     @Req() req,
   ): Promise<{
     data: {
+      taskId: string
       nickname: string
       gender: string
       dayMaster: string
@@ -70,6 +72,9 @@ export class BaziController {
     // 使用 @openfate/bazi-engine 进行专业排盘
     const baziResult = this.baziService.calculateBaZi(solarBirthDate, birthTime, gender)
 
+    // 生成任务 ID 用于取消
+    const taskId = uuidv4()
+
     // 生成穿搭图片
     const forwardHeaders = HeaderUtils.extractForwardHeaders(
       req.headers as Record<string, string>,
@@ -77,6 +82,7 @@ export class BaziController {
     const imageUrl = await this.baziService.generateOutfitImage(
       baziResult.outfit.prompt,
       forwardHeaders,
+      taskId,
     )
 
     // 获取当前干支历日期
@@ -84,6 +90,7 @@ export class BaziController {
 
     return {
       data: {
+        taskId,
         nickname,
         gender,
         dayMaster: baziResult.dayMaster,
@@ -99,6 +106,16 @@ export class BaziController {
         dailyXiShen: baziResult.dailyXiShen,
       },
     }
+  }
+
+  // 取消任务接口
+  @Post('cancel')
+  @HttpCode(200)
+  async cancelTask(
+    @Body() body: { taskId: string },
+  ): Promise<{ data: { success: boolean } }> {
+    const success = this.baziService.cancelTask(body.taskId)
+    return { data: { success } }
   }
 
   @Post('try-on')

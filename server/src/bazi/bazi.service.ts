@@ -344,6 +344,9 @@ const SHICHEN_TO_HOUR: Record<string, number> = {
 
 @Injectable()
 export class BaziService {
+  // 存储进行中的任务，用于取消
+  private activeTasks = new Map<string, AbortController>()
+
   // ========== Main Calculation ==========
 
   calculateBaZi(
@@ -1130,6 +1133,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
   async generateOutfitImage(
     prompt: string,
     headers: Record<string, string>,
+    taskId?: string,
   ): Promise<string> {
     const config = new Config()
     // 过滤掉实例相关的 header，使用当前环境的实例 ID
@@ -1140,20 +1144,45 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     delete filteredHeaders['X-Coze-Instance-Id']
     const client = new ImageGenerationClient(config, filteredHeaders)
 
-    const response = await client.generate({
-      prompt,
-      size: '2K',
-      
-    })
-
-    const helper = client.getResponseHelper(response)
-
-    if (helper.success && helper.imageUrls.length > 0) {
-      return helper.imageUrls[0]
+    // 如果提供了 taskId，创建 AbortController 并存储
+    let abortController: AbortController | undefined
+    if (taskId) {
+      abortController = new AbortController()
+      this.activeTasks.set(taskId, abortController)
     }
 
-    throw new Error(
-      `Image generation failed: ${helper.errorMessages.join(', ')}`,
-    )
+    try {
+      const response = await client.generate({
+        prompt,
+        size: '2K',
+      })
+
+      const helper = client.getResponseHelper(response)
+
+      if (helper.success && helper.imageUrls.length > 0) {
+        return helper.imageUrls[0]
+      }
+
+      throw new Error(
+        `Image generation failed: ${helper.errorMessages.join(', ')}`,
+      )
+    } finally {
+      // 任务完成后清理
+      if (taskId) {
+        this.activeTasks.delete(taskId)
+      }
+    }
+  }
+
+  // 取消任务
+  cancelTask(taskId: string): boolean {
+    const controller = this.activeTasks.get(taskId)
+    if (controller) {
+      controller.abort()
+      this.activeTasks.delete(taskId)
+      console.log(`Task ${taskId} cancelled`)
+      return true
+    }
+    return false
   }
 }
