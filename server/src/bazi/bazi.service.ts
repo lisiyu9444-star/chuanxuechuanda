@@ -411,7 +411,7 @@ export class BaziService {
     const dailyXiShen = dailyElements.xiShen
 
     // 使用当日用神生成穿搭
-    const outfit = this.generateOutfit(dailyYongShen, favorableAnalysis, gender)
+    const outfit = this.generateOutfit(dailyYongShen, dailyXiShen, favorableAnalysis, gender)
 
     return {
       dayMaster, dayMasterElement, fourPillars, fiveElements,
@@ -965,7 +965,7 @@ export class BaziService {
     }
   }
 
-  private generateOutfit(element: string, analysis?: FavorableAnalysis, gender: string = 'male'): OutfitRecommendation {
+  private generateOutfit(element: string, xiShenElement: string, analysis?: FavorableAnalysis, gender: string = 'male'): OutfitRecommendation {
     const colors = ELEMENT_COLORS[element] || ['白色', '灰色']
     const style = OUTFIT_STYLES[element] || '简约百搭风'
     const bgColor = pickBackgroundColor(element)
@@ -975,7 +975,7 @@ export class BaziService {
     const bottomColor = bottomColorResult.color
     const colorRule = bottomColorResult.rule
     const genderText = gender === 'female' ? '女装' : '男装'
-    const xiShen = analysis?.assistantXiShen || '白色'
+    const xiShen = xiShenElement || analysis?.assistantXiShen || '白色'
     const xiShenColor = ELEMENT_MAIN_COLOR[xiShen] || '白色'
     const isFemale = gender === 'female'
 
