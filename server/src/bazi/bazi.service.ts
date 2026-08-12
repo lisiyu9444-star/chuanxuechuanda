@@ -266,55 +266,54 @@ export function getDailyStemElement(): string {
 
 /**
  * 根据命盘用神/喜神和日干五行，计算当日用神/喜神
- * 逻辑：
- * 1. 日干生用神 → 用神=日干，喜神=生日干者
- * 2. 日干=用神 → 不变
- * 3. 用神生日干 → 用神=日干，喜神=用神
- * 4. 日干克用神 → 用神=喜神，喜神=日干
- * 5. 用神克日干 → 不变
- * 6. 日干生喜神 → 用神=喜神，喜神=日干
- * 7. 日干=喜神 → 用神=喜神，喜神=用神
- * 8. 其他 → 不变
+ * 简化逻辑：
+ * 1. 日干=用神 → 用神=命盘用神，喜神=命盘喜神（保持不变）
+ * 2. 其他 → 用神根据日干调整，喜神随机选（不等于用神）
  */
 export function getDailyFavorableElements(
   natalYongShen: string,
   natalXiShen: string,
   dayElement: string,
 ): { yongShen: string; xiShen: string } {
-  // 优先级 1：日干 vs 用神
+  // 确定当日用神
+  let yongShen = natalYongShen
+  
   if (GENERATES[dayElement] === natalYongShen) {
-    // 日干生用神 → 用神=日干，喜神=生日干者
-    return { yongShen: dayElement, xiShen: GENERATED_BY[dayElement] }
-  }
-  if (dayElement === natalYongShen) {
+    // 日干生用神 → 用神=日干
+    yongShen = dayElement
+  } else if (dayElement === natalYongShen) {
     // 日干=用神 → 不变
-    return { yongShen: natalYongShen, xiShen: natalXiShen }
-  }
-  if (GENERATES[natalYongShen] === dayElement) {
-    // 用神生日干 → 用神=日干，喜神=用神
-    return { yongShen: dayElement, xiShen: natalYongShen }
-  }
-  if (OVERCOMES[dayElement] === natalYongShen) {
-    // 日干克用神 → 用神=喜神，喜神=日干
-    return { yongShen: natalXiShen, xiShen: dayElement }
-  }
-  if (OVERCOMES[natalYongShen] === dayElement) {
+    yongShen = natalYongShen
+  } else if (GENERATES[natalYongShen] === dayElement) {
+    // 用神生日干 → 用神=日干
+    yongShen = dayElement
+  } else if (OVERCOMES[dayElement] === natalYongShen) {
+    // 日干克用神 → 用神=命盘喜神
+    yongShen = natalXiShen
+  } else if (OVERCOMES[natalYongShen] === dayElement) {
     // 用神克日干 → 不变
-    return { yongShen: natalYongShen, xiShen: natalXiShen }
+    yongShen = natalYongShen
+  } else if (GENERATES[dayElement] === natalXiShen) {
+    // 日干生喜神 → 用神=命盘喜神
+    yongShen = natalXiShen
+  } else if (dayElement === natalXiShen) {
+    // 日干=喜神 → 用神=命盘喜神
+    yongShen = natalXiShen
   }
 
-  // 优先级 2：日干 vs 喜神
-  if (GENERATES[dayElement] === natalXiShen) {
-    // 日干生喜神 → 用神=喜神，喜神=日干
-    return { yongShen: natalXiShen, xiShen: dayElement }
-  }
-  if (dayElement === natalXiShen) {
-    // 日干=喜神 → 用神=喜神，喜神=用神
-    return { yongShen: natalXiShen, xiShen: natalYongShen }
+  // 确定当日喜神
+  let xiShen: string
+  if (dayElement === natalYongShen) {
+    // 日干=用神 → 喜神=命盘喜神（保持不变）
+    xiShen = natalXiShen
+  } else {
+    // 其他 → 随机选，只要不等于用神
+    const elements = ['木', '火', '土', '金', '水']
+    const candidates = elements.filter(e => e !== yongShen)
+    xiShen = candidates[Math.floor(Math.random() * candidates.length)]
   }
 
-  // 其他 → 不变
-  return { yongShen: natalYongShen, xiShen: natalXiShen }
+  return { yongShen, xiShen }
 }
 
 /** 根据用神选取背景色（70%中性色，30%撞色） */
