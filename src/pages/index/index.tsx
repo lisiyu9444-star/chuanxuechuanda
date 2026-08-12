@@ -256,7 +256,7 @@ const IndexPage = () => {
             onClick={handleSubmit}
           >
             <Rocket size={18} color="#ffffff" />
-            <Text className="ml-2 text-white font-bold">开始推演</Text>
+            <Text className="ml-2 text-white font-bold">开始勾画</Text>
           </Button>
         </View>
       </View>
