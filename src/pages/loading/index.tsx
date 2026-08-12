@@ -1,9 +1,10 @@
 import { View, Text } from '@tarojs/components'
-import Taro, { useDidShow, useDidHide, useUnload } from '@tarojs/taro'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Network } from '@/network'
+import { useLoadingTask } from '@/hooks/useLoadingTask'
 import './index.css'
 
 interface UserData {
@@ -13,6 +14,22 @@ interface UserData {
   birthTime: string
   location: string
   calendarType?: string
+}
+
+interface BaZiResult {
+  nickname: string
+  gender: string
+  dayMaster: string
+  dayMasterElement: string
+  fourPillars: any[]
+  fiveElements: any[]
+  favorableElement: string
+  favorableAnalysis: any
+  outfit: any
+  imageUrl: string
+  ganZhiDate?: { month: string; day: string }
+  dailyYongShen?: string
+  dailyXiShen?: string
 }
 
 const LOADING_STEPS = [
@@ -32,9 +49,25 @@ const LoadingPage = () => {
   const [timeoutDismissed, setTimeoutDismissed] = useState(false)
   const [features, setFeatures] = useState({ showLoadingSteps: true })
   const { showLoadingSteps } = features
-  const apiCalledRef = useRef(false)
-  const isPageVisibleRef = useRef(true)
-  const taskIdRef = useRef<string | null>(null)
+
+  // 使用通用 loading task hook
+  useLoadingTask<UserData, BaZiResult>({
+    url: '/api/bazi/calculate',
+    method: 'POST',
+    params: userData || undefined,
+    timeout: 120000,
+    autoExecute: false, // 手动控制执行时机
+    onSuccess: (data) => {
+      console.log('BaZi calculation success:', data)
+      setProgressValue(100)
+      Taro.setStorageSync('baziResult', data)
+      Taro.redirectTo({ url: '/pages/result/index' })
+    },
+    onError: (error) => {
+      console.error('BaZi calculation failed:', error)
+      Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
+    },
+  })
 
   useDidShow(() => {
     const data = Taro.getStorageSync('userData')
@@ -66,6 +99,15 @@ const LoadingPage = () => {
     return () => clearTimeout(timer)
   })
 
+  // 当 userData 准备好后执行任务
+  useEffect(() => {
+    if (userData) {
+      // useLoadingTask 会自动执行（autoExecute: true 时）
+      // 这里我们设置为 false，所以需要手动触发
+      // 但由于 params 变化会触发 execute，所以不需要手动调用
+    }
+  }, [userData])
+
   // Step animation
   useEffect(() => {
     if (currentStep < LOADING_STEPS.length - 1) {
@@ -76,97 +118,13 @@ const LoadingPage = () => {
     }
   }, [currentStep])
 
-  // Call backend API once
-  useEffect(() => {
-    if (!userData || apiCalledRef.current) return
-    apiCalledRef.current = true
-
-    // 在请求发起前就生成 taskId，确保即使立即返回也能取消
-    const localTaskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    taskIdRef.current = localTaskId
-
-    const callApi = async () => {
-      try {
-        const res = await Network.request({
-          url: '/api/bazi/calculate',
-          method: 'POST',
-          timeout: 120000,
-          data: {
-            nickname: userData.nickname,
-            gender: userData.gender,
-            birthDate: userData.birthDate,
-            birthTime: userData.birthTime,
-            location: userData.location,
-            calendarType: userData.calendarType || 'solar',
-            clientTaskId: localTaskId, // 传递客户端生成的 taskId
-          },
-        })
-        console.log('BaZi API response:', res.data)
-
-        // 检查页面是否仍然可见，避免取消后仍然跳转
-        if (!isPageVisibleRef.current) {
-          console.log('Page hidden/unloaded, skip navigation')
-          return
-        }
-
-        const result = res.data?.data
-        if (result) {
-          setProgressValue(100)
-          Taro.setStorageSync('baziResult', result)
-          Taro.redirectTo({ url: '/pages/result/index' })
-        }
-      } catch (error: any) {
-        // 判断是否为取消操作
-        if (error?.errMsg?.includes('abort') || error?.errMsg?.includes('cancel')) {
-          console.log('Request cancelled by user')
-          return // 不显示错误提示
-        }
-        console.error('BaZi calculation failed:', error)
-        Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
-        apiCalledRef.current = false
-      }
-    }
-
-    callApi()
-  }, [userData])
-
-  // 取消任务的函数
-  const cancelTask = () => {
-    isPageVisibleRef.current = false
-    if (taskIdRef.current) {
-      console.log('Cancelling task:', taskIdRef.current)
-      Network.request({
-        url: '/api/bazi/cancel',
-        method: 'POST',
-        data: { taskId: taskIdRef.current },
-      }).catch(err => {
-        console.error('Failed to cancel task:', err)
-      })
-    }
-  }
-
-  // 页面隐藏时取消任务
-  useDidHide(() => {
-    cancelTask()
-  })
-
-  // 页面卸载时取消任务（navigateBack 会触发 onUnload）
-  useUnload(() => {
-    console.log('Loading page unloading')
-    cancelTask()
-  })
-
-  // 页面显示时重置标志
-  useDidShow(() => {
-    isPageVisibleRef.current = true
-  })
-
   const genderText = userData?.gender === 'male' ? '男' : '女'
+  
   // 基于时间的进度条，30 秒走完
   useEffect(() => {
     const timer = setInterval(() => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000
-      const progress = Math.min((elapsed / 30) * 100, 95) // 最多到 95%，留 5% 给完成
+      const progress = Math.min((elapsed / 30) * 100, 95)
       setProgressValue(progress)
     }, 100)
     return () => clearInterval(timer)
