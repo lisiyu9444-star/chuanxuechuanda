@@ -1,5 +1,5 @@
 import { View, Text } from '@tarojs/components'
-import Taro, { useDidShow, useDidHide } from '@tarojs/taro'
+import Taro, { useDidShow, useDidHide, useUnload } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -81,6 +81,10 @@ const LoadingPage = () => {
     if (!userData || apiCalledRef.current) return
     apiCalledRef.current = true
 
+    // 在请求发起前就生成 taskId，确保即使立即返回也能取消
+    const localTaskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    taskIdRef.current = localTaskId
+
     const callApi = async () => {
       try {
         const res = await Network.request({
@@ -94,22 +98,18 @@ const LoadingPage = () => {
             birthTime: userData.birthTime,
             location: userData.location,
             calendarType: userData.calendarType || 'solar',
+            clientTaskId: localTaskId, // 传递客户端生成的 taskId
           },
         })
         console.log('BaZi API response:', res.data)
 
-        // 保存 taskId 用于取消
-        const result = res.data?.data
-        if (result?.taskId) {
-          taskIdRef.current = result.taskId
-        }
-
         // 检查页面是否仍然可见，避免取消后仍然跳转
         if (!isPageVisibleRef.current) {
-          console.log('Page hidden, skip navigation')
+          console.log('Page hidden/unloaded, skip navigation')
           return
         }
 
+        const result = res.data?.data
         if (result) {
           setProgressValue(100)
           Taro.setStorageSync('baziResult', result)
@@ -130,12 +130,11 @@ const LoadingPage = () => {
     callApi()
   }, [userData])
 
-  // 页面隐藏时取消任务
-  useDidHide(() => {
+  // 取消任务的函数
+  const cancelTask = () => {
     isPageVisibleRef.current = false
-    // 调用后端取消接口
     if (taskIdRef.current) {
-      console.log('Loading page hidden, cancelling task:', taskIdRef.current)
+      console.log('Cancelling task:', taskIdRef.current)
       Network.request({
         url: '/api/bazi/cancel',
         method: 'POST',
@@ -144,6 +143,17 @@ const LoadingPage = () => {
         console.error('Failed to cancel task:', err)
       })
     }
+  }
+
+  // 页面隐藏时取消任务
+  useDidHide(() => {
+    cancelTask()
+  })
+
+  // 页面卸载时取消任务（navigateBack 会触发 onUnload）
+  useUnload(() => {
+    console.log('Loading page unloading')
+    cancelTask()
   })
 
   // 页面显示时重置标志

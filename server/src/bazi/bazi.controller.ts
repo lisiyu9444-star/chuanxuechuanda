@@ -24,6 +24,7 @@ export class BaziController {
       birthTime: string
       location: string
       calendarType?: 'solar' | 'lunar'
+      clientTaskId?: string
     },
     @Req() req,
   ): Promise<{
@@ -47,7 +48,7 @@ export class BaziController {
       dailyXiShen?: string
     }
   }> {
-    const { nickname, gender, birthDate, birthTime, calendarType } = body
+    const { nickname, gender, birthDate, birthTime, calendarType, clientTaskId } = body
 
     // 如果是农历，先转换为阳历
     let solarBirthDate = birthDate
@@ -72,8 +73,8 @@ export class BaziController {
     // 使用 @openfate/bazi-engine 进行专业排盘
     const baziResult = this.baziService.calculateBaZi(solarBirthDate, birthTime, gender)
 
-    // 生成任务 ID 用于取消
-    const taskId = uuidv4()
+    // 使用客户端传递的 taskId，如果没有则生成新的
+    const taskId = clientTaskId || uuidv4()
 
     // 生成穿搭图片
     const forwardHeaders = HeaderUtils.extractForwardHeaders(
