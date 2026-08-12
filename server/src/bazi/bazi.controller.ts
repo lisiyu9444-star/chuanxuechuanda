@@ -115,7 +115,9 @@ export class BaziController {
   async cancelTask(
     @Body() body: { taskId: string },
   ): Promise<{ data: { success: boolean } }> {
+    console.log('[Cancel] Received cancel request for taskId:', body.taskId)
     const success = this.baziService.cancelTask(body.taskId)
+    console.log('[Cancel] Cancel result:', success)
     return { data: { success } }
   }
 

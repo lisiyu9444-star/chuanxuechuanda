@@ -1149,6 +1149,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     if (taskId) {
       abortController = new AbortController()
       this.activeTasks.set(taskId, abortController)
+      console.log('[GenerateImage] Task registered:', taskId, 'Active tasks:', Array.from(this.activeTasks.keys()))
     }
 
     try {
@@ -1176,13 +1177,15 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 
   // 取消任务
   cancelTask(taskId: string): boolean {
+    console.log('[CancelService] Looking for taskId:', taskId, 'Active tasks:', Array.from(this.activeTasks.keys()))
     const controller = this.activeTasks.get(taskId)
     if (controller) {
       controller.abort()
       this.activeTasks.delete(taskId)
-      console.log(`Task ${taskId} cancelled`)
+      console.log(`[CancelService] Task ${taskId} cancelled successfully`)
       return true
     }
+    console.log(`[CancelService] Task ${taskId} not found in active tasks`)
     return false
   }
 }
