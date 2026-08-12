@@ -239,14 +239,6 @@ const ResultPage = () => {
   // Tab 切换处理
   const handleTabChange = (tab: 'flat' | 'tryon') => {
     setActiveTab(tab)
-    // 切换到上身图时，如果还没有生成，则开始生成
-    if (tab === 'tryon' && !tryOnUrl && !tryOnLoading && result) {
-      generateTryOn({
-        imageUrl: result.imageUrl,
-        outfit: result.outfit,
-        gender: result.gender,
-      })
-    }
   }
 
   // 小程序分享配置
