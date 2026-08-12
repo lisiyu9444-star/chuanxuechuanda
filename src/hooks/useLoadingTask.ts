@@ -90,16 +90,21 @@ export function useLoadingTask<TParams = any, TResult = any>(
 
   // 取消任务
   const cancel = useCallback(() => {
+    console.log('[useLoadingTask] Cancel called, isPageVisible:', isPageVisibleRef.current, 'taskId:', taskIdRef.current)
     isPageVisibleRef.current = false
     if (taskIdRef.current) {
-      console.log('[useLoadingTask] Cancelling task:', taskIdRef.current)
+      console.log('[useLoadingTask] Sending cancel request to backend, taskId:', taskIdRef.current)
       Network.request({
         url: '/api/bazi/cancel',
         method: 'POST',
         data: { taskId: taskIdRef.current },
+      }).then(res => {
+        console.log('[useLoadingTask] Cancel response:', res.data)
       }).catch(err => {
         console.error('[useLoadingTask] Failed to cancel task:', err)
       })
+    } else {
+      console.log('[useLoadingTask] No taskId to cancel')
     }
   }, [])
 
@@ -112,11 +117,20 @@ export function useLoadingTask<TParams = any, TResult = any>(
     taskIdRef.current = localTaskId
     isPageVisibleRef.current = true
     
+    console.log('[useLoadingTask] Starting execute, taskId:', localTaskId)
+    
     setLoading(true)
     setError(null)
     executedRef.current = true
 
     try {
+      // 再次检查页面是否可见（防止在请求发起前就返回）
+      if (!isPageVisibleRef.current) {
+        console.log('[useLoadingTask] Page already hidden before request, skip')
+        return
+      }
+
+      console.log('[useLoadingTask] Sending request to:', url)
       const res = await Network.request({
         url,
         method,
@@ -127,11 +141,11 @@ export function useLoadingTask<TParams = any, TResult = any>(
         },
       })
       
-      console.log('[useLoadingTask] API response:', res.data)
+      console.log('[useLoadingTask] API response received:', res.data)
 
       // 检查页面是否仍然可见
       if (!isPageVisibleRef.current) {
-        console.log('[useLoadingTask] Page hidden/unloaded, skip callback')
+        console.log('[useLoadingTask] Page hidden/unloaded after response, skip callback')
         return
       }
 

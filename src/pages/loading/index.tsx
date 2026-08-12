@@ -56,7 +56,7 @@ const LoadingPage = () => {
     method: 'POST',
     params: userData || undefined,
     timeout: 120000,
-    autoExecute: false, // 手动控制执行时机
+    autoExecute: true, // userData 准备好后自动执行
     onSuccess: (data) => {
       console.log('BaZi calculation success:', data)
       setProgressValue(100)
@@ -98,15 +98,6 @@ const LoadingPage = () => {
     }, 7000)
     return () => clearTimeout(timer)
   })
-
-  // 当 userData 准备好后执行任务
-  useEffect(() => {
-    if (userData) {
-      // useLoadingTask 会自动执行（autoExecute: true 时）
-      // 这里我们设置为 false，所以需要手动触发
-      // 但由于 params 变化会触发 execute，所以不需要手动调用
-    }
-  }, [userData])
 
   // Step animation
   useEffect(() => {
