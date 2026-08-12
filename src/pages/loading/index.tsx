@@ -153,7 +153,7 @@ const LoadingPage = () => {
 
         {/* Current Step Text */}
         <Text className="block text-base font-medium text-gray-900 mb-1">
-          绘画中...
+          勾画中...
         </Text>
 
         {/* Progress Bar */}
