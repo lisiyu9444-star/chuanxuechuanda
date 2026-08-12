@@ -33,7 +33,7 @@ const LoadingPage = () => {
   const [features, setFeatures] = useState({ showLoadingSteps: true })
   const { showLoadingSteps } = features
   const apiCalledRef = useRef(false)
-  const abortControllerRef = useRef<AbortController | null>(null)
+  const isPageVisibleRef = useRef(true)
 
   useDidShow(() => {
     const data = Taro.getStorageSync('userData')
@@ -80,16 +80,12 @@ const LoadingPage = () => {
     if (!userData || apiCalledRef.current) return
     apiCalledRef.current = true
 
-    // 创建 AbortController 用于取消请求
-    abortControllerRef.current = new AbortController()
-
     const callApi = async () => {
       try {
         const res = await Network.request({
           url: '/api/bazi/calculate',
           method: 'POST',
-          timeout: 120000, // 120 秒超时，AI 生图需要较长时间
-          signal: abortControllerRef.current?.signal,
+          timeout: 120000,
           data: {
             nickname: userData.nickname,
             gender: userData.gender,
@@ -101,6 +97,12 @@ const LoadingPage = () => {
         })
         console.log('BaZi API response:', res.data)
 
+        // 检查页面是否仍然可见，避免取消后仍然跳转
+        if (!isPageVisibleRef.current) {
+          console.log('Page hidden, skip navigation')
+          return
+        }
+
         const result = res.data?.data
         if (result) {
           setProgressValue(100)
@@ -109,7 +111,7 @@ const LoadingPage = () => {
         }
       } catch (error: any) {
         // 判断是否为取消操作
-        if (error?.errMsg?.includes('abort') || error?.name === 'AbortError') {
+        if (error?.errMsg?.includes('abort') || error?.errMsg?.includes('cancel')) {
           console.log('Request cancelled by user')
           return // 不显示错误提示
         }
@@ -122,12 +124,15 @@ const LoadingPage = () => {
     callApi()
   }, [userData])
 
-  // 页面隐藏时取消请求
+  // 页面隐藏时设置标志位
   useDidHide(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-      console.log('Loading page hidden, request cancelled')
-    }
+    isPageVisibleRef.current = false
+    console.log('Loading page hidden, will skip navigation')
+  })
+
+  // 页面显示时重置标志
+  useDidShow(() => {
+    isPageVisibleRef.current = true
   })
 
   const genderText = userData?.gender === 'male' ? '男' : '女'
