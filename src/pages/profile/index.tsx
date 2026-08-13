@@ -143,7 +143,6 @@ export default function ProfilePage() {
                             </Text>
                           </View>
                         </View>
-                        <Text className="block text-sm text-gray-600 mb-2">{record.outfit?.style}</Text>
                         <View className="flex flex-wrap gap-2 mb-3">
                           {record.outfit?.colors?.map((color, index) => (
                             <View
