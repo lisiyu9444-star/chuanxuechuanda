@@ -32,6 +32,15 @@ interface BaZiResult {
   dailyXiShen?: string
 }
 
+interface HistoryRecord extends BaZiResult {
+  id: string
+  birthDate: string
+  birthTime: string
+  city: string
+  tryOnUrl: string
+  createdAt: number
+}
+
 const LOADING_STEPS = [
   '正在排列四柱...',
   '正在推演旺缺...',
@@ -48,6 +57,30 @@ const LoadingPage = () => {
   const [showTimeout, setShowTimeout] = useState(false)
   const [timeoutDismissed, setTimeoutDismissed] = useState(false)
   const [features, setFeatures] = useState({ showLoadingSteps: true })
+
+  const saveHistoryRecord = (data: BaZiResult) => {
+    try {
+      const records: HistoryRecord[] = Taro.getStorageSync('outfit_history') || []
+      const storedUserData = Taro.getStorageSync('userData')
+      const newRecord: HistoryRecord = {
+        ...data,
+        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        birthDate: storedUserData?.birthDate || '',
+        birthTime: storedUserData?.birthTime || '',
+        city: storedUserData?.location || '',
+        tryOnUrl: '',
+        createdAt: Date.now(),
+      }
+      const filtered = records.filter(
+        (item) => Date.now() - item.createdAt < 30 * 24 * 60 * 60 * 1000
+      )
+      const updated = [newRecord, ...filtered].slice(0, 100)
+      Taro.setStorageSync('outfit_history', updated)
+    } catch (e) {
+      console.error('Save history failed:', e)
+    }
+  }
+
   const { showLoadingSteps } = features
 
   // 使用通用 loading task hook
@@ -59,6 +92,7 @@ const LoadingPage = () => {
     autoExecute: true, // userData 准备好后自动执行
     onSuccess: (data) => {
       console.log('BaZi calculation success:', data)
+      saveHistoryRecord(data)
       setProgressValue(100)
       Taro.setStorageSync('baziResult', data)
       Taro.redirectTo({ url: '/pages/result/index' })

@@ -71,6 +71,19 @@ const ResultPage = () => {
   // 防止分享保存重复触发
   const isSavingRef = useRef(false)
 
+  // 更新历史记录中的上身图 URL
+  const updateHistoryTryOnUrl = (imageUrl: string, newTryOnUrl: string) => {
+    try {
+      const records: any[] = Taro.getStorageSync('outfit_history') || []
+      const updated = records.map((item) =>
+        item.imageUrl === imageUrl ? { ...item, tryOnUrl: newTryOnUrl } : item
+      )
+      Taro.setStorageSync('outfit_history', updated)
+    } catch (e) {
+      console.error('Update history tryOnUrl failed:', e)
+    }
+  }
+
   // 上身图生成任务（使用 useLoadingTask 管理）
   const {
     execute: generateTryOn,
@@ -83,6 +96,9 @@ const ResultPage = () => {
       console.log('Try-on success:', data)
       if (data?.tryOnUrl) {
         setTryOnUrl(data.tryOnUrl)
+        if (result?.imageUrl) {
+          updateHistoryTryOnUrl(result.imageUrl, data.tryOnUrl)
+        }
       } else {
         Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
       }
@@ -142,6 +158,9 @@ const ResultPage = () => {
       const data = Taro.getStorageSync('baziResult')
       if (data) {
         setResult(data)
+        if (data.tryOnUrl) {
+          setTryOnUrl(data.tryOnUrl)
+        }
       }
     }
   })
