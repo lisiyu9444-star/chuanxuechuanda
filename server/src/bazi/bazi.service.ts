@@ -880,7 +880,7 @@ export class BaziService {
       { desc: '刺绣手提包（丝质面料）', style: 'oriental' },
       { desc: '盘扣斜挎包（中式纹样）', style: 'oriental' },
       { desc: '竹编手提篮（手工编织）', style: 'oriental' },
-      { desc: '流苏手拿包（丝质穗饰）', style: 'oriental' },
+      { desc: '简约手拿包（磁扣翻盖款）', style: 'oriental' },
       { desc: '水墨印花布包（棉麻材质）', style: 'oriental' },
     ],
     accessories: [
@@ -906,7 +906,7 @@ export class BaziService {
       { desc: '玉佩挂件（翡翠雕刻款）', style: 'oriental' },
       { desc: '盘扣手链（木质雕刻）', style: 'oriental' },
       { desc: '中国结挂件（红绳编织）', style: 'oriental' },
-      { desc: '水墨纹丝巾（方形系法）', style: 'oriental' },
+      { desc: '棉麻手帕（口袋折叠款）', style: 'oriental' },
       { desc: '竹节手镯（天然竹材）', style: 'oriental' },
     ],
   }
