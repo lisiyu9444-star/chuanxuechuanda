@@ -110,6 +110,12 @@ export function useLoadingTask<TParams = any, TResult = any>(
 
   // 执行任务
   const execute = useCallback(async (overrideParams?: TParams) => {
+    // 防止重复执行
+    if (executedRef.current) {
+      console.debug('[useLoadingTask] Already executed, skip')
+      return
+    }
+
     const currentParams = overrideParams || params
     
     // 生成 taskId
@@ -184,6 +190,10 @@ export function useLoadingTask<TParams = any, TResult = any>(
     console.debug('[useLoadingTask] Page shown, resetting executedRef')
     executedRef.current = false
     isPageVisibleRef.current = true
+    // 若 params 已就绪且需要自动执行，主动触发一次，防止依赖未变化导致 useEffect 跳过
+    if (autoExecute && params) {
+      execute()
+    }
   })
 
   // 页面隐藏时取消任务

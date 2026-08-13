@@ -60,7 +60,8 @@ const LoadingPage = () => {
 
   const saveHistoryRecord = (data: BaZiResult) => {
     try {
-      const records: HistoryRecord[] = Taro.getStorageSync('outfit_history') || []
+      const raw = Taro.getStorageSync('outfit_history')
+      const records = Array.isArray(raw) ? (raw as HistoryRecord[]) : []
       const storedUserData = Taro.getStorageSync('userData')
       const newRecord: HistoryRecord = {
         ...data,
@@ -76,8 +77,10 @@ const LoadingPage = () => {
       )
       const updated = [newRecord, ...filtered].slice(0, 100)
       Taro.setStorageSync('outfit_history', updated)
+      console.log('[saveHistoryRecord] saved, count:', updated.length, 'newId:', newRecord.id)
     } catch (e) {
-      console.error('Save history failed:', e)
+      console.error('[saveHistoryRecord] failed:', e)
+      Taro.showToast({ title: '历史记录保存失败', icon: 'none' })
     }
   }
 
