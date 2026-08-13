@@ -384,23 +384,27 @@ const ResultPage = () => {
                 </Text>
               </View>
             ) : (
-              <View
-                className="w-full h-full flex flex-col items-center justify-center"
-                onClick={() => generateTryOn({
-                  imageUrl: result.imageUrl,
-                  outfit: result.outfit,
-                  gender: result.gender,
-                })}
-              >
-                <View className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mb-4">
+              <View className="w-full h-full flex flex-col items-center justify-center px-6">
+                <View className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                   <Lock size={28} color="#6b7280" />
                 </View>
-                <Text className="block text-gray-700 text-base font-medium mb-2">
-                  点击生成上身试穿图
+                <Text className="block text-gray-700 text-base font-semibold mb-2">
+                  上身试穿图未生成
                 </Text>
-                <Text className="block text-gray-400 text-sm text-center px-8">
-                  基于平铺图生成模特上身效果{'\n'}约需等待30s左右
+                <Text className="block text-gray-400 text-sm text-center mb-6 px-4">
+                  基于平铺图生成模特上身效果，约需等待30秒
                 </Text>
+                <Button
+                  variant="outline"
+                  className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700"
+                  onClick={() => generateTryOn({
+                    imageUrl: result.imageUrl,
+                    outfit: result.outfit,
+                    gender: result.gender,
+                  })}
+                >
+                  <Text className="block text-sm font-medium">点击生成上身试穿图</Text>
+                </Button>
               </View>
             )}
           </View>

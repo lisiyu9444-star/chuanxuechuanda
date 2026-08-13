@@ -165,35 +165,35 @@ const LoadingPage = () => {
         <View className="mb-5">
           <Card className="bg-gray-50 border-gray-100">
             <CardContent className="p-4">
-              <Text className="block text-sm font-medium text-black mb-3">
+              <Text className="block text-base font-semibold text-black mb-3">
                 个人信息
               </Text>
-              <View className="flex flex-col gap-2">
+              <View className="flex flex-col gap-3">
                 <View className="flex justify-between">
-                  <Text className="text-gray-400 text-sm">昵称</Text>
-                  <Text className="text-gray-700 text-sm">
+                  <Text className="text-xs text-gray-500">昵称</Text>
+                  <Text className="text-sm text-gray-900">
                     {userData.nickname}
                   </Text>
                 </View>
                 <View className="flex justify-between">
-                  <Text className="text-gray-400 text-sm">性别</Text>
-                  <Text className="text-gray-700 text-sm">{genderText}</Text>
+                  <Text className="text-xs text-gray-500">性别</Text>
+                  <Text className="text-sm text-gray-900">{genderText}</Text>
                 </View>
                 <View className="flex justify-between">
-                  <Text className="text-gray-400 text-sm">出生日期</Text>
-                  <Text className="text-gray-700 text-sm">
+                  <Text className="text-xs text-gray-500">出生日期</Text>
+                  <Text className="text-sm text-gray-900">
                     {userData.birthDate}
                   </Text>
                 </View>
                 <View className="flex justify-between">
-                  <Text className="text-gray-400 text-sm">出生时辰</Text>
-                  <Text className="text-gray-700 text-sm">
+                  <Text className="text-xs text-gray-500">出生时辰</Text>
+                  <Text className="text-sm text-gray-900">
                     {userData.birthTime}
                   </Text>
                 </View>
                 <View className="flex justify-between">
-                  <Text className="text-gray-400 text-sm">所在城市</Text>
-                  <Text className="text-gray-700 text-sm">
+                  <Text className="text-xs text-gray-500">所在城市</Text>
+                  <Text className="text-sm text-gray-900">
                     {userData.location}
                   </Text>
                 </View>

@@ -127,12 +127,12 @@ const IndexPage = () => {
   }
 
   return (
-    <View className="min-h-full bg-white px-6 py-6">
+    <View className="min-h-full bg-white px-6 pt-6 pb-24">
       {/* Header */}
       <View className="flex flex-col items-center pt-8 pb-8">
         <Image src={logoPng} className="w-24 h-24 mb-3" mode="aspectFit" />
         {features.showHomeSubtitle && (
-          <Text className="block text-sm text-gray-400">
+          <Text className="block text-xs text-gray-400">
             填写个人信息 · 推荐每日穿搭
           </Text>
         )}
@@ -142,7 +142,7 @@ const IndexPage = () => {
       <View className="flex flex-col gap-5">
         {/* Nickname */}
         <View>
-          <Text className="block text-sm text-gray-500 mb-2">昵称</Text>
+          <Text className="block text-xs text-gray-500 mb-2">昵称</Text>
           <View className="bg-gray-50 rounded-xl px-4 py-3">
             <Input
               className="w-full bg-transparent border-0 text-gray-900 placeholder:text-gray-400"
@@ -156,7 +156,7 @@ const IndexPage = () => {
 
         {/* Gender */}
         <View>
-          <Text className="block text-sm text-gray-500 mb-2">性别</Text>
+          <Text className="block text-xs text-gray-500 mb-2">性别</Text>
           <View className="flex gap-3">
             <View
               className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
@@ -185,7 +185,7 @@ const IndexPage = () => {
 
         {/* Calendar Type + Birth Date */}
         <View>
-          <Text className="block text-sm text-gray-500 mb-2">出生日期</Text>
+          <Text className="block text-xs text-gray-500 mb-2">出生日期</Text>
           <View className="flex gap-3 mb-3">
             <View
               className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
@@ -226,7 +226,7 @@ const IndexPage = () => {
 
         {/* Birth Time */}
         <View>
-          <Text className="block text-sm text-gray-500 mb-2">出生时辰</Text>
+          <Text className="block text-xs text-gray-500 mb-2">出生时辰</Text>
           <Picker
             mode="selector"
             range={SHICHEN_OPTIONS}
@@ -244,7 +244,7 @@ const IndexPage = () => {
 
         {/* City */}
         <View>
-          <Text className="block text-sm text-gray-500 mb-2">出生城市</Text>
+          <Text className="block text-xs text-gray-500 mb-2">出生城市</Text>
           <Picker
             mode="selector"
             range={CITIES}
