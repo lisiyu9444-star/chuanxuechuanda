@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Trash2, Clock, Shirt } from 'lucide-react-taro'
@@ -166,16 +165,13 @@ export default function ProfilePage() {
 
                     <View className="px-4 pb-4">
                       <AlertDialog>
-                        {/* @ts-expect-error asChild not in Taro View props */}
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-red-500 border-red-200 hover:bg-red-50"
-                          >
-                            <Trash2 size={16} color="#ef4444" />
-                            <Text className="block ml-1">删除记录</Text>
-                          </Button>
+                        <AlertDialogTrigger
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-red-500 border-red-200 hover:bg-red-50 flex items-center justify-center"
+                        >
+                          <Trash2 size={16} color="#ef4444" />
+                          <Text className="block ml-1">删除记录</Text>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
@@ -189,21 +185,15 @@ export default function ProfilePage() {
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            {/* @ts-expect-error asChild not in Taro View props */}
-                            <AlertDialogCancel asChild>
-                              <Button variant="outline" size="sm">
-                                <Text className="block">取消</Text>
-                              </Button>
+                            <AlertDialogCancel variant="outline" size="sm">
+                              <Text className="block">取消</Text>
                             </AlertDialogCancel>
-                            {/* @ts-expect-error asChild not in Taro View props */}
-                            <AlertDialogAction asChild>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDelete(record.id)}
-                              >
-                                <Text className="block">删除</Text>
-                              </Button>
+                            <AlertDialogAction
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(record.id)}
+                            >
+                              <Text className="block">删除</Text>
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

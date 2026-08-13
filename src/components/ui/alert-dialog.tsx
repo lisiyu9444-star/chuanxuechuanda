@@ -63,13 +63,13 @@ const AlertDialog = ({
 
 const AlertDialogTrigger = React.forwardRef<
     React.ElementRef<typeof View>,
-    React.ComponentPropsWithoutRef<typeof View>
->(({ className, children, ...props }, ref) => {
+    React.ComponentPropsWithoutRef<typeof View> & VariantProps<typeof buttonVariants>
+>(({ className, variant, size, children, ...props }, ref) => {
     const context = React.useContext(AlertDialogContext)
     return (
         <View
           ref={ref}
-          className={className}
+          className={cn(buttonVariants({ variant, size }), className)}
           onClick={(e) => {
                 e.stopPropagation()
                 context?.onOpenChange?.(true)
