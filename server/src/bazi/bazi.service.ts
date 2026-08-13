@@ -366,7 +366,7 @@ export class BaziService {
 
     const chart = calculateBaziChart({
       year, month, day, hour, minute: 0,
-      gender: (gender === 'female' ? 'female' : 'male') as const,
+      gender: 'male' as const,
     })
 
     const pillarKeys = ['year', 'month', 'day', 'hour'] as const
@@ -875,8 +875,12 @@ export class BaziService {
       { desc: '尼龙斜挎包（轻便运动风）', style: 'casual' },
       { desc: '皮质腰包（简约窄版）', style: 'casual' },
       { desc: '帆布单肩包（文艺复古）', style: 'casual' },
+      { desc: '编织手提包（手工拉菲草）', style: 'casual' },
       // oriental（东方风）
+      { desc: '刺绣手提包（丝质面料）', style: 'oriental' },
       { desc: '盘扣斜挎包（中式纹样）', style: 'oriental' },
+      { desc: '竹编手提篮（手工编织）', style: 'oriental' },
+      { desc: '流苏手拿包（丝质穗饰）', style: 'oriental' },
       { desc: '水墨印花布包（棉麻材质）', style: 'oriental' },
     ],
     accessories: [
@@ -916,7 +920,6 @@ export class BaziService {
     outerwear: string; bottom: string; shoes: string; bag: string; accessories: string; style: string
   } {
     const pool = isFemale ? BaziService.FEMALE_ITEMS : BaziService.MALE_ITEMS
-    console.log('[selectOutfitItems] isFemale:', isFemale, 'pool:', isFemale ? 'FEMALE_ITEMS' : 'MALE_ITEMS')
     const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)]
 
     // Step 1: 随机选外套，确定风格锚点
@@ -977,7 +980,6 @@ export class BaziService {
     const xiShen = xiShenElement || analysis?.assistantXiShen || '白色'
     const xiShenColor = ELEMENT_MAIN_COLOR[xiShen] || '白色'
     const isFemale = gender === 'female'
-    console.log('[generateOutfit] gender:', gender, 'isFemale:', isFemale, 'genderText:', genderText)
 
     // 颜色冲突对（互补色/对比色）
     const COLOR_CONFLICTS = [
@@ -1045,7 +1047,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 商业摄影风格，画面清晰，焦点准确。
 
 【反向提示词】
-不要出现假人模特、不要人脸、不要杂乱背景、不要褶皱堆叠、不要平淡无阴影的顶光、不要透视畸变、不要过度饱和的廉价色彩${isFemale ? '' : '、不要女性化单品、不要裙装、不要高跟鞋、不要手提包、不要女士凉鞋、不要编织女鞋、不要丝巾、不要首饰'}。`
+不要出现假人模特、不要人脸、不要杂乱背景、不要褶皱堆叠、不要平淡无阴影的顶光、不要透视畸变、不要过度饱和的廉价色彩${isFemale ? '' : '、不要女性化单品、不要裙装、不要高跟鞋'}。`
 
     return { style, colors, description, prompt, backgroundColor: bgColor, season, bottomColor, colorRule }
   }
