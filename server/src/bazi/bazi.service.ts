@@ -738,7 +738,7 @@ export class BaziService {
       { desc: '刺绣手提包（丝质面料）', style: 'oriental' },
       { desc: '盘扣斜挎包（中式纹样）', style: 'oriental' },
       { desc: '竹编手提篮（手工编织）', style: 'oriental' },
-      { desc: '流苏手拿包（丝质穗饰）', style: 'oriental' },
+      { desc: '简约手拿包（磁扣翻盖款）', style: 'oriental' },
       { desc: '水墨印花布包（棉麻材质）', style: 'oriental' },
     ],
     accessories: [
@@ -767,7 +767,7 @@ export class BaziService {
       { desc: '流苏耳环（长款丝线款）', style: 'oriental' },
       { desc: '盘扣发簪（木质雕刻款）', style: 'oriental' },
       { desc: '中国结手链（红绳编织）', style: 'oriental' },
-      { desc: '水墨纹丝巾（方形系法）', style: 'oriental' },
+      { desc: '棉麻手帕（口袋折叠款）', style: 'oriental' },
     ],
   }
 
@@ -839,7 +839,7 @@ export class BaziService {
       // elegant（优雅风）
       { desc: '乐福鞋（马衔扣装饰）', style: 'elegant' },
       { desc: '切尔西靴（圆头侧拉链）', style: 'elegant' },
-      { desc: '麂皮乐福鞋（流苏装饰）', style: 'elegant' },
+      { desc: '麂皮乐福鞋（简约无流苏款）', style: 'elegant' },
       { desc: '皮质短靴（圆头平底款）', style: 'elegant' },
       { desc: '编织皮鞋（手工缝线款）', style: 'elegant' },
       // casual（休闲风）
@@ -895,7 +895,7 @@ export class BaziService {
       { desc: '银质戒指（极简宽版）', style: 'elegant' },
       { desc: '丝质口袋巾（花卉图案）', style: 'elegant' },
       { desc: '金属手镯（开口设计）', style: 'elegant' },
-      { desc: '真丝围巾（小方巾系法）', style: 'elegant' },
+      { desc: '皮质手环（简约宽版）', style: 'elegant' },
       // casual（休闲风）
       { desc: '飞行员墨镜（金属框架）', style: 'casual' },
       { desc: '皮质手链（编织多圈款）', style: 'casual' },
