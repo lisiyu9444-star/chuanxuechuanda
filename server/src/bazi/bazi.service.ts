@@ -35,6 +35,7 @@ export interface OutfitRecommendation {
   prompt: string
   backgroundColor: string
   season: string
+  seasonMaterial: string
   bottomColor: string
   colorRule: string
 }
@@ -231,6 +232,26 @@ function getCurrentSeason(): string {
   if (month >= 6 && month <= 8) return '夏季'
   if (month >= 9 && month <= 11) return '秋季'
   return '冬季'
+}
+
+function getSeasonalMaterial(season: string, gender: string): string {
+  const map: Record<string, Record<string, string>> = {
+    male: {
+      '春季': '棉麻/精纺棉/轻薄针织',
+      '夏季': '亚麻/精梳棉/透气府绸/轻薄丝麻',
+      '秋季': '棉麻/灯芯绒/薄呢/法兰绒',
+      '冬季': '羊毛/羊绒/粗呢/厚棉/灯芯绒',
+    },
+    female: {
+      '春季': '棉麻/雪纺/薄针织',
+      '夏季': '亚麻/真丝/雪纺/薄纱/天丝',
+      '秋季': '棉麻/灯芯绒/薄呢/针织',
+      '冬季': '羊毛/羊绒/粗呢/厚棉/皮草',
+    },
+  }
+
+  const genderMap = map[gender] || map.female
+  return genderMap[season] || '棉麻'
 }
 
 /** 获取当前日期的干支历月日 */
@@ -972,6 +993,7 @@ export class BaziService {
     const style = OUTFIT_STYLES[element] || '简约百搭风'
     const bgColor = pickBackgroundColor(element)
     const season = getCurrentSeason()
+    const seasonMaterial = getSeasonalMaterial(season, gender)
     const mainColor = ELEMENT_MAIN_COLOR[element] || '白色'
     const bottomColorResult = generateBottomColor(element)
     const bottomColor = bottomColorResult.color
@@ -1049,7 +1071,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 【反向提示词】
 不要出现假人模特、不要人脸、不要杂乱背景、不要褶皱堆叠、不要平淡无阴影的顶光、不要透视畸变、不要过度饱和的廉价色彩${isFemale ? '' : '、不要女性化单品、不要裙装、不要高跟鞋'}。`
 
-    return { style, colors, description, prompt, backgroundColor: bgColor, season, bottomColor, colorRule }
+    return { style, colors, description, prompt, backgroundColor: bgColor, season, seasonMaterial, bottomColor, colorRule }
   }
 
   // ========== Image Generation ==========
