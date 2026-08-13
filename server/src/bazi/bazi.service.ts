@@ -735,7 +735,7 @@ export class BaziService {
       { desc: '皮质双肩包（迷你尺寸）', style: 'casual' },
       { desc: '半月包（弧形单肩设计）', style: 'casual' },
       // oriental（东方风）
-      { desc: '刺绣手提包（丝质面料）', style: 'oriental' },
+      { desc: '皮质斜挎包（简约窄版）', style: 'oriental' },
       { desc: '盘扣斜挎包（中式纹样）', style: 'oriental' },
       { desc: '竹编手提篮（手工编织）', style: 'oriental' },
       { desc: '简约手拿包（磁扣翻盖款）', style: 'oriental' },
@@ -851,9 +851,9 @@ export class BaziService {
       // oriental（东方风）
       { desc: '老北京布鞋（圆头平底款）', style: 'oriental' },
       { desc: '千层底布鞋（手工纳底）', style: 'oriental' },
-      { desc: '盘扣布鞋（丝质面料）', style: 'oriental' },
-      { desc: '刺绣布鞋（中式纹样）', style: 'oriental' },
-      { desc: '竹编凉鞋（手工编织款）', style: 'oriental' },
+      { desc: '棉麻布鞋（简约直筒款）', style: 'oriental' },
+      { desc: '皮质凉鞋（编织宽条款）', style: 'oriental' },
+      { desc: '亚麻拖鞋（居家休闲款）', style: 'oriental' },
     ],
     bag: [
       // formal（正式风）
@@ -905,9 +905,9 @@ export class BaziService {
       // oriental（东方风）
       { desc: '玉佩挂件（翡翠雕刻款）', style: 'oriental' },
       { desc: '盘扣手链（木质雕刻）', style: 'oriental' },
-      { desc: '中国结挂件（红绳编织）', style: 'oriental' },
       { desc: '棉麻手帕（口袋折叠款）', style: 'oriental' },
       { desc: '竹节手镯（天然竹材）', style: 'oriental' },
+      { desc: '菩提手串（男士宽珠款）', style: 'oriental' },
     ],
   }
 
