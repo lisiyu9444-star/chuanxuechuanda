@@ -178,17 +178,27 @@ const LoadingPage = () => {
       </View>
 
       {/* Animation Area */}
-      <View className="flex flex-col items-center pt-10 pb-6">
-        {/* Clean loading animation - bouncing dots */}
-        <View className="flex items-center gap-2 mb-6">
-          <View className="w-3 h-3 rounded-full bg-gray-500 animate-bounce-dot" style={{ animationDelay: '0ms' }} />
-          <View className="w-3 h-3 rounded-full bg-gray-700 animate-bounce-dot" style={{ animationDelay: '150ms' }} />
-          <View className="w-3 h-3 rounded-full bg-gray-700 animate-bounce-dot" style={{ animationDelay: '300ms' }} />
+      <View className="flex flex-col items-center pt-8 pb-6">
+        {/* 五行流动动画 */}
+        <View className="wuxing-orbit-container mb-6">
+          <View className="wuxing-orbit-ring" />
+          <View className="wuxing-core-ring" />
+          <View className="wuxing-core">
+            <Text className="block text-xs font-medium text-gray-600">五行</Text>
+          </View>
+          <View className="wuxing-dot wuxing-dot-wood" />
+          <View className="wuxing-dot wuxing-dot-fire" />
+          <View className="wuxing-dot wuxing-dot-earth" />
+          <View className="wuxing-dot wuxing-dot-metal" />
+          <View className="wuxing-dot wuxing-dot-water" />
         </View>
 
         {/* Current Step Text */}
         <Text className="block text-base font-medium text-gray-900 mb-1">
           勾画中...
+        </Text>
+        <Text className="block text-sm text-gray-500">
+          {LOADING_STEPS[currentStep]}
         </Text>
 
         {/* Progress Bar */}
