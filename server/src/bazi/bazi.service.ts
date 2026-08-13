@@ -1049,8 +1049,8 @@ export class BaziService {
 采用 ${bgColor} 的平整细腻亚麻纹理背景布，背景布完全平铺无褶皱，营造极简高级画布感。
 
 【主体穿搭 - 主色=用神】
-核心单品为 ${mainColor} 的棉麻${items.outerwear}，搭配 ${bottomColor} 的棉麻${items.bottom}，
-面料需呈现清晰的天然肌理（哑光棉麻质感）。
+核心单品为 ${mainColor} 的${seasonMaterial}${items.outerwear}，搭配 ${bottomColor} 的${seasonMaterial}${items.bottom}，
+面料需呈现清晰的高品质面料肌理，符合${season}穿着场景。
 
 【辅助单品 - 辅色=喜神】
 配饰部分包含一只 ${accessoryColor} 的 ${items.bag} 和一双 ${accessoryColor} 的 ${items.shoes}，放置于服装右下方。
