@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  BadRequestException,
 } from '@nestjs/common'
 import { eq } from 'drizzle-orm'
 import { db } from '../storage/database/db'
@@ -33,6 +34,10 @@ export class ShareController {
     const shareId = `share_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     const now = Date.now()
     const expiresAt = now + 180 * 24 * 60 * 60 * 1000
+
+    if (!body.result) {
+      throw new BadRequestException('Result is required')
+    }
 
     const shareData = {
       id: shareId,
@@ -63,6 +68,10 @@ export class ShareController {
   ) {
     const now = Date.now()
     const expiresAt = now + 180 * 24 * 60 * 60 * 1000
+
+    if (!body.result) {
+      throw new BadRequestException('result is required')
+    }
 
     const updateData = {
       nickname: body.nickname,
@@ -98,7 +107,12 @@ export class ShareController {
         return { expired: true }
       }
 
-      const result = JSON.parse(share.result)
+      let result
+      try {
+        result = JSON.parse(share.result || '{}')
+      } catch {
+        result = {}
+      }
 
       return {
         result: {

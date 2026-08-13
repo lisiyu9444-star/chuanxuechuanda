@@ -1,6 +1,6 @@
 import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Share2, RefreshCw, Lock, Loader } from 'lucide-react-taro'
@@ -68,6 +68,8 @@ const ResultPage = () => {
   const [showBaZiContent, setShowBaZiContent] = useState(true)
   // 分享 ID（用于朋友圈分享）
   const [shareId, setShareId] = useState('')
+  // 防止分享保存重复触发
+  const isSavingRef = useRef(false)
 
   // 上身图生成任务（使用 useLoadingTask 管理）
   const {
@@ -146,8 +148,9 @@ const ResultPage = () => {
 
   // 保存/更新分享数据到服务器
   const saveShareData = async (currentTryOnUrl?: string) => {
-    if (!result) return
+    if (!result || isSavingRef.current) return
 
+    isSavingRef.current = true
     try {
       const shareData = {
         nickname: result.nickname || '',
@@ -178,6 +181,8 @@ const ResultPage = () => {
       }
     } catch (err) {
       console.error('Failed to save/update share data:', err)
+    } finally {
+      isSavingRef.current = false
     }
   }
 
@@ -274,8 +279,7 @@ const ResultPage = () => {
   }, [])
 
   if (!result) {
-
-  return (
+    return (
       <View className="min-h-full bg-white flex items-center justify-center">
         <Text className="text-gray-400">加载中...</Text>
       </View>
