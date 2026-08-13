@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Taro, { useDidHide, useUnload } from '@tarojs/taro'
+import Taro, { useDidHide, useDidShow, useUnload } from '@tarojs/taro'
 import { Network } from '@/network'
 
 interface UseLoadingTaskOptions<TParams, TResult> {
@@ -178,6 +178,13 @@ export function useLoadingTask<TParams = any, TResult = any>(
     isPageVisibleRef.current = true
     executedRef.current = false
   }, [])
+
+  // 页面显示时重置状态（解决页面缓存导致的参数不更新问题）
+  useDidShow(() => {
+    console.log('[useLoadingTask] Page shown, resetting executedRef')
+    executedRef.current = false
+    isPageVisibleRef.current = true
+  })
 
   // 页面隐藏时取消任务
   useDidHide(() => {
