@@ -183,9 +183,7 @@ const LoadingPage = () => {
         <View className="wuxing-orbit-container mb-6">
           <View className="wuxing-orbit-ring" />
           <View className="wuxing-core-ring" />
-          <View className="wuxing-core">
-            <Text className="block text-xs font-medium text-gray-600">五行</Text>
-          </View>
+          <View className="wuxing-core" />
           <View className="wuxing-dot wuxing-dot-wood" />
           <View className="wuxing-dot wuxing-dot-fire" />
           <View className="wuxing-dot wuxing-dot-earth" />

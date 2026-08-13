@@ -51,11 +51,9 @@
   margin-top: -32px;
   margin-left: -32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  background: radial-gradient(circle at 30% 30%, #d8b4fe 0%, #a855f7 45%, #7c3aed 100%);
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.35), inset 0 0 20px rgba(255, 255, 255, 0.25);
   animation: wuxing-core-breathe 2.4s ease-in-out infinite;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .wuxing-core-ring {
@@ -67,7 +65,7 @@
   margin-top: -44px;
   margin-left: -44px;
   border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(168, 85, 247, 0.15);
   animation: wuxing-pulse 2.4s ease-in-out infinite;
 }
 
