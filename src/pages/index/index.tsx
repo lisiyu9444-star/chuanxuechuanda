@@ -90,15 +90,24 @@ const IndexPage = () => {
   })
 
   const handleSubmit = () => {
-    if (!nickname.trim()) {
+    const trimmedNickname = nickname.trim()
+    if (!trimmedNickname) {
       Taro.showToast({ title: '请输入昵称', icon: 'none' })
+      return
+    }
+    if (trimmedNickname.length > 20) {
+      Taro.showToast({ title: '昵称最多 20 个字符', icon: 'none' })
+      return
+    }
+    if (cityIndex < 0 || cityIndex >= CITIES.length) {
+      Taro.showToast({ title: '请选择所在城市', icon: 'none' })
       return
     }
     if (!birthDate) {
       Taro.showToast({ title: '请选择出生日期', icon: 'none' })
       return
     }
-    if (shichenIndex < 0) {
+    if (shichenIndex < 0 || shichenIndex >= SHICHEN_OPTIONS.length) {
       Taro.showToast({ title: '选择时辰，未知选午时', icon: 'none' })
       return
     }
@@ -139,7 +148,8 @@ const IndexPage = () => {
               className="w-full bg-transparent border-0 text-gray-900 placeholder:text-gray-400"
               placeholder="请输入昵称"
               value={nickname}
-              onInput={(e) => setNickname(e.detail.value)}
+              maxlength={20}
+              onInput={(e) => setNickname(e.detail.value.slice(0, 20))}
             />
           </View>
         </View>

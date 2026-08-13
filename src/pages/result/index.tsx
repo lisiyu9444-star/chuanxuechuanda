@@ -152,10 +152,29 @@ const ResultPage = () => {
 
     isSavingRef.current = true
     try {
+      // 精简分享数据，只保留展示必需的字段，避免存储冗余数据
+      const shareResult = {
+        nickname: result.nickname || '',
+        gender: result.gender || 'male',
+        imageUrl: result.imageUrl,
+        outfit: {
+          style: result.outfit.style,
+          colors: result.outfit.colors,
+          description: result.outfit.description,
+        },
+        favorableAnalysis: {
+          coreYongShen: result.favorableAnalysis.coreYongShen,
+          assistantXiShen: result.favorableAnalysis.assistantXiShen,
+        },
+        ganZhiDate: result.ganZhiDate,
+        dailyYongShen: result.dailyYongShen,
+        dailyXiShen: result.dailyXiShen,
+      }
+
       const shareData = {
         nickname: result.nickname || '',
         gender: result.gender || 'male',
-        result: result,  // 保存完整的八字结果
+        result: shareResult,
         tryOnUrl: currentTryOnUrl || tryOnUrl || undefined,
       }
 

@@ -5,6 +5,7 @@ import {
   HttpCode,
   Req,
 } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { BaziService, FourPillar, FavorableAnalysis, OutfitRecommendation, getCurrentGanZhiDate } from './bazi.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
 import { v4 as uuidv4 } from 'uuid'
@@ -15,6 +16,7 @@ export class BaziController {
 
   @Post('calculate')
   @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 每 IP 每分钟最多 5 次
   async calculate(
     @Body()
     body: {
@@ -123,6 +125,7 @@ export class BaziController {
 
   @Post('try-on')
   @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 每 IP 每分钟最多 10 次
   async generateTryOn(
     @Body()
     body: {
