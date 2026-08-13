@@ -1153,10 +1153,20 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     }
 
     try {
-      const response = await client.generate({
-        prompt,
-        size: '2K',
+      // 添加 120 秒超时兜底，防止 AI 服务挂起导致请求无限等待
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Image generation timeout after 120 seconds'))
+        }, 120000)
       })
+
+      const response = await Promise.race([
+        client.generate({
+          prompt,
+          size: '2K',
+        }),
+        timeoutPromise,
+      ])
 
       const helper = client.getResponseHelper(response)
 

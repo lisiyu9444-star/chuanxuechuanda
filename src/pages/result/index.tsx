@@ -334,12 +334,14 @@ const ResultPage = () => {
                 src={result.imageUrl}
                 className="w-full h-full"
                 mode="aspectFill"
+                lazyLoad
               />
             ) : tryOnUrl ? (
               <Image
                 src={tryOnUrl}
                 className="w-full h-full"
                 mode="aspectFill"
+                lazyLoad
               />
             ) : tryOnLoading ? (
               <View className="w-full h-full flex flex-col items-center justify-center bg-gray-50">

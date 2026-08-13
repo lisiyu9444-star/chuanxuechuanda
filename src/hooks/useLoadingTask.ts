@@ -90,21 +90,21 @@ export function useLoadingTask<TParams = any, TResult = any>(
 
   // 取消任务
   const cancel = useCallback(() => {
-    console.log('[useLoadingTask] Cancel called, isPageVisible:', isPageVisibleRef.current, 'taskId:', taskIdRef.current)
+    console.debug('[useLoadingTask] Cancel called, isPageVisible:', isPageVisibleRef.current, 'taskId:', taskIdRef.current)
     isPageVisibleRef.current = false
     if (taskIdRef.current) {
-      console.log('[useLoadingTask] Sending cancel request to backend, taskId:', taskIdRef.current)
+      console.debug('[useLoadingTask] Sending cancel request to backend, taskId:', taskIdRef.current)
       Network.request({
         url: '/api/bazi/cancel',
         method: 'POST',
         data: { taskId: taskIdRef.current },
       }).then(res => {
-        console.log('[useLoadingTask] Cancel response:', res.data)
+        console.debug('[useLoadingTask] Cancel response:', res.data)
       }).catch(err => {
         console.error('[useLoadingTask] Failed to cancel task:', err)
       })
     } else {
-      console.log('[useLoadingTask] No taskId to cancel')
+      console.debug('[useLoadingTask] No taskId to cancel')
     }
   }, [])
 
@@ -117,7 +117,7 @@ export function useLoadingTask<TParams = any, TResult = any>(
     taskIdRef.current = localTaskId
     isPageVisibleRef.current = true
     
-    console.log('[useLoadingTask] Starting execute, taskId:', localTaskId)
+    console.debug('[useLoadingTask] Starting execute, taskId:', localTaskId)
     
     setLoading(true)
     setError(null)
@@ -126,11 +126,11 @@ export function useLoadingTask<TParams = any, TResult = any>(
     try {
       // 再次检查页面是否可见（防止在请求发起前就返回）
       if (!isPageVisibleRef.current) {
-        console.log('[useLoadingTask] Page already hidden before request, skip')
+        console.debug('[useLoadingTask] Page already hidden before request, skip')
         return
       }
 
-      console.log('[useLoadingTask] Sending request to:', url)
+      console.debug('[useLoadingTask] Sending request to:', url)
       const res = await Network.request({
         url,
         method,
@@ -141,11 +141,11 @@ export function useLoadingTask<TParams = any, TResult = any>(
         },
       })
       
-      console.log('[useLoadingTask] API response received:', res.data)
+      console.debug('[useLoadingTask] API response received:', res.data)
 
       // 检查页面是否仍然可见
       if (!isPageVisibleRef.current) {
-        console.log('[useLoadingTask] Page hidden/unloaded after response, skip callback')
+        console.debug('[useLoadingTask] Page hidden/unloaded after response, skip callback')
         return
       }
 
@@ -157,7 +157,7 @@ export function useLoadingTask<TParams = any, TResult = any>(
     } catch (err: any) {
       // 判断是否为取消操作
       if (err?.errMsg?.includes('abort') || err?.errMsg?.includes('cancel')) {
-        console.log('[useLoadingTask] Request cancelled by user')
+        console.debug('[useLoadingTask] Request cancelled by user')
         return
       }
       
@@ -181,27 +181,27 @@ export function useLoadingTask<TParams = any, TResult = any>(
 
   // 页面显示时重置状态（解决页面缓存导致的参数不更新问题）
   useDidShow(() => {
-    console.log('[useLoadingTask] Page shown, resetting executedRef')
+    console.debug('[useLoadingTask] Page shown, resetting executedRef')
     executedRef.current = false
     isPageVisibleRef.current = true
   })
 
   // 页面隐藏时取消任务
   useDidHide(() => {
-    console.log('[useLoadingTask] Page hidden')
+    console.debug('[useLoadingTask] Page hidden')
     cancel()
   })
 
   // 页面卸载时取消任务
   useUnload(() => {
-    console.log('[useLoadingTask] Page unloading')
+    console.debug('[useLoadingTask] Page unloading')
     cancel()
   })
 
   // 监听应用级别的 onHide（用户退出小程序、切换到后台）
   useEffect(() => {
     const handleAppHide = () => {
-      console.log('[useLoadingTask] App hidden, cancelling task')
+      console.debug('[useLoadingTask] App hidden, cancelling task')
       cancel()
     }
 
