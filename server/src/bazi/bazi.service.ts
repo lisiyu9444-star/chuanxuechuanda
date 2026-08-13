@@ -1138,7 +1138,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 
     const response = await client.generate({
       prompt: tryOnPrompt,
-      size: '2K',
+      size: '1K',
       
       image: referenceImageUrl,
     })
@@ -1185,7 +1185,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
       const response = await Promise.race([
         client.generate({
           prompt,
-          size: '2K',
+          size: '1K',
         }),
         timeoutPromise,
       ])
