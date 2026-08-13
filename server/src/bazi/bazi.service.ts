@@ -366,7 +366,7 @@ export class BaziService {
 
     const chart = calculateBaziChart({
       year, month, day, hour, minute: 0,
-      gender: 'male' as const,
+      gender: (gender === 'female' ? 'female' : 'male') as const,
     })
 
     const pillarKeys = ['year', 'month', 'day', 'hour'] as const
@@ -916,6 +916,7 @@ export class BaziService {
     outerwear: string; bottom: string; shoes: string; bag: string; accessories: string; style: string
   } {
     const pool = isFemale ? BaziService.FEMALE_ITEMS : BaziService.MALE_ITEMS
+    console.log('[selectOutfitItems] isFemale:', isFemale, 'pool:', isFemale ? 'FEMALE_ITEMS' : 'MALE_ITEMS')
     const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)]
 
     // Step 1: 随机选外套，确定风格锚点
@@ -976,6 +977,7 @@ export class BaziService {
     const xiShen = xiShenElement || analysis?.assistantXiShen || '白色'
     const xiShenColor = ELEMENT_MAIN_COLOR[xiShen] || '白色'
     const isFemale = gender === 'female'
+    console.log('[generateOutfit] gender:', gender, 'isFemale:', isFemale, 'genderText:', genderText)
 
     // 颜色冲突对（互补色/对比色）
     const COLOR_CONFLICTS = [
