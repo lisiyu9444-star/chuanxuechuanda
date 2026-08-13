@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import Taro from '@tarojs/taro'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -65,9 +65,14 @@ export default function ProfilePage() {
     loadHistory()
   }, [])
 
+  useDidShow(() => {
+    loadHistory()
+  })
+
   const loadHistory = () => {
     try {
-      const data = Taro.getStorageSync(HISTORY_KEY) || []
+      const raw = Taro.getStorageSync(HISTORY_KEY)
+      const data = Array.isArray(raw) ? raw : []
       const now = Date.now()
       const validRecords = data.filter((item: HistoryRecord) => now - item.createdAt < THIRTY_DAYS)
       if (validRecords.length !== data.length) {
