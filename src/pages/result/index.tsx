@@ -3,28 +3,50 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Share2, RefreshCw, Lock, Loader } from 'lucide-react-taro'
+import { Share2, RefreshCw, Lock, Loader, Shirt, Layers, Footprints, ShoppingBag, Sparkles } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import './index.css'
 
 const COLOR_MAP: Record<string, string> = {
   玄青色: '#1a237e',
+  玄青: '#1a237e',
   藏青色: '#1e3a5f',
+  藏青: '#1e3a5f',
+  黛蓝: '#3b4d61',
+  靛蓝: '#4b0082',
+  蔚蓝: '#007fff',
+  宝蓝: '#4a90e2',
   深蓝色: '#1e3a8a',
   蓝色: '#2563eb',
+  石青: '#1685a9',
   天蓝色: '#87ceeb',
   湖蓝色: '#008b8b',
   雾霾蓝: '#9db2c5',
   浅蓝色: '#add8e6',
   黑色: '#1f2937',
+  墨黑: '#1c1c1c',
+  炭黑: '#1f2937',
+  黝黑: '#2d2d2d',
+  黯黑: '#1a1a1a',
+  鸦青: '#4a5568',
   深灰: '#4b5563',
   灰色: '#6b7280',
+  烟灰: '#6b7280',
+  铁灰: '#4b5563',
   浅灰: '#d1d5db',
   银色: '#c0c0c0',
+  亮银: '#e0e0e0',
   银白: '#e8e8e8',
   白色: '#f8f9fa',
+  纯白色: '#ffffff',
+  亮白: '#ffffff',
+  雪白: '#fffafa',
+  霜白: '#f2f3f5',
+  乳白: '#fffdd0',
   象牙白: '#fffff0',
+  月白: '#d6ecf0',
+  铅白: '#e4e4e4',
   米白: '#faf9f6',
   米白色: '#faf9f6',
   米色: '#f5f5dc',
@@ -34,28 +56,50 @@ const COLOR_MAP: Record<string, string> = {
   金黄色: '#ffd700',
   红色: '#dc2626',
   深红: '#8b0000',
+  绛纱红: '#b22222',
+  绛纱: '#b22222',
   酒红色: '#722f37',
-  玫红色: '#c71585',
+  朱砂: '#e34234',
+  海棠红: '#f03752',
+  石榴红: '#f20c00',
+  樱桃红: '#de3163',
   珊瑚红: '#f08080',
   橙红色: '#ff4500',
+  橘红: '#ff4500',
+  品红: '#ff00ff',
+  洋红: '#ff00ff',
+  玫红色: '#c71585',
+  桃红: '#f47983',
+  妃色: '#ed6d8e',
+  胭脂: '#9d2933',
   粉色: '#f472b6',
   玫粉: '#ff69b4',
-  绿色: '#16a34a',
-  深绿: '#14532d',
-  墨绿色: '#1b4d3e',
-  橄榄绿: '#6b8e23',
-  薄荷绿: '#98ff98',
-  翠绿色: '#00a86b',
-  青色: '#008080',
   黄色: '#facc15',
+  缃叶黄: '#f4d03f',
+  缃叶: '#f4d03f',
   土黄: '#d2b48c',
   土黄色: '#d2b48c',
+  姜黄: '#eec900',
+  鹅黄: '#fff143',
+  杏黄: '#f8b500',
+  明黄: '#ffd700',
+  秋香色: '#d4a574',
   卡其色: '#c3b091',
   驼色: '#c19a6b',
   棕色: '#8b5a2b',
   咖啡色: '#6f4e37',
   大地色: '#8b7355',
   褐色: '#8b4513',
+  绿色: '#16a34a',
+  深绿: '#14532d',
+  墨绿色: '#1b4d3e',
+  橄榄绿: '#6b8e23',
+  薄荷绿: '#98ff98',
+  翠绿色: '#00a86b',
+  葱绿: '#0dbc79',
+  豆绿: '#9ed048',
+  柳绿: '#c0dd3f',
+  青色: '#008080',
   紫色: '#9333ea',
   深紫: '#581c87',
   淡紫: '#c4b5fd',
@@ -714,37 +758,55 @@ const ResultPage = () => {
                     <View className="grid grid-cols-2 gap-3">
                       {result.llmPlan.outfitPlan.top && (
                         <View className="bg-gray-50 p-3 rounded-xl">
-                          <Text className="block text-xs text-gray-500 mb-1">上衣</Text>
+                          <View className="flex items-center gap-1 mb-1">
+                            <Shirt size={12} color="#6b7280" />
+                            <Text className="block text-xs text-gray-500">上衣</Text>
+                          </View>
                           <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.top}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.bottom && (
                         <View className="bg-gray-50 p-3 rounded-xl">
-                          <Text className="block text-xs text-gray-500 mb-1">下装</Text>
+                          <View className="flex items-center gap-1 mb-1">
+                            <Layers size={12} color="#6b7280" />
+                            <Text className="block text-xs text-gray-500">下装</Text>
+                          </View>
                           <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.bottom}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.outerwear && (
                         <View className="bg-gray-50 p-3 rounded-xl">
-                          <Text className="block text-xs text-gray-500 mb-1">外套</Text>
+                          <View className="flex items-center gap-1 mb-1">
+                            <Shirt size={12} color="#6b7280" />
+                            <Text className="block text-xs text-gray-500">外套</Text>
+                          </View>
                           <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.outerwear}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.shoes && (
                         <View className="bg-gray-50 p-3 rounded-xl">
-                          <Text className="block text-xs text-gray-500 mb-1">鞋履</Text>
+                          <View className="flex items-center gap-1 mb-1">
+                            <Footprints size={12} color="#6b7280" />
+                            <Text className="block text-xs text-gray-500">鞋履</Text>
+                          </View>
                           <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.shoes}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.bag && (
                         <View className="bg-gray-50 p-3 rounded-xl">
-                          <Text className="block text-xs text-gray-500 mb-1">包袋</Text>
+                          <View className="flex items-center gap-1 mb-1">
+                            <ShoppingBag size={12} color="#6b7280" />
+                            <Text className="block text-xs text-gray-500">包袋</Text>
+                          </View>
                           <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.bag}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.accessories.length > 0 && (
                         <View className="bg-gray-50 p-3 rounded-xl">
-                          <Text className="block text-xs text-gray-500 mb-1">配饰</Text>
+                          <View className="flex items-center gap-1 mb-1">
+                            <Sparkles size={12} color="#6b7280" />
+                            <Text className="block text-xs text-gray-500">配饰</Text>
+                          </View>
                           <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.accessories.join('、')}</Text>
                         </View>
                       )}
@@ -754,7 +816,22 @@ const ResultPage = () => {
                   {/* 适用场景 */}
                   <View className="space-y-2">
                     <Text className="block text-sm font-semibold text-gray-700">适用场景</Text>
-                    <Text className="block text-sm text-gray-700 leading-relaxed">{result.llmPlan.occasions?.join('、') || '日常穿搭'}</Text>
+                    <View className="flex flex-wrap gap-2">
+                      {(result.llmPlan.occasions?.length ? result.llmPlan.occasions : ['日常穿搭']).map((scene, index) => (
+                        <View
+                          key={index}
+                          className="px-3 py-1 rounded-full"
+                          style={{
+                            borderWidth: '1px',
+                            borderStyle: 'solid',
+                            borderColor: `${elementColor}33`,
+                            backgroundColor: `${elementColor}0d`
+                          }}
+                        >
+                          <Text className="block text-xs font-medium" style={{ color: elementColor }}>{scene}</Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
 
                   {/* 面料建议 */}
