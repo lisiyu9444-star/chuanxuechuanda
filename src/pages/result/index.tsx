@@ -47,6 +47,26 @@ interface BaZiResult {
   }
   dailyYongShen?: string
   dailyXiShen?: string
+  llmPlan?: {
+    luckyColors: {
+      primary: string
+      secondary: string
+      accent: string
+      avoid: string[]
+    }
+    styleTheme: string
+    stylingPrinciples: string[]
+    outfitPlan: {
+      top: string
+      bottom: string
+      outerwear: string | null
+      shoes: string
+      bag: string
+      accessories: string[]
+    }
+    fabricSuggestion: string
+    occasions: string[]
+  }
 }
 
 const ELEMENT_COLORS: Record<string, string> = {
@@ -567,19 +587,83 @@ const ResultPage = () => {
               <Text className="block text-sm font-medium text-gray-900 mb-2">
                 穿搭推荐
               </Text>
-              <Text className="block text-gray-600 text-sm mb-3">
-                {result.outfit.description}
-              </Text>
-              <View className="flex flex-wrap gap-2">
-                {result.outfit.colors.map((color) => (
-                  <View
-                    key={color}
-                    className="px-3 py-1 rounded-full bg-gray-50 border border-gray-100"
-                  >
-                    <Text className="text-xs text-gray-600">{color}</Text>
+              {result.llmPlan ? (
+                <>
+                  <Text className="block text-gray-900 text-sm font-medium mb-2">
+                    {result.llmPlan.styleTheme}
+                  </Text>
+                  <View className="flex flex-wrap gap-2 mb-3">
+                    <View className="px-3 py-1 rounded-full bg-purple-50 border border-purple-100">
+                      <Text className="text-xs text-purple-700">主色 {result.llmPlan.luckyColors.primary}</Text>
+                    </View>
+                    <View className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100">
+                      <Text className="text-xs text-blue-700">辅色 {result.llmPlan.luckyColors.secondary}</Text>
+                    </View>
+                    <View className="px-3 py-1 rounded-full bg-amber-50 border border-amber-100">
+                      <Text className="text-xs text-amber-700">点缀 {result.llmPlan.luckyColors.accent}</Text>
+                    </View>
                   </View>
-                ))}
-              </View>
+                  <View className="space-y-1 mb-3">
+                    {result.llmPlan.stylingPrinciples.map((principle, index) => (
+                      <View key={index} className="flex flex-row items-start gap-2">
+                        <Text className="text-xs text-purple-500 mt-1">•</Text>
+                        <Text className="block text-gray-600 text-xs">{principle}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <View className="bg-gray-50 rounded-xl p-3 mb-3">
+                    <Text className="block text-xs font-medium text-gray-700 mb-2">单品清单</Text>
+                    <View className="space-y-1">
+                      {result.llmPlan.outfitPlan.top && (
+                        <Text className="block text-gray-600 text-xs">上衣：{result.llmPlan.outfitPlan.top}</Text>
+                      )}
+                      {result.llmPlan.outfitPlan.bottom && (
+                        <Text className="block text-gray-600 text-xs">下装：{result.llmPlan.outfitPlan.bottom}</Text>
+                      )}
+                      {result.llmPlan.outfitPlan.outerwear && (
+                        <Text className="block text-gray-600 text-xs">外套：{result.llmPlan.outfitPlan.outerwear}</Text>
+                      )}
+                      {result.llmPlan.outfitPlan.shoes && (
+                        <Text className="block text-gray-600 text-xs">鞋履：{result.llmPlan.outfitPlan.shoes}</Text>
+                      )}
+                      {result.llmPlan.outfitPlan.bag && (
+                        <Text className="block text-gray-600 text-xs">包袋：{result.llmPlan.outfitPlan.bag}</Text>
+                      )}
+                      {result.llmPlan.outfitPlan.accessories.length > 0 && (
+                        <Text className="block text-gray-600 text-xs">
+                          配饰：{result.llmPlan.outfitPlan.accessories.join('、')}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <View className="flex flex-wrap gap-2 mb-2">
+                    {result.llmPlan.occasions.map((occasion, index) => (
+                      <View key={index} className="px-2 py-1 rounded bg-purple-50">
+                        <Text className="text-xs text-purple-700">{occasion}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <Text className="block text-gray-500 text-xs">
+                    面料建议：{result.llmPlan.fabricSuggestion}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text className="block text-gray-600 text-sm mb-3">
+                    {result.outfit.description}
+                  </Text>
+                  <View className="flex flex-wrap gap-2">
+                    {result.outfit.colors.map((color) => (
+                      <View
+                        key={color}
+                        className="px-3 py-1 rounded-full bg-gray-50 border border-gray-100"
+                      >
+                        <Text className="text-xs text-gray-600">{color}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
             </CardContent>
           </Card>
           </>

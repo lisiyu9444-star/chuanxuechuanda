@@ -5,6 +5,7 @@ import { AppController } from '@/app.controller'
 import { AppService } from '@/app.service'
 import { BaziController } from '@/bazi/bazi.controller'
 import { BaziService } from '@/bazi/bazi.service'
+import { StylistService } from '@/bazi/stylist.service'
 import { ConfigController } from '@/config/config.controller'
 import { ShareController } from '@/share/share.controller'
 
@@ -21,6 +22,7 @@ import { ShareController } from '@/share/share.controller'
   providers: [
     AppService,
     BaziService,
+    StylistService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

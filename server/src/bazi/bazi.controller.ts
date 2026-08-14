@@ -7,12 +7,16 @@ import {
 } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
 import { BaziService, FourPillar, FavorableAnalysis, OutfitRecommendation, getCurrentGanZhiDate } from './bazi.service'
+import { StylistService, StylistResult } from './stylist.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
 import { v4 as uuidv4 } from 'uuid'
 
 @Controller('bazi')
 export class BaziController {
-  constructor(private readonly baziService: BaziService) {}
+  constructor(
+    private readonly baziService: BaziService,
+    private readonly stylistService: StylistService,
+  ) {}
 
   @Post('calculate')
   @HttpCode(200)
@@ -27,6 +31,8 @@ export class BaziController {
       location: string
       calendarType?: 'solar' | 'lunar'
       clientTaskId?: string
+      age?: number
+      stylePreference?: string
     },
     @Req() req,
   ): Promise<{
@@ -48,9 +54,10 @@ export class BaziController {
       }
       dailyYongShen?: string
       dailyXiShen?: string
+      llmPlan?: StylistResult
     }
   }> {
-    const { nickname, gender, birthDate, birthTime, calendarType, clientTaskId } = body
+    const { nickname, gender, birthDate, birthTime, calendarType, clientTaskId, age, stylePreference } = body
 
     // 如果是农历，先转换为阳历
     let solarBirthDate = birthDate
@@ -78,12 +85,30 @@ export class BaziController {
     // 使用客户端传递的 taskId，如果没有则生成新的
     const taskId = clientTaskId || uuidv4()
 
-    // 生成穿搭图片
+    // 通过 LLM 穿搭顾问生成结构化方案与生图 prompt
+    let llmPlan: StylistResult | undefined
+    let imagePrompt = baziResult.outfit.prompt
     const forwardHeaders = HeaderUtils.extractForwardHeaders(
       req.headers as Record<string, string>,
     )
+    try {
+      llmPlan = await this.stylistService.generatePlan({
+        gender: gender === 'female' ? '女' : '男',
+        age,
+        season: baziResult.outfit.season,
+        stylePreference: stylePreference || '简约通勤风',
+        yongShen: baziResult.dailyYongShen || baziResult.favorableElement,
+        xiShen: baziResult.dailyXiShen || baziResult.favorableAnalysis.assistantXiShen,
+      }, forwardHeaders)
+      imagePrompt = llmPlan.imagePrompt
+      console.log('[Stylist] LLM 方案生成成功，使用 LLM imagePrompt 生图')
+    } catch (error) {
+      console.error('[Stylist] LLM 方案生成失败，使用默认 prompt:', error)
+    }
+
+    // 生成穿搭图片
     const imageUrl = await this.baziService.generateOutfitImage(
-      baziResult.outfit.prompt,
+      imagePrompt,
       forwardHeaders,
       taskId,
     )
@@ -107,6 +132,7 @@ export class BaziController {
         ganZhiDate,
         dailyYongShen: baziResult.dailyYongShen,
         dailyXiShen: baziResult.dailyXiShen,
+        llmPlan,
       },
     }
   }
@@ -121,6 +147,27 @@ export class BaziController {
     const success = this.baziService.cancelTask(body.taskId)
     console.log('[Cancel] Cancel result:', success)
     return { data: { success } }
+  }
+
+  // LLM 穿搭顾问测试接口
+  @Post('stylist')
+  @HttpCode(200)
+  async stylist(
+    @Body()
+    body: {
+      gender: string
+      age: number
+      season: string
+      stylePreference: string
+      yongShen: string
+      xiShen: string
+      dayMaster?: string
+    },
+  ): Promise<{ data: StylistResult }> {
+    console.log('[Stylist] Request:', body)
+    const result = await this.stylistService.generatePlan(body)
+    console.log('[Stylist] Result:', result)
+    return { data: result }
   }
 
   @Post('try-on')
