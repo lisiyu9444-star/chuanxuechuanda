@@ -1,12 +1,43 @@
 import { View, Text, Picker, Image } from '@tarojs/components'
 import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Venus, Mars, ChevronDown } from 'lucide-react-taro'
+import { Venus, Mars, ChevronDown, Check } from 'lucide-react-taro'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Network } from '@/network'
 import logoPng from '@/assets/logo-brand.png'
 import './index.css'
+
+const COMMON_STYLES = [
+  '简约风', '通勤风', '休闲风', '运动风', '复古风', '新中式',
+  '法式', '韩系', '日系', '欧美风', '英伦风', '田园风',
+  '波西米亚', 'Y2K', '朋克风', '极简风', '中性风',
+  '多巴胺穿搭', '美拉德穿搭'
+]
+
+const FEMALE_STYLES = ['甜美风', '淑女风', '名媛风', '可爱风', '优雅风', '浪漫风']
+
+const MALE_STYLES = ['嘻哈风', '街头风', '工装风', '商务风', '阳光少年风', '硬朗风']
+
+const calculateAge = (birthDate: string) => {
+  const today = new Date()
+  const birth = new Date(birthDate)
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--
+  }
+  return Math.max(1, age)
+}
+
+const getDefaultStyle = (gender: string) => gender === 'male' ? '简约风' : '甜美风'
+
+const getStyleOptions = (gender: string) =>
+  gender === 'male'
+    ? [...COMMON_STYLES, ...MALE_STYLES]
+    : [...COMMON_STYLES, ...FEMALE_STYLES]
 
 const SHICHEN_OPTIONS = [
   '子时 (23:00-01:00)',
@@ -49,7 +80,11 @@ const IndexPage = () => {
   const [birthDate, setBirthDate] = useState('2000-01-01')
   const [shichenIndex, setShichenIndex] = useState(-1)
   const [cityIndex, setCityIndex] = useState(0)
+  const [stylePreference, setStylePreference] = useState(getDefaultStyle('female'))
+  const [styleSheetOpen, setStyleSheetOpen] = useState(false)
   const [features, setFeatures] = useState({ showHomeSubtitle: true })
+
+  const styleOptions = useMemo(() => getStyleOptions(gender), [gender])
 
   useShareAppMessage(() => ({
     title: '测一测你的幸运穿搭',
@@ -66,14 +101,18 @@ const IndexPage = () => {
     try {
       const saved = Taro.getStorageSync('formData')
       if (saved) {
+        const savedGender = saved.gender || 'female'
         setNickname(saved.nickname || getRandomNickname())
-        setGender(saved.gender || 'female')
+        setGender(savedGender)
         setCalendarType(saved.calendarType || 'solar')
         setBirthDate(saved.birthDate || '2000-01-01')
         const si = SHICHEN_OPTIONS.findIndex(s => s.includes(saved.birthTime || ''))
         setShichenIndex(si >= 0 ? si : -1)
         const ci = CITIES.findIndex(c => c === saved.location)
         setCityIndex(ci >= 0 ? ci : 0)
+        const styles = getStyleOptions(savedGender)
+        const savedStyle = saved.stylePreference
+        setStylePreference(savedStyle && styles.some(s => s === savedStyle) ? savedStyle : getDefaultStyle(savedGender))
       }
     } catch (e) {
       // ignore
@@ -112,6 +151,7 @@ const IndexPage = () => {
       return
     }
 
+    const age = calculateAge(birthDate)
     const userData = {
       nickname: nickname.trim(),
       gender,
@@ -119,6 +159,8 @@ const IndexPage = () => {
       birthDate,
       birthTime: SHICHEN_OPTIONS[shichenIndex],
       location: CITIES[cityIndex],
+      age,
+      stylePreference: stylePreference || getDefaultStyle(gender),
     }
 
     Taro.setStorageSync('formData', userData)
@@ -256,6 +298,50 @@ const IndexPage = () => {
               <ChevronDown size={18} color="#9CA3AF" />
             </View>
           </Picker>
+        </View>
+
+        {/* Style Preference */}
+        <View>
+          <Text className="block text-xs text-gray-500 mb-2">穿搭风格偏好</Text>
+          <View
+            className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between"
+            onClick={() => setStyleSheetOpen(true)}
+          >
+            <Text className={`block ${stylePreference ? 'text-gray-900' : 'text-gray-400'}`}>
+              {stylePreference || `选择风格（${gender === 'female' ? '女' : '男'}性推荐）`}
+            </Text>
+            <ChevronDown size={18} color="#9CA3AF" />
+          </View>
+          <Sheet open={styleSheetOpen} onOpenChange={setStyleSheetOpen}>
+            <SheetContent side="bottom" className="h-3/5 rounded-t-3xl">
+              <SheetHeader>
+                <SheetTitle>选择穿搭风格</SheetTitle>
+              </SheetHeader>
+              <ScrollArea className="h-[calc(100%-80px)] mt-4">
+                <View className="flex flex-col gap-2 px-4 pb-6">
+                  {styleOptions.map((style) => (
+                    <View
+                      key={style}
+                      className={`py-3 px-4 rounded-xl border-2 flex items-center justify-between ${
+                        stylePreference === style
+                          ? 'border-gray-900 bg-gray-50'
+                          : 'border-gray-100 bg-white'
+                      }`}
+                      onClick={() => {
+                        setStylePreference(style)
+                        setStyleSheetOpen(false)
+                      }}
+                    >
+                      <Text className={`block ${stylePreference === style ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
+                        {style}
+                      </Text>
+                      {stylePreference === style && <Check size={18} color="#1F2937" />}
+                    </View>
+                  ))}
+                </View>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
         </View>
 
         {/* Submit Button */}
