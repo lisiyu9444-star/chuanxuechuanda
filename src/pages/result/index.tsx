@@ -3,10 +3,77 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Share2, RefreshCw, Lock, Loader, Shirt, Footprints, ShoppingBag, Gem, Sparkles, Palette, Briefcase } from 'lucide-react-taro'
+import { Share2, RefreshCw, Lock, Loader } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import './index.css'
+
+const COLOR_MAP: Record<string, string> = {
+  玄青色: '#1a237e',
+  藏青色: '#1e3a5f',
+  深蓝色: '#1e3a8a',
+  蓝色: '#2563eb',
+  天蓝色: '#87ceeb',
+  湖蓝色: '#008b8b',
+  雾霾蓝: '#9db2c5',
+  浅蓝色: '#add8e6',
+  黑色: '#1f2937',
+  深灰: '#4b5563',
+  灰色: '#6b7280',
+  浅灰: '#d1d5db',
+  银色: '#c0c0c0',
+  银白: '#e8e8e8',
+  白色: '#f8f9fa',
+  象牙白: '#fffff0',
+  米白: '#faf9f6',
+  米白色: '#faf9f6',
+  米色: '#f5f5dc',
+  香槟色: '#f7e7ce',
+  香槟金: '#f7e7ce',
+  金色: '#d4af37',
+  金黄色: '#ffd700',
+  红色: '#dc2626',
+  深红: '#8b0000',
+  酒红色: '#722f37',
+  玫红色: '#c71585',
+  珊瑚红: '#f08080',
+  橙红色: '#ff4500',
+  粉色: '#f472b6',
+  玫粉: '#ff69b4',
+  绿色: '#16a34a',
+  深绿: '#14532d',
+  墨绿色: '#1b4d3e',
+  橄榄绿: '#6b8e23',
+  薄荷绿: '#98ff98',
+  翠绿色: '#00a86b',
+  青色: '#008080',
+  黄色: '#facc15',
+  土黄: '#d2b48c',
+  土黄色: '#d2b48c',
+  卡其色: '#c3b091',
+  驼色: '#c19a6b',
+  棕色: '#8b5a2b',
+  咖啡色: '#6f4e37',
+  大地色: '#8b7355',
+  褐色: '#8b4513',
+  紫色: '#9333ea',
+  深紫: '#581c87',
+  淡紫: '#c4b5fd',
+  橙色: '#f97316',
+  裸色: '#e8c4a2'
+}
+
+function getColorHex(name: string): string {
+  const normalized = name.replace(/[\s·]/g, '')
+  const direct = COLOR_MAP[normalized]
+  if (direct) return direct
+  for (const key of Object.keys(COLOR_MAP)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return COLOR_MAP[key]
+    }
+  }
+  return '#9ca3af'
+}
 
 interface BaZiResult {
   nickname: string
@@ -583,119 +650,117 @@ const ResultPage = () => {
           {/* Outfit Recommendation */}
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
-              <Text className="block text-sm font-medium text-gray-900 mb-2">
-                穿搭推荐
+              <Text className="block text-base font-semibold text-gray-900 mb-3">
+                今日穿搭
               </Text>
               {result.llmPlan ? (
                 <View className="space-y-4">
                   {/* 风格主题 */}
-                  <View>
-                    <Text className="block text-gray-500 text-xs mb-1">今日穿搭主题</Text>
-                    <Text className="block text-gray-900 text-base font-semibold">{result.llmPlan.styleTheme}</Text>
-                  </View>
+                  <Text className="block text-base font-semibold text-gray-900 leading-relaxed">
+                    {result.llmPlan.styleTheme}
+                  </Text>
 
                   {/* 幸运色 */}
-                  <View>
-                    <View className="flex flex-row items-center gap-2 mb-2">
-                      <Palette size={14} color="#7c3aed" />
-                      <Text className="text-xs font-medium text-gray-700">幸运色</Text>
-                    </View>
-                    <View className="flex flex-row gap-2">
-                      <View className="flex-1 px-3 py-2 rounded-xl bg-purple-50 border border-purple-100">
-                        <Text className="block text-xs text-purple-400 mb-1">主色</Text>
-                        <Text className="block text-sm font-medium text-purple-700">{result.llmPlan.luckyColors.primary}</Text>
+                  <View className="space-y-2">
+                    <Text className="block text-sm font-semibold text-gray-700">幸运色</Text>
+                    <View className="grid grid-cols-2 gap-3">
+                      <View className="flex items-center gap-3 bg-gray-50 px-3 py-3 rounded-xl">
+                        <View
+                          className="w-5 h-5 rounded-full flex-shrink-0 border"
+                          style={{ backgroundColor: getColorHex(result.llmPlan.luckyColors.primary), borderColor: 'rgba(0,0,0,0.05)' }}
+                        />
+                        <View className="flex-1 min-w-0">
+                          <Text className="block text-xs text-gray-500">主色</Text>
+                          <Text className="block text-sm font-medium text-gray-900 truncate">{result.llmPlan.luckyColors.primary}</Text>
+                        </View>
                       </View>
-                      <View className="flex-1 px-3 py-2 rounded-xl bg-blue-50 border border-blue-100">
-                        <Text className="block text-xs text-blue-400 mb-1">辅色</Text>
-                        <Text className="block text-sm font-medium text-blue-700">{result.llmPlan.luckyColors.secondary}</Text>
+                      <View className="flex items-center gap-3 bg-gray-50 px-3 py-3 rounded-xl">
+                        <View
+                          className="w-5 h-5 rounded-full flex-shrink-0 border"
+                          style={{ backgroundColor: getColorHex(result.llmPlan.luckyColors.secondary), borderColor: 'rgba(0,0,0,0.05)' }}
+                        />
+                        <View className="flex-1 min-w-0">
+                          <Text className="block text-xs text-gray-500">辅色</Text>
+                          <Text className="block text-sm font-medium text-gray-900 truncate">{result.llmPlan.luckyColors.secondary}</Text>
+                        </View>
                       </View>
-                      <View className="flex-1 px-3 py-2 rounded-xl bg-amber-50 border border-amber-100">
-                        <Text className="block text-xs text-amber-400 mb-1">点缀</Text>
-                        <Text className="block text-sm font-medium text-amber-700">{result.llmPlan.luckyColors.accent}</Text>
+                      <View className="flex items-center gap-3 bg-gray-50 px-3 py-3 rounded-xl">
+                        <View
+                          className="w-5 h-5 rounded-full flex-shrink-0 border"
+                          style={{ backgroundColor: getColorHex(result.llmPlan.luckyColors.accent), borderColor: 'rgba(0,0,0,0.05)' }}
+                        />
+                        <View className="flex-1 min-w-0">
+                          <Text className="block text-xs text-gray-500">点缀</Text>
+                          <Text className="block text-sm font-medium text-gray-900 truncate">{result.llmPlan.luckyColors.accent}</Text>
+                        </View>
                       </View>
+                      {result.llmPlan.luckyColors.avoid?.length > 0 && (
+                        <View className="flex items-center gap-3 bg-gray-50 px-3 py-3 rounded-xl">
+                          <View className="w-5 h-5 rounded-full flex-shrink-0 bg-gray-200 border" style={{ borderColor: 'rgba(0,0,0,0.05)' }} />
+                          <View className="flex-1 min-w-0">
+                            <Text className="block text-xs text-gray-500">避雷</Text>
+                            <Text className="block text-sm font-medium text-gray-900 truncate">
+                              {result.llmPlan.luckyColors.avoid.join('、')}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
                     </View>
                   </View>
 
                   {/* 单品清单 */}
-                  <View>
-                    <View className="flex flex-row items-center gap-2 mb-2">
-                      <Briefcase size={14} color="#7c3aed" />
-                      <Text className="text-xs font-medium text-gray-700">单品清单</Text>
-                    </View>
-                    <View className="grid grid-cols-2 gap-2">
+                  <View className="space-y-2">
+                    <Text className="block text-sm font-semibold text-gray-700">单品清单</Text>
+                    <View className="grid grid-cols-2 gap-3">
                       {result.llmPlan.outfitPlan.top && (
-                        <View className="p-3 rounded-xl bg-gray-50">
-                          <View className="flex flex-row items-center gap-2 mb-1">
-                            <Shirt size={14} color="#6b7280" />
-                            <Text className="text-xs text-gray-400">上衣</Text>
-                          </View>
-                          <Text className="block text-sm text-gray-700">{result.llmPlan.outfitPlan.top}</Text>
+                        <View className="bg-gray-50 p-3 rounded-xl">
+                          <Text className="block text-xs text-gray-500 mb-1">上衣</Text>
+                          <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.top}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.bottom && (
-                        <View className="p-3 rounded-xl bg-gray-50">
-                          <View className="flex flex-row items-center gap-2 mb-1">
-                            <Sparkles size={14} color="#6b7280" />
-                            <Text className="text-xs text-gray-400">下装</Text>
-                          </View>
-                          <Text className="block text-sm text-gray-700">{result.llmPlan.outfitPlan.bottom}</Text>
+                        <View className="bg-gray-50 p-3 rounded-xl">
+                          <Text className="block text-xs text-gray-500 mb-1">下装</Text>
+                          <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.bottom}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.outerwear && (
-                        <View className="p-3 rounded-xl bg-gray-50">
-                          <View className="flex flex-row items-center gap-2 mb-1">
-                            <Briefcase size={14} color="#6b7280" />
-                            <Text className="text-xs text-gray-400">外套</Text>
-                          </View>
-                          <Text className="block text-sm text-gray-700">{result.llmPlan.outfitPlan.outerwear}</Text>
+                        <View className="bg-gray-50 p-3 rounded-xl">
+                          <Text className="block text-xs text-gray-500 mb-1">外套</Text>
+                          <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.outerwear}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.shoes && (
-                        <View className="p-3 rounded-xl bg-gray-50">
-                          <View className="flex flex-row items-center gap-2 mb-1">
-                            <Footprints size={14} color="#6b7280" />
-                            <Text className="text-xs text-gray-400">鞋履</Text>
-                          </View>
-                          <Text className="block text-sm text-gray-700">{result.llmPlan.outfitPlan.shoes}</Text>
+                        <View className="bg-gray-50 p-3 rounded-xl">
+                          <Text className="block text-xs text-gray-500 mb-1">鞋履</Text>
+                          <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.shoes}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.bag && (
-                        <View className="p-3 rounded-xl bg-gray-50">
-                          <View className="flex flex-row items-center gap-2 mb-1">
-                            <ShoppingBag size={14} color="#6b7280" />
-                            <Text className="text-xs text-gray-400">包袋</Text>
-                          </View>
-                          <Text className="block text-sm text-gray-700">{result.llmPlan.outfitPlan.bag}</Text>
+                        <View className="bg-gray-50 p-3 rounded-xl">
+                          <Text className="block text-xs text-gray-500 mb-1">包袋</Text>
+                          <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.bag}</Text>
                         </View>
                       )}
                       {result.llmPlan.outfitPlan.accessories.length > 0 && (
-                        <View className="p-3 rounded-xl bg-gray-50">
-                          <View className="flex flex-row items-center gap-2 mb-1">
-                            <Gem size={14} color="#6b7280" />
-                            <Text className="text-xs text-gray-400">配饰</Text>
-                          </View>
-                          <Text className="block text-sm text-gray-700">{result.llmPlan.outfitPlan.accessories.join('、')}</Text>
+                        <View className="bg-gray-50 p-3 rounded-xl">
+                          <Text className="block text-xs text-gray-500 mb-1">配饰</Text>
+                          <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.accessories.join('、')}</Text>
                         </View>
                       )}
                     </View>
                   </View>
 
-                  {/* 适用场景 & 面料 */}
-                  <View className="flex flex-row gap-3">
-                    <View className="flex-1">
-                      <Text className="text-xs text-gray-400 mb-2">适用场景</Text>
-                      <View className="flex flex-wrap gap-2">
-                        {result.llmPlan.occasions.map((occasion, index) => (
-                          <View key={index} className="px-3 py-1 rounded-lg bg-purple-50">
-                            <Text className="text-xs text-purple-700">{occasion}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-xs text-gray-400 mb-2">面料建议</Text>
-                      <Text className="block text-sm text-gray-700">{result.llmPlan.fabricSuggestion}</Text>
-                    </View>
+                  {/* 适用场景 */}
+                  <View className="space-y-2">
+                    <Text className="block text-sm font-semibold text-gray-700">适用场景</Text>
+                    <Text className="block text-sm text-gray-700 leading-relaxed">{result.llmPlan.occasions?.join('、') || '日常穿搭'}</Text>
+                  </View>
+
+                  {/* 面料建议 */}
+                  <View className="space-y-2">
+                    <Text className="block text-sm font-semibold text-gray-700">面料建议</Text>
+                    <Text className="block text-sm text-gray-700 leading-relaxed">{result.llmPlan.fabricSuggestion || '舒适透气面料'}</Text>
                   </View>
                 </View>
               ) : (
