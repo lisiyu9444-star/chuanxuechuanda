@@ -224,7 +224,7 @@ const ResultPage = () => {
   // 上身图 URL（生成后缓存）
   const [tryOnUrl, setTryOnUrl] = useState<string>('')
   // 功能开关：分享功能是否开启
-  // 功能开关：是否显示八字相关内容（八字概览、喜用神分析、穿搭推荐）
+  // 功能开关：是否显示玄学相关内容（八字概览、喜用神分析），穿搭模块始终展示
   const [showBaZiContent, setShowBaZiContent] = useState(true)
   // 分享 ID（用于朋友圈分享）
   const [shareId, setShareId] = useState('')
@@ -355,6 +355,9 @@ const ResultPage = () => {
         ganZhiDate: result.ganZhiDate,
         dailyYongShen: result.dailyYongShen,
         dailyXiShen: result.dailyXiShen,
+        // 穿搭数据：不属于玄学内容，分享给好友后仍需展示
+        llmPlan: result.llmPlan,
+        age: result.age,
       }
 
       const shareData = {
@@ -597,7 +600,7 @@ const ResultPage = () => {
           {/* BaZi Summary - Controlled by backend */}
           {showBaZiContent && result.fourPillars && result.fourPillars.length > 0 && (
           <>
-          <Card className="bg-white border-gray-100 shadow-sm">
+            <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
               <View className="flex items-center justify-between mb-3">
                 <Text className="block text-sm font-medium text-black">
@@ -721,8 +724,10 @@ const ResultPage = () => {
               )}
             </CardContent>
           </Card>
+          </>
+          )}
 
-          {/* Outfit Recommendation */}
+          {/* Outfit Recommendation - Always visible */}
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
               <Text className="block text-base font-semibold text-gray-900 mb-3">
@@ -890,8 +895,6 @@ const ResultPage = () => {
               )}
             </CardContent>
           </Card>
-          </>
-          )}
         </View>
       </View>
 
