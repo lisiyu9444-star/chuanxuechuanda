@@ -90,7 +90,7 @@ export class StylistService {
   },
   "fabricSuggestion": "今日推荐面料，说明为什么适合这个季节和五行",
   "occasions": ["适用场景1", "适用场景2"],
-  "imagePrompt": "一段详细的英文 prompt，用于 AI 文生图生成平铺穿搭图。要求：flat lay photography, 3:4 vertical composition, solid color background, all items neatly arranged, natural soft lighting, high-end fashion magazine editorial style. 必须明确表达这是${genderText}穿搭（女性用 women's fashion / feminine styling，男性用 men's fashion / masculine styling）；必须包含所有单品、颜色、材质细节；突出高级感和设计感，避免纯色色块；背景干净有质感，光影柔和自然。禁止出现人物、面部、文字水印。",
+  "imagePrompt": "一段详细的英文 prompt，用于 AI 文生图生成平铺穿搭图。要求：flat lay photography, 3:4 vertical composition, solid color background, all items neatly arranged, natural soft lighting, high-end fashion magazine editorial style. 必须明确表达这是${genderText}穿搭（女性用 women's fashion / feminine styling，男性用 men's fashion / masculine styling）；平铺图上衣区域只允许出现一件核心上装，若 outfitPlan 同时包含 top 和 outerwear，则只把 outerwear 作为上衣主体平铺展示，top 仅作为内搭层次在描述中提及，不得单独平铺为第二件上衣；必须包含所有单品、颜色、材质细节；突出高级感和设计感，避免纯色色块；背景干净有质感，光影柔和自然。禁止出现人物、面部、文字水印。",
   "negativePrompt": "英文反向提示词，必须排除不雅、变形、缺失单品、错误颜色等问题；同时必须排除异性化单品：${genderText === '女性' ? '男装外套、领带、西装裤、宽大工装、男性皮鞋等' : '连衣裙、高跟鞋、蕾丝、荷叶边、短裙、女性手包等'}"
 }
 
@@ -104,7 +104,7 @@ export class StylistService {
 4. 女性上衣必须有可见内搭（如衬衫/T恤/吊带），禁止真空、低胸、透视；男性上衣同样禁止真空。
 5. 单品描述要有高级设计感：允许同色系深浅变化、面料纹理（条纹、格纹、暗纹、提花）、金属扣、珍珠扣、缝线、褶皱、荷叶边等细节，避免像纯色色块。
 6. 整体造型参考韩系/通勤博主的穿搭质感：自然柔和的光影、不经意的精致、配色和谐、层次清晰、配饰点睛。
-7. imagePrompt 英文描述中必须明确包含 women's fashion 或 men's fashion 关键词，且与性别一致；negativePrompt 必须排除异性化单品，但不能误排除本性别正常单品。
+7. imagePrompt 英文描述中必须明确包含 women's fashion 或 men's fashion 关键词，且与性别一致；平铺图上衣区域只能出现一件核心上装，若同时有 top 和 outerwear，只平铺展示 outerwear，内搭 top 不得单独出现；negativePrompt 必须排除异性化单品，但不能误排除本性别正常单品。
 8. 只输出 JSON，不要任何额外文字。`
 
     const config = new Config()
