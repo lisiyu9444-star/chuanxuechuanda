@@ -331,7 +331,7 @@ const IndexPage = () => {
                       }`}
                       onClick={() => {
                         setStylePreference(style)
-                        setStyleSheetOpen(false)
+                        setTimeout(() => setStyleSheetOpen(false), 120)
                       }}
                     >
                       <Text className={`block ${stylePreference === style ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
