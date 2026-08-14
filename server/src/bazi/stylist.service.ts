@@ -20,7 +20,6 @@ export interface LuckyColors {
 export interface StylistResult {
   luckyColors: LuckyColors
   styleTheme: string
-  stylingPrinciples: string[]
   outfitPlan: OutfitPlan
   fabricSuggestion: string
   occasions: string[]
@@ -81,12 +80,6 @@ export class StylistService {
     "avoid": ["应避免的1-2种颜色"]
   },
   "styleTheme": "一句话概括今日穿搭主题，如：温柔知性的秋日通勤风",
-  "stylingPrinciples": [
-    "结合用神五行的搭配原则1",
-    "结合喜神五行的搭配原则2",
-    "结合季节和风格的建议3",
-    "避免踩雷的提示4"
-  ],
   "outfitPlan": {
     "top": "具体上衣单品，含颜色和款式细节，如：米白色V领针织衫",
     "bottom": "具体下装单品，含颜色和款式细节",
@@ -155,9 +148,6 @@ export class StylistService {
         avoid: ['荧光色'],
       }) as LuckyColors,
       styleTheme: String(data.styleTheme || '今日幸运穿搭'),
-      stylingPrinciples: Array.isArray(data.stylingPrinciples)
-        ? data.stylingPrinciples.map(String)
-        : [],
       outfitPlan: (data.outfitPlan || {
         top: '白色T恤',
         bottom: '蓝色牛仔裤',
