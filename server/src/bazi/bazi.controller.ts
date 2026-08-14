@@ -200,7 +200,7 @@ export class BaziController {
       outfit,
       outfit.backgroundColor || '#F5F1E8',
       gender,
-      age,
+      age ?? 25,
       forwardHeaders,
     )
 
