@@ -54,8 +54,7 @@ const LoadingPage = () => {
   const startTimeRef = useRef(Date.now())
   const [userData, setUserData] = useState<UserData | null>(null)
   const [trustCount] = useState(128456 + Math.floor(Math.random() * 1000))
-  const [showTimeout, setShowTimeout] = useState(false)
-  const [timeoutDismissed, setTimeoutDismissed] = useState(false)
+  const [isAccelerated, setIsAccelerated] = useState(false)
   const [features, setFeatures] = useState({ showLoadingSteps: true })
 
   const saveHistoryRecord = (data: BaZiResult) => {
@@ -129,10 +128,10 @@ const LoadingPage = () => {
     }
     loadFeatures()
 
-    // 7秒超时提示
+    // 25秒后加速动画，营造正在加速工作的感知
     const timer = setTimeout(() => {
-      setShowTimeout(true)
-    }, 7000)
+      setIsAccelerated(true)
+    }, 25000)
     return () => clearTimeout(timer)
   })
 
@@ -160,27 +159,10 @@ const LoadingPage = () => {
 
   return (
     <View className="min-h-full bg-white px-6 py-8 flex flex-col">
-      {/* 超时提示 - 预留空间 + 淡入 */}
-      <View
-        className={`flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 transition-all duration-500 ${
-          showTimeout && !timeoutDismissed ? 'opacity-100 mb-4' : 'opacity-0 mb-0 h-0 overflow-hidden'
-        }`}
-      >
-        <Text className="text-sm text-gray-700 flex-1">
-          绘图需要时间啦，约30s左右
-        </Text>
-        <View
-          className="ml-3 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100"
-          onClick={() => setTimeoutDismissed(true)}
-        >
-          <Text className="text-gray-500 text-xs font-bold">✕</Text>
-        </View>
-      </View>
-
       {/* Animation Area */}
       <View className="flex flex-col items-center pt-8 pb-6">
         {/* 五行流动动画 */}
-        <View className="wuxing-orbit-container mb-6">
+        <View className={`wuxing-orbit-container mb-6 ${isAccelerated ? 'wuxing-speedup' : ''}`}>
           <View className="wuxing-orbit-ring" />
           <View className="wuxing-core-ring" />
           <View className="wuxing-core" />
@@ -194,9 +176,6 @@ const LoadingPage = () => {
         {/* Current Step Text */}
         <Text className="block text-base font-medium text-gray-900 mb-1">
           勾画中...
-        </Text>
-        <Text className="block text-sm text-gray-500">
-          {LOADING_STEPS[currentStep]}
         </Text>
 
         {/* Progress Bar */}
