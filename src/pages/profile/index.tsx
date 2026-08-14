@@ -61,6 +61,7 @@ interface BaZiResult {
     backgroundColor?: string
   }
   imageUrl: string
+  age?: number
   ganZhiDate?: { month: string; day: string }
   dailyYongShen?: string
   dailyXiShen?: string

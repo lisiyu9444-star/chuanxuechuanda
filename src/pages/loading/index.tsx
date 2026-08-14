@@ -27,6 +27,7 @@ interface BaZiResult {
   favorableAnalysis: any
   outfit: any
   imageUrl: string
+  age?: number
   ganZhiDate?: { month: string; day: string }
   dailyYongShen?: string
   dailyXiShen?: string

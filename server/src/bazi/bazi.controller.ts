@@ -48,6 +48,7 @@ export class BaziController {
       favorableAnalysis: FavorableAnalysis
       outfit: OutfitRecommendation
       imageUrl: string
+      age?: number
       ganZhiDate?: {
         month: string
         day: string
@@ -129,6 +130,7 @@ export class BaziController {
         favorableAnalysis: baziResult.favorableAnalysis,
         outfit: baziResult.outfit,
         imageUrl,
+        age,
         ganZhiDate,
         dailyYongShen: baziResult.dailyYongShen,
         dailyXiShen: baziResult.dailyXiShen,
@@ -179,6 +181,7 @@ export class BaziController {
       imageUrl: string
       outfit: OutfitRecommendation
       gender: string
+      age?: number
     },
     @Req() req,
   ): Promise<{
@@ -186,7 +189,7 @@ export class BaziController {
       tryOnUrl: string
     }
   }> {
-    const { imageUrl, outfit, gender } = body
+    const { imageUrl, outfit, gender, age } = body
 
     const forwardHeaders = HeaderUtils.extractForwardHeaders(
       req.headers as Record<string, string>,
@@ -197,6 +200,7 @@ export class BaziController {
       outfit,
       outfit.backgroundColor || '#F5F1E8',
       gender,
+      age,
       forwardHeaders,
     )
 

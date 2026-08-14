@@ -181,6 +181,7 @@ interface BaZiResult {
     backgroundColor?: string
   }
   imageUrl: string
+  age?: number
   ganZhiDate?: {
     month: string
     day: string
@@ -579,6 +580,7 @@ const ResultPage = () => {
                     imageUrl: result.imageUrl,
                     outfit: result.outfit,
                     gender: result.gender,
+                    age: result.age,
                   })}
                 >
                   <Text className="block text-sm font-medium">点击生成上身试穿图</Text>
