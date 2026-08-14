@@ -32,12 +32,14 @@ const calculateAge = (birthDate: string) => {
   return Math.max(1, age)
 }
 
-const getDefaultStyle = (gender: string) => gender === 'male' ? '简约风' : '甜美风'
+const getDefaultStyle = () => '简约风'
 
-const getStyleOptions = (gender: string) =>
-  gender === 'male'
+const getStyleOptions = (gender: string) => {
+  const options = gender === 'male'
     ? [...COMMON_STYLES, ...MALE_STYLES]
     : [...COMMON_STYLES, ...FEMALE_STYLES]
+  return ['无偏好', ...options]
+}
 
 const SHICHEN_OPTIONS = [
   '子时 (23:00-01:00)',
@@ -80,7 +82,7 @@ const IndexPage = () => {
   const [birthDate, setBirthDate] = useState('2000-01-01')
   const [shichenIndex, setShichenIndex] = useState(-1)
   const [cityIndex, setCityIndex] = useState(0)
-  const [stylePreference, setStylePreference] = useState(getDefaultStyle('female'))
+  const [stylePreference, setStylePreference] = useState(getDefaultStyle())
   const [styleSheetOpen, setStyleSheetOpen] = useState(false)
   const [features, setFeatures] = useState({ showHomeSubtitle: true })
 
@@ -112,7 +114,7 @@ const IndexPage = () => {
         setCityIndex(ci >= 0 ? ci : 0)
         const styles = getStyleOptions(savedGender)
         const savedStyle = saved.stylePreference
-        setStylePreference(savedStyle && styles.some(s => s === savedStyle) ? savedStyle : getDefaultStyle(savedGender))
+        setStylePreference(savedStyle && styles.some(s => s === savedStyle) ? savedStyle : getDefaultStyle())
       }
     } catch (e) {
       // ignore
@@ -160,7 +162,7 @@ const IndexPage = () => {
       birthTime: SHICHEN_OPTIONS[shichenIndex],
       location: CITIES[cityIndex],
       age,
-      stylePreference: stylePreference || getDefaultStyle(gender),
+      stylePreference: stylePreference === '无偏好' ? '自由搭配' : (stylePreference || getDefaultStyle()),
     }
 
     Taro.setStorageSync('formData', userData)

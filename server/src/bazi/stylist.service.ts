@@ -53,13 +53,19 @@ export class StylistService {
     } = params
 
     const genderText = gender === 'female' ? '女性' : '男性'
+    const isFreeStyle = stylePreference === '自由搭配'
+    const styleInstruction = isFreeStyle
+      ? '用户无明确风格偏好，请根据五行用神/喜神、季节特点和性别年龄自由发挥，给出最适合的穿搭风格。'
+      : `用户明确偏好「${stylePreference}」风格，请在该风格框架内进行搭配。`
+
     const prompt = `你是一位精通五行色彩学和现代时尚搭配的造型顾问。请根据以下用户信息生成一份结构化穿搭方案：
 
 【用户信息】
 - 性别：${genderText}
 - 年龄：${age}岁
 - 季节：${season}
-- 穿搭风格偏好：${stylePreference}
+- 穿搭风格偏好：${isFreeStyle ? '无明确偏好（自由搭配）' : stylePreference}
+- ${styleInstruction}
 - 八字日主：${dayMaster}
 - 八字用神（最需要补的五行）：${yongShen}
 - 八字喜神（辅助调候的五行）：${xiShen}
