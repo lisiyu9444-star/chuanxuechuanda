@@ -3,7 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Share2, RefreshCw, Lock, Loader, Shirt, Layers, Footprints, ShoppingBag, Sparkles } from 'lucide-react-taro'
+import { Share2, RefreshCw, Lock, Loader, Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import './index.css'
@@ -768,7 +768,7 @@ const ResultPage = () => {
                       {result.llmPlan.outfitPlan.bottom && (
                         <View className="bg-gray-50 p-3 rounded-xl">
                           <View className="flex items-center gap-1 mb-1">
-                            <Layers size={12} color="#6b7280" />
+                            <Square size={12} color="#6b7280" />
                             <Text className="block text-xs text-gray-500">下装</Text>
                           </View>
                           <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.bottom}</Text>
@@ -804,7 +804,7 @@ const ResultPage = () => {
                       {result.llmPlan.outfitPlan.accessories.length > 0 && (
                         <View className="bg-gray-50 p-3 rounded-xl">
                           <View className="flex items-center gap-1 mb-1">
-                            <Sparkles size={12} color="#6b7280" />
+                            <Gem size={12} color="#6b7280" />
                             <Text className="block text-xs text-gray-500">配饰</Text>
                           </View>
                           <Text className="block text-sm font-medium text-gray-900 leading-snug">{result.llmPlan.outfitPlan.accessories.join('、')}</Text>
