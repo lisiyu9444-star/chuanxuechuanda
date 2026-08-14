@@ -6,6 +6,28 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Trash2, Clock, Shirt } from 'lucide-react-taro'
 
+interface StylistResult {
+  luckyColors: {
+    primary: string
+    secondary: string
+    accent: string
+    avoid: string[]
+  }
+  styleTheme: string
+  outfitPlan: {
+    top: string
+    bottom: string
+    outerwear: string | null
+    shoes: string
+    bag: string
+    accessories: string[]
+  }
+  fabricSuggestion: string
+  occasions: string[]
+  imagePrompt: string
+  negativePrompt: string
+}
+
 interface BaZiResult {
   nickname: string
   gender: string
@@ -42,6 +64,7 @@ interface BaZiResult {
   ganZhiDate?: { month: string; day: string }
   dailyYongShen?: string
   dailyXiShen?: string
+  llmPlan?: StylistResult
 }
 
 interface HistoryRecord extends BaZiResult {
@@ -147,16 +170,9 @@ export default function ProfilePage() {
                             </Text>
                           </View>
                         </View>
-                        <View className="flex flex-wrap gap-2 mb-3">
-                          {record.outfit?.colors?.map((color, index) => (
-                            <View
-                              key={index}
-                              className="px-2 py-1 rounded-full bg-gray-100"
-                            >
-                              <Text className="block text-xs text-gray-600">{color}</Text>
-                            </View>
-                          ))}
-                        </View>
+                        <Text className="block text-sm text-gray-600" numberOfLines={2}>
+                          {record.llmPlan?.styleTheme || record.outfit?.style || '今日穿搭推荐'}
+                        </Text>
                         <Text className="block text-xs text-gray-400">
                           {record.ganZhiDate?.month || ''} {record.ganZhiDate?.day || ''}
                         </Text>

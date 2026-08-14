@@ -104,18 +104,47 @@ const COLOR_MAP: Record<string, string> = {
   深紫: '#581c87',
   淡紫: '#c4b5fd',
   橙色: '#f97316',
-  裸色: '#e8c4a2'
+  裸色: '#e8c4a2',
+  // 单字兜底
+  红: '#dc2626',
+  橙: '#f97316',
+  黄: '#facc15',
+  绿: '#16a34a',
+  青: '#008080',
+  蓝: '#2563eb',
+  紫: '#9333ea',
+  黑: '#1f2937',
+  白: '#f8f9fa',
+  灰: '#6b7280',
+  棕: '#8b5a2b',
+  粉: '#f472b6',
+  金: '#d4af37',
+  银: '#c0c0c0'
 }
 
 function getColorHex(name: string): string {
-  const normalized = name.replace(/[\s·]/g, '')
+  const normalized = name.replace(/[\s·,，]/g, '')
+  if (!normalized) return '#9ca3af'
+
+  // 1. 精确匹配
   const direct = COLOR_MAP[normalized]
   if (direct) return direct
+
+  // 2. 包含匹配（颜色名包含关键词，或关键词包含颜色名）
   for (const key of Object.keys(COLOR_MAP)) {
     if (normalized.includes(key) || key.includes(normalized)) {
       return COLOR_MAP[key]
     }
   }
+
+  // 3. 取最后一个字匹配（如珊瑚橙 -> 橙）
+  const lastChar = normalized.slice(-1)
+  if (lastChar && COLOR_MAP[lastChar]) return COLOR_MAP[lastChar]
+
+  // 4. 取最后两个字匹配（如玫瑰红 -> 玫红）
+  const lastTwo = normalized.slice(-2)
+  if (lastTwo && COLOR_MAP[lastTwo]) return COLOR_MAP[lastTwo]
+
   return '#9ca3af'
 }
 

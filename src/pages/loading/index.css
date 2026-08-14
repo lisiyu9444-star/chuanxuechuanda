@@ -106,3 +106,36 @@
   background-color: #3b82f6;
   animation-delay: -2.4s;
 }
+
+/* 25s 后动画加速，营造正在加速工作的感觉 */
+.wuxing-speedup .wuxing-core {
+  animation-duration: 1.2s;
+}
+
+.wuxing-speedup .wuxing-core-ring {
+  animation-duration: 1.2s;
+}
+
+.wuxing-speedup .wuxing-dot {
+  animation-duration: 1.5s;
+}
+
+.wuxing-speedup .wuxing-dot-wood {
+  animation-delay: 0s;
+}
+
+.wuxing-speedup .wuxing-dot-fire {
+  animation-delay: -0.3s;
+}
+
+.wuxing-speedup .wuxing-dot-earth {
+  animation-delay: -0.6s;
+}
+
+.wuxing-speedup .wuxing-dot-metal {
+  animation-delay: -0.9s;
+}
+
+.wuxing-speedup .wuxing-dot-water {
+  animation-delay: -1.2s;
+}
