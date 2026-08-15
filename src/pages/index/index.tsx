@@ -1,4 +1,4 @@
-import { View, Text, Picker, Image } from '@tarojs/components'
+import { View, Text, Picker } from '@tarojs/components'
 import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
@@ -7,7 +7,6 @@ import { Venus, Mars, ChevronDown, Check } from 'lucide-react-taro'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Network } from '@/network'
-import logoPng from '@/assets/logo-brand.png'
 import './index.css'
 
 const COMMON_STYLES = [
@@ -173,8 +172,7 @@ const IndexPage = () => {
   return (
     <View className="min-h-full bg-white px-6 pt-6 pb-24">
       {/* Header */}
-      <View className="flex flex-col items-center pt-8 pb-8">
-        <Image src={logoPng} className="w-24 h-24 mb-3" mode="aspectFit" />
+      <View className="flex flex-col items-center pt-4 pb-4">
         {features.showHomeSubtitle && (
           <Text className="block text-xs text-gray-400">
             填写个人信息 · 推荐每日穿搭
