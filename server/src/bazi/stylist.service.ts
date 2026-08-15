@@ -12,8 +12,11 @@ export interface OutfitPlan {
 
 export interface LuckyColors {
   primary: string
+  primaryHex: string
   secondary: string
+  secondaryHex: string
   accent: string
+  accentHex: string
   avoid: string[]
 }
 
@@ -75,8 +78,11 @@ export class StylistService {
 {
   "luckyColors": {
     "primary": "主幸运色（对应用神，用于上衣/外套主体，需给出具体颜色名称如：米白色、香槟金、雾霾蓝）",
+    "primaryHex": "主幸运色的 HEX 色值，仅用于结果页展示，必须以 # 开头，例如 #F5F5DC",
     "secondary": "辅助幸运色（对应喜神，用于下装/裤装，需给出具体颜色名称）",
+    "secondaryHex": "辅助幸运色的 HEX 色值，仅用于结果页展示，必须以 # 开头",
     "accent": "点缀幸运色（用于鞋包配饰，需给出具体颜色名称）",
+    "accentHex": "点缀幸运色的 HEX 色值，仅用于结果页展示，必须以 # 开头",
     "avoid": ["应避免的1-2种颜色"]
   },
   "styleTheme": "一句话概括今日穿搭主题，如：温柔知性的秋日通勤风",
@@ -146,12 +152,15 @@ export class StylistService {
 
   private normalizeResult(data: Record<string, unknown>): StylistResult {
     return {
-      luckyColors: (data.luckyColors || {
-        primary: '米白色',
-        secondary: '浅灰色',
-        accent: '金色',
-        avoid: ['荧光色'],
-      }) as LuckyColors,
+      luckyColors: {
+        primary: String(data.luckyColors?.primary || '米白色'),
+        primaryHex: this.normalizeHex(String(data.luckyColors?.primaryHex || '')),
+        secondary: String(data.luckyColors?.secondary || '浅灰色'),
+        secondaryHex: this.normalizeHex(String(data.luckyColors?.secondaryHex || '')),
+        accent: String(data.luckyColors?.accent || '金色'),
+        accentHex: this.normalizeHex(String(data.luckyColors?.accentHex || '')),
+        avoid: Array.isArray(data.luckyColors?.avoid) ? data.luckyColors.avoid : ['荧光色'],
+      } as LuckyColors,
       styleTheme: String(data.styleTheme || '今日幸运穿搭'),
       outfitPlan: (data.outfitPlan || {
         top: '白色T恤',
@@ -166,5 +175,11 @@ export class StylistService {
       imagePrompt: String(data.imagePrompt || ''),
       negativePrompt: String(data.negativePrompt || ''),
     }
+  }
+
+  private normalizeHex(hex: string): string {
+    const trimmed = hex.trim()
+    if (/^#[0-9A-Fa-f]{6}$/.test(trimmed)) return trimmed.toUpperCase()
+    return '#9CA3AF'
   }
 }

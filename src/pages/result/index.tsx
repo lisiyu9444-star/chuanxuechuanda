@@ -191,8 +191,11 @@ interface BaZiResult {
   llmPlan?: {
     luckyColors: {
       primary: string
+      primaryHex?: string
       secondary: string
+      secondaryHex?: string
       accent: string
+      accentHex?: string
       avoid: string[]
     }
     styleTheme: string
@@ -747,7 +750,7 @@ const ResultPage = () => {
                       <View className="flex items-center gap-3 bg-gray-50 px-3 py-3 rounded-xl">
                         <View
                           className="w-5 h-5 rounded-full flex-shrink-0 border"
-                          style={{ backgroundColor: getColorHex(result.llmPlan.luckyColors.primary), borderColor: 'rgba(0,0,0,0.05)' }}
+                          style={{ backgroundColor: result.llmPlan.luckyColors.primaryHex || getColorHex(result.llmPlan.luckyColors.primary), borderColor: 'rgba(0,0,0,0.05)' }}
                         />
                         <View className="flex-1 min-w-0">
                           <Text className="block text-xs text-gray-500">主色</Text>
@@ -757,7 +760,7 @@ const ResultPage = () => {
                       <View className="flex items-center gap-3 bg-gray-50 px-3 py-3 rounded-xl">
                         <View
                           className="w-5 h-5 rounded-full flex-shrink-0 border"
-                          style={{ backgroundColor: getColorHex(result.llmPlan.luckyColors.secondary), borderColor: 'rgba(0,0,0,0.05)' }}
+                          style={{ backgroundColor: result.llmPlan.luckyColors.secondaryHex || getColorHex(result.llmPlan.luckyColors.secondary), borderColor: 'rgba(0,0,0,0.05)' }}
                         />
                         <View className="flex-1 min-w-0">
                           <Text className="block text-xs text-gray-500">辅色</Text>
@@ -767,7 +770,7 @@ const ResultPage = () => {
                       <View className="flex items-center gap-3 bg-gray-50 px-3 py-3 rounded-xl">
                         <View
                           className="w-5 h-5 rounded-full flex-shrink-0 border"
-                          style={{ backgroundColor: getColorHex(result.llmPlan.luckyColors.accent), borderColor: 'rgba(0,0,0,0.05)' }}
+                          style={{ backgroundColor: result.llmPlan.luckyColors.accentHex || getColorHex(result.llmPlan.luckyColors.accent), borderColor: 'rgba(0,0,0,0.05)' }}
                         />
                         <View className="flex-1 min-w-0">
                           <Text className="block text-xs text-gray-500">点缀</Text>
