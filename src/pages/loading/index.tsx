@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
+import type { BaZiResult } from '@/types/bazi'
 import './index.css'
 
 interface UserData {
@@ -14,23 +15,6 @@ interface UserData {
   birthTime: string
   location: string
   calendarType?: string
-}
-
-interface BaZiResult {
-  nickname: string
-  gender: string
-  dayMaster: string
-  dayMasterElement: string
-  fourPillars: any[]
-  fiveElements: any[]
-  favorableElement: string
-  favorableAnalysis: any
-  outfit: any
-  imageUrl: string
-  age?: number
-  ganZhiDate?: { month: string; day: string }
-  dailyYongShen?: string
-  dailyXiShen?: string
 }
 
 interface HistoryRecord extends BaZiResult {

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Share2, RefreshCw, Lock, Loader, Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
+import type { BaZiResult } from '@/types/bazi'
 import './index.css'
 
 const COLOR_MAP: Record<string, string> = {
@@ -148,69 +149,6 @@ function getColorHex(name: string): string {
   return '#9ca3af'
 }
 
-interface BaZiResult {
-  nickname: string
-  gender: string
-  dayMaster: string
-  dayMasterElement: string
-  fourPillars: Array<{
-    name: string
-    stem: string
-    branch: string
-    ganZhi: string
-    stemElement: string
-    branchElement: string
-    naYin: string
-    tenGod: string
-  }>
-  fiveElements: Array<{ name: string; count: number }>
-  favorableElement: string
-  favorableAnalysis: {
-    dayMaster: string
-    strength: string
-    coreYongShen: string
-    assistantXiShen: string
-    taboo: string
-    logicSummary: string
-  }
-  outfit: {
-    style: string
-    colors: string[]
-    description: string
-    prompt: string
-    backgroundColor?: string
-  }
-  imageUrl: string
-  age?: number
-  ganZhiDate?: {
-    month: string
-    day: string
-  }
-  dailyYongShen?: string
-  dailyXiShen?: string
-  llmPlan?: {
-    luckyColors: {
-      primary: string
-      primaryHex?: string
-      secondary: string
-      secondaryHex?: string
-      accent: string
-      accentHex?: string
-      avoid: string[]
-    }
-    styleTheme: string
-    outfitPlan: {
-      top: string
-      bottom: string
-      outerwear: string | null
-      shoes: string
-      bag: string
-      accessories: string[]
-    }
-    fabricSuggestion: string
-    occasions: string[]
-  }
-}
 
 const ELEMENT_COLORS: Record<string, string> = {
   '木': '#22c55e',
@@ -233,6 +171,8 @@ const ResultPage = () => {
   const [shareId, setShareId] = useState('')
   // 防止分享保存重复触发
   const isSavingRef = useRef(false)
+  // 标记是否从分享链接打开
+  const fromShareRef = useRef(false)
 
   // 更新历史记录中的上身图 URL
   const updateHistoryTryOnUrl = (imageUrl: string, newTryOnUrl: string) => {
@@ -285,6 +225,7 @@ const ResultPage = () => {
     if (urlShareId) {
       // 从分享链接打开，加载分享者的数据
       console.log('Loading shared result with shareId:', urlShareId)
+      fromShareRef.current = true
       Network.request({
         url: `/api/share/${urlShareId}`,
         method: 'GET',
@@ -300,7 +241,14 @@ const ResultPage = () => {
           return
         }
         if (res.data?.result) {
-          setResult(res.data.result)
+          const sharedResult = res.data.result as BaZiResult
+          setResult(sharedResult)
+          // 缓存到本地，方便刷新后仍能查看
+          try {
+            Taro.setStorageSync('baziResult', sharedResult)
+          } catch (e) {
+            console.error('Save shared result to storage failed:', e)
+          }
           // 如果分享数据中包含上身图，直接设置
           if (res.data.tryOnUrl) {
             setTryOnUrl(res.data.tryOnUrl)
@@ -330,7 +278,7 @@ const ResultPage = () => {
 
   // 保存/更新分享数据到服务器
   const saveShareData = async (currentTryOnUrl?: string) => {
-    if (!result || isSavingRef.current) return
+    if (!result || isSavingRef.current || fromShareRef.current) return
 
     isSavingRef.current = true
     try {
@@ -340,9 +288,9 @@ const ResultPage = () => {
         gender: result.gender || 'male',
         imageUrl: result.imageUrl,
         outfit: {
-          style: result.outfit.style,
-          colors: result.outfit.colors,
-          description: result.outfit.description,
+          style: result.outfit?.style || '简约风',
+          colors: result.outfit?.colors || [],
+          description: result.outfit?.description || '',
         },
         favorableElement: result.favorableElement,
         fourPillars: result.fourPillars,
@@ -882,10 +830,10 @@ const ResultPage = () => {
               ) : (
                 <>
                   <Text className="block text-gray-600 text-sm mb-3">
-                    {result.outfit.description}
+                    {result.outfit?.description}
                   </Text>
                   <View className="flex flex-wrap gap-2">
-                    {result.outfit.colors.map((color) => (
+                    {result.outfit?.colors?.map((color) => (
                       <View
                         key={color}
                         className="px-3 py-1 rounded-full bg-gray-50 border border-gray-100"

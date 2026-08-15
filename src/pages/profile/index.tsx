@@ -5,77 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Trash2, Clock, Shirt } from 'lucide-react-taro'
-
-interface StylistResult {
-  luckyColors: {
-    primary: string
-    secondary: string
-    accent: string
-    avoid: string[]
-  }
-  styleTheme: string
-  outfitPlan: {
-    top: string
-    bottom: string
-    outerwear: string | null
-    shoes: string
-    bag: string
-    accessories: string[]
-  }
-  fabricSuggestion: string
-  occasions: string[]
-  imagePrompt: string
-  negativePrompt: string
-}
-
-interface BaZiResult {
-  nickname: string
-  gender: string
-  dayMaster: string
-  dayMasterElement: string
-  fourPillars: Array<{
-    name: string
-    stem: string
-    branch: string
-    ganZhi: string
-    stemElement: string
-    branchElement: string
-    naYin: string
-    tenGod: string
-  }>
-  fiveElements: Array<{ name: string; count: number }>
-  favorableElement: string
-  favorableAnalysis: {
-    dayMaster: string
-    strength: string
-    coreYongShen: string
-    assistantXiShen: string
-    taboo: string
-    logicSummary: string
-  }
-  outfit: {
-    style: string
-    colors: string[]
-    description: string
-    prompt: string
-    backgroundColor?: string
-  }
-  imageUrl: string
-  age?: number
-  ganZhiDate?: { month: string; day: string }
-  dailyYongShen?: string
-  dailyXiShen?: string
-  llmPlan?: StylistResult
-}
-
-interface HistoryRecord extends BaZiResult {
-  id: string
-  birthDate: string
-  birthTime: string
-  city: string
-  tryOnUrl?: string
-  createdAt: number
-}
+import type { HistoryRecord } from '@/types/bazi'
 
 const HISTORY_KEY = 'outfit_history'
 const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000

@@ -88,12 +88,12 @@ const IndexPage = () => {
   useShareAppMessage(() => ({
     title: '测一测你的幸运穿搭',
     path: '/pages/index/index',
-    imageUrl: '/share-cover.jpg',
+    // 不设置 imageUrl，微信会自动截取当前页面作为分享图
   }))
 
   useShareTimeline(() => ({
     title: '测一测你的幸运穿搭',
-    imageUrl: '/share-cover.jpg',
+    // 不设置 imageUrl，微信会自动截取当前页面作为分享图
   }))
 
   Taro.useDidShow(() => {
