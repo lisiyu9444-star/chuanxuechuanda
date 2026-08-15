@@ -151,15 +151,16 @@ export class StylistService {
   }
 
   private normalizeResult(data: Record<string, unknown>): StylistResult {
+    const luckyColors = (data.luckyColors || {}) as LuckyColors
     return {
       luckyColors: {
-        primary: String(data.luckyColors?.primary || '米白色'),
-        primaryHex: this.normalizeHex(String(data.luckyColors?.primaryHex || '')),
-        secondary: String(data.luckyColors?.secondary || '浅灰色'),
-        secondaryHex: this.normalizeHex(String(data.luckyColors?.secondaryHex || '')),
-        accent: String(data.luckyColors?.accent || '金色'),
-        accentHex: this.normalizeHex(String(data.luckyColors?.accentHex || '')),
-        avoid: Array.isArray(data.luckyColors?.avoid) ? data.luckyColors.avoid : ['荧光色'],
+        primary: String(luckyColors.primary || '米白色'),
+        primaryHex: this.normalizeHex(String(luckyColors.primaryHex || '')),
+        secondary: String(luckyColors.secondary || '浅灰色'),
+        secondaryHex: this.normalizeHex(String(luckyColors.secondaryHex || '')),
+        accent: String(luckyColors.accent || '金色'),
+        accentHex: this.normalizeHex(String(luckyColors.accentHex || '')),
+        avoid: Array.isArray(luckyColors.avoid) ? luckyColors.avoid : ['荧光色'],
       } as LuckyColors,
       styleTheme: String(data.styleTheme || '今日幸运穿搭'),
       outfitPlan: (data.outfitPlan || {
