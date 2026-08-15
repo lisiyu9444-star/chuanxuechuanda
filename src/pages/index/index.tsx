@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Venus, Mars, ChevronDown, Check } from 'lucide-react-taro'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Network } from '@/network'
 import './index.css'
 
 const COMMON_STYLES = [
@@ -83,7 +82,6 @@ const IndexPage = () => {
   const [cityIndex, setCityIndex] = useState(0)
   const [stylePreference, setStylePreference] = useState(getDefaultStyle())
   const [styleSheetOpen, setStyleSheetOpen] = useState(false)
-  const [features, setFeatures] = useState({ showHomeSubtitle: true })
 
   const styleOptions = useMemo(() => getStyleOptions(gender), [gender])
 
@@ -119,14 +117,6 @@ const IndexPage = () => {
       // ignore
     }
 
-    Network.request({ url: '/api/config/features' }).then((res: any) => {
-      console.log('Features config:', res.data)
-      if (res.data?.data?.features) {
-        setFeatures(res.data.data.features)
-      }
-    }).catch(err => {
-      console.error('Failed to load features:', err)
-    })
   })
 
   const handleSubmit = () => {
@@ -170,16 +160,7 @@ const IndexPage = () => {
   }
 
   return (
-    <View className="min-h-full bg-white px-6 pt-6 pb-24">
-      {/* Header */}
-      <View className="flex flex-col items-center pt-4 pb-4">
-        {features.showHomeSubtitle && (
-          <Text className="block text-xs text-gray-400">
-            填写个人信息 · 推荐每日穿搭
-          </Text>
-        )}
-      </View>
-
+    <View className="min-h-full bg-white px-6 pt-4 pb-24">
       {/* Form */}
       <View className="flex flex-col gap-5">
         {/* Nickname */}
