@@ -174,6 +174,8 @@ const ResultPage = () => {
   const [shareLoading, setShareLoading] = useState(false)
   // 分享数据是否准备就绪（shareId 已生成）
   const [shareReady, setShareReady] = useState(false)
+  // 从分享链接打开时携带的 shareId
+  const [urlShareId, setUrlShareId] = useState('')
   // 防止分享保存重复触发
   const isSavingRef = useRef(false)
   // 标记是否从分享链接打开
@@ -225,17 +227,18 @@ const ResultPage = () => {
   useDidShow(() => {
     // 检查是否从分享链接打开
     const router = Taro.getCurrentInstance().router
-    const urlShareId = router?.params?.shareId
+    const shareIdFromUrl = router?.params?.shareId
+    setUrlShareId(shareIdFromUrl || '')
 
-    if (urlShareId) {
+    if (shareIdFromUrl) {
       // 从分享链接打开，加载分享者的数据
-      console.log('Loading shared result with shareId:', urlShareId)
+      console.log('Loading shared result with shareId:', shareIdFromUrl)
       fromShareRef.current = true
       setShareLoading(true)
       ;(async () => {
         try {
           const res: any = await Network.request({
-            url: `/api/share/${urlShareId}`,
+            url: `/api/share/${shareIdFromUrl}`,
             method: 'GET',
           })
           console.log('Shared result response:', res.data)
@@ -877,45 +880,47 @@ const ResultPage = () => {
         </View>
       </View>
 
-      {/* Fixed Bottom Buttons */}
-      <View
-        className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
-        style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
-      >
-        {shareReady ? (
+      {/* Fixed Bottom Buttons - 从分享链接进入时隐藏 */}
+      {!urlShareId && (
+        <View
+          className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
+          style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
+        >
+          {shareReady ? (
+            <Button
+              className="flex-1 bg-white border py-3 rounded-xl"
+              style={{ borderColor: `${themeColor}33` }}
+              openType="share"
+            >
+              <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Share2 size={18} color={themeColor} />
+                <Text className="text-gray-700">分享好友</Text>
+              </View>
+            </Button>
+          ) : (
+            <Button
+              className="flex-1 bg-white border py-3 rounded-xl opacity-60"
+              style={{ borderColor: `${themeColor}33` }}
+              disabled
+            >
+              <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Share2 size={18} color={themeColor} />
+                <Text className="text-gray-500">准备分享中...</Text>
+              </View>
+            </Button>
+          )}
           <Button
             className="flex-1 bg-white border py-3 rounded-xl"
             style={{ borderColor: `${themeColor}33` }}
-            openType="share"
+            onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
           >
             <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Share2 size={18} color={themeColor} />
-              <Text className="text-gray-700">分享好友</Text>
+              <RefreshCw size={18} color={themeColor} />
+              <Text className="text-gray-700">再测一次</Text>
             </View>
           </Button>
-        ) : (
-          <Button
-            className="flex-1 bg-white border py-3 rounded-xl opacity-60"
-            style={{ borderColor: `${themeColor}33` }}
-            disabled
-          >
-            <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Share2 size={18} color={themeColor} />
-              <Text className="text-gray-500">准备分享中...</Text>
-            </View>
-          </Button>
-        )}
-        <Button
-          className="flex-1 bg-white border py-3 rounded-xl"
-          style={{ borderColor: `${themeColor}33` }}
-          onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
-        >
-          <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <RefreshCw size={18} color={themeColor} />
-            <Text className="text-gray-700">再测一次</Text>
-          </View>
-        </Button>
-      </View>
+        </View>
+      )}
     </View>
   )
 }
