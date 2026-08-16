@@ -811,11 +811,11 @@ const ResultPage = () => {
                           style={{
                             borderWidth: '1px',
                             borderStyle: 'solid',
-                            borderColor: `${elementColor}33`,
-                            backgroundColor: `${elementColor}0d`
+                            borderColor: `${themeColor}33`,
+                            backgroundColor: `${themeColor}0d`
                           }}
                         >
-                          <Text className="block text-xs font-medium" style={{ color: elementColor }}>{scene}</Text>
+                          <Text className="block text-xs font-medium" style={{ color: themeColor }}>{scene}</Text>
                         </View>
                       ))}
                     </View>
