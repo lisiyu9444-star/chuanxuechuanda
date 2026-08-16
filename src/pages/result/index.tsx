@@ -212,10 +212,10 @@ const ResultPage = () => {
     },
   })
 
-  // 获取今日用神主题色
-  const themeColor = result?.dailyYongShen
-    ? ELEMENT_COLORS[result.dailyYongShen] || '#9333ea'
-    : '#9333ea'
+  // 获取今日用神主题色：优先使用幸运色主色，保持与幸运色 UI 一致
+  const themeColor = result?.llmPlan?.luckyColors?.primaryHex
+    || (result?.dailyYongShen ? ELEMENT_COLORS[result.dailyYongShen] : undefined)
+    || '#9333ea'
 
   useDidShow(() => {
     // 检查是否从分享链接打开
