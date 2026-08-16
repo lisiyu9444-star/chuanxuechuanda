@@ -96,7 +96,7 @@ export class StylistService {
   },
   "fabricSuggestion": "今日推荐面料，说明为什么适合这个季节",
   "occasions": ["适用场景1", "适用场景2"],
-  "imagePrompt": "一段详细的英文 prompt，用于 AI 文生图生成平铺穿搭图。要求：flat lay photography, 1:1 square composition, solid color linen-textured background, all items fully visible within the frame with no cropping and no overlapping, generous spacing between items, clear boundaries. 采用中心展开式构图：上衣/外套平铺展开于画面上半部分，下装平铺展开于画面下半部分，鞋包配饰整齐摆放于画面右下角，配饰点缀于左下角或中心空白处。必须明确表达这是${genderText}穿搭（女性用 women's fashion / feminine styling，男性用 men's fashion / masculine styling）；必须包含所有单品、颜色、材质细节；突出高级感和设计感，避免纯色色块；背景干净有质感，光影柔和自然。禁止出现人物、面部、文字水印。",
+  "imagePrompt": "一段详细的英文 prompt，用于 AI 文生图生成平铺穿搭图。要求：flat lay photography, 3:4 vertical composition, solid color linen-textured background, all items fully visible within the frame with no cropping and no overlapping, generous spacing between items, clear boundaries. 采用上下三段式稳定构图：上衣/外套平铺于画面上方区域，下装平铺于画面中部区域，鞋包配饰整齐排列于画面下方区域。必须明确表达这是${genderText}穿搭（女性用 women's fashion / feminine styling，男性用 men's fashion / masculine styling）；必须包含所有单品、颜色、材质细节；突出高级感和设计感，避免纯色色块；背景干净有质感，光影柔和自然。禁止出现人物、面部、文字水印。",
   "negativePrompt": "英文反向提示词，必须排除不雅、变形、缺失单品、错误颜色、裁切单品、单品被遮挡、单品超出画面、单品堆叠混乱等问题；同时必须排除异性化单品：${genderText === '女性' ? '男装外套、领带、西装裤、宽大工装、男性皮鞋等' : '连衣裙、高跟鞋、蕾丝、荷叶边、短裙、女性手包等'}"
 }
 

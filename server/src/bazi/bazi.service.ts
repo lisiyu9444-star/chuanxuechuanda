@@ -1043,23 +1043,23 @@ export class BaziService {
     const prompt = `俯拍平铺式高定时尚广告摄影，${season} ${genderText} 成衣系列，${styleText}，
 
 【输出尺寸规格】
-强制正方形 1:1 比例构图，画面中心为穿搭主体，四周均匀留白，确保画面重心稳定。画面中所有服装与配饰单品必须完整入镜，任何单品不得被画面边缘裁切、不得被其他单品遮挡。
+强制竖版 3:4 比例构图，顶部留白与底部留白比例为 1:2，确保画面重心稳定。画面中所有服装与配饰单品必须完整入镜，任何单品不得被画面边缘裁切、不得被其他单品遮挡。
 
 【拍摄背景】
 采用 ${bgColor} 的平整细腻亚麻纹理背景布，背景布完全平铺无褶皱，营造极简高级画布感。
 
 【主体穿搭 - 主色=用神】
-核心单品为 ${mainColor} 的${seasonMaterial}${items.outerwear}，搭配 ${bottomColor} 的${seasonMaterial}${items.bottom}。
-上衣/外套与下装分别独立平铺展开，保持自然舒展状态，完整呈现领口、袖口、下摆、裤脚/裙摆等关键部位，面料需呈现清晰的高品质肌理，符合${season}穿着场景。
+核心单品为 ${mainColor} 的${seasonMaterial}${items.outerwear}，搭配 ${bottomColor} 的${seasonMaterial}${items.bottom}，
+面料需呈现清晰的高品质面料肌理，符合${season}穿着场景。
 
 【辅助单品 - 辅色=喜神】
-配饰部分包含一只 ${accessoryColor} 的 ${items.bag} 和一双 ${accessoryColor} 的 ${items.shoes}，单独摆放于画面右下角，不与服装重叠。
+配饰部分包含一只 ${accessoryColor} 的 ${items.bag} 和一双 ${accessoryColor} 的 ${items.shoes}，放置于服装右下方，不与服装重叠。
 
 【点缀细节 - 点缀色】
 ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${accessoryMaterial}作为视觉亮点，保证搭配美观且色彩呼应。
 
 【摆放构图与光影】
-采用中心展开式稳定构图：上衣/外套平铺展开于画面上半部分，下装平铺展开于画面下半部分，鞋包配饰整齐摆放于画面右下角，配饰点缀于画面左下角或中心空白处。各单品之间保留充足间距、边界清晰、互不重叠，整体布局疏朗有序。
+采用上下三段式稳定构图：上衣/外套平铺于画面上方区域，下装平铺于画面中部区域，鞋包配饰整齐排列于画面下方区域。各单品之间保留充足间距、边界清晰、互不重叠，整体布局疏朗有序。
 所有物品投影方向统一（左前方打光），在背景布上投射出柔和块状阴影，增强立体感与落地感。
 四周留有大量留白（占比不少于30%），强调高端画册的排版呼吸感。
 
@@ -1146,7 +1146,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 
     const response = await client.generate({
       prompt: tryOnPrompt,
-      size: '1K',
+      size: '1728x2304',
       image: referenceImageUrl,
     })
 
@@ -1192,7 +1192,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
       const response = await Promise.race([
         client.generate({
           prompt,
-          size: '1K',
+          size: '1728x2304',
         }),
         timeoutPromise,
       ])

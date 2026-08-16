@@ -521,8 +521,8 @@ const ResultPage = () => {
         </View>
 
         {/* Image Display */}
-        <View className="relative w-full rounded-2xl overflow-hidden bg-gray-100">
-          <View className="w-full" style={{ height: '600px' }}>
+        <View className="relative w-full rounded-2xl overflow-hidden bg-gray-100" style={{ paddingBottom: '133.33%' }}>
+          <View className="absolute inset-0">
             {activeTab === 'flat' ? (
               <Image
                 src={result.imageUrl}
