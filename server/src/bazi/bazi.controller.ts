@@ -103,6 +103,7 @@ export class BaziController {
       }, forwardHeaders)
       imagePrompt = llmPlan.imagePrompt
       console.log('[Stylist] LLM 方案生成成功，使用 LLM imagePrompt 生图')
+      console.log('[Stylist] imagePrompt:', imagePrompt)
     } catch (error) {
       console.error('[Stylist] LLM 方案生成失败，使用默认 prompt:', error)
     }
