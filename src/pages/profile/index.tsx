@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Trash2, Clock, Shirt } from 'lucide-react-taro'
@@ -13,6 +14,7 @@ const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000
 export default function ProfilePage() {
   const [history, setHistory] = useState<HistoryRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadHistory()
@@ -31,7 +33,14 @@ export default function ProfilePage() {
       if (validRecords.length !== data.length) {
         Taro.setStorageSync(HISTORY_KEY, validRecords)
       }
-      setHistory(validRecords.sort((a: HistoryRecord, b: HistoryRecord) => b.createdAt - a.createdAt))
+      const sorted = validRecords.sort((a: HistoryRecord, b: HistoryRecord) => b.createdAt - a.createdAt)
+      setHistory(sorted)
+      // 预加载封面图，命中小程序图片缓存，减少列表滑动时的闪烁
+      sorted.forEach((record: HistoryRecord) => {
+        if (record.imageUrl) {
+          Taro.getImageInfo({ src: record.imageUrl }).catch(() => {})
+        }
+      })
     } catch (e) {
       console.error('Load history failed:', e)
     } finally {
@@ -83,12 +92,33 @@ export default function ProfilePage() {
                 <Card key={record.id} className="overflow-hidden">
                   <CardContent className="p-0">
                     <View onClick={() => handleViewDetail(record)}>
-                      <Image
-                        src={record.imageUrl}
-                        mode="aspectFill"
-                        className="w-full h-64 bg-gray-100"
-                        lazyLoad
-                      />
+                      <View className="relative w-full h-64 bg-gray-100">
+                        {!loadedImages.has(record.imageUrl) && (
+                          <View className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100">
+                            <Skeleton className="w-full h-full" />
+                          </View>
+                        )}
+                        <Image
+                          src={record.imageUrl}
+                          mode="aspectFill"
+                          className="w-full h-64"
+                          lazyLoad
+                          onLoad={() => {
+                            setLoadedImages(prev => {
+                              const next = new Set(prev)
+                              next.add(record.imageUrl)
+                              return next
+                            })
+                          }}
+                          onError={() => {
+                            setLoadedImages(prev => {
+                              const next = new Set(prev)
+                              next.add(record.imageUrl)
+                              return next
+                            })
+                          }}
+                        />
+                      </View>
                       <View className="p-4">
                         <View className="flex items-center justify-between mb-2">
                           <Text className="block text-base font-semibold text-gray-900">

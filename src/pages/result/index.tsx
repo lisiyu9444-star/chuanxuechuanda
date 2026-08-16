@@ -3,6 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Share2, RefreshCw, Lock, Loader, Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
@@ -169,6 +170,10 @@ const ResultPage = () => {
   const [showBaZiContent, setShowBaZiContent] = useState(true)
   // 分享 ID（用于朋友圈分享）
   const [shareId, setShareId] = useState('')
+  // 从分享链接进入时的加载态
+  const [shareLoading, setShareLoading] = useState(false)
+  // 分享数据是否准备就绪（shareId 已生成）
+  const [shareReady, setShareReady] = useState(false)
   // 防止分享保存重复触发
   const isSavingRef = useRef(false)
   // 标记是否从分享链接打开
@@ -226,44 +231,50 @@ const ResultPage = () => {
       // 从分享链接打开，加载分享者的数据
       console.log('Loading shared result with shareId:', urlShareId)
       fromShareRef.current = true
-      Network.request({
-        url: `/api/share/${urlShareId}`,
-        method: 'GET',
-      }).then((res: any) => {
-        console.log('Shared result response:', res.data)
-        // 检查是否过期
-        if (res.data?.expired) {
-          Taro.showToast({ title: '分享链接已过期', icon: 'none' })
-          // 跳转到首页
-          setTimeout(() => {
-            Taro.switchTab({ url: '/pages/index/index' })
-          }, 1500)
-          return
-        }
-        if (res.data?.result) {
-          const sharedResult = res.data.result as BaZiResult
-          setResult(sharedResult)
-          // 缓存到本地，方便刷新后仍能查看
-          try {
-            Taro.setStorageSync('baziResult', sharedResult)
-          } catch (e) {
-            console.error('Save shared result to storage failed:', e)
+      setShareLoading(true)
+      ;(async () => {
+        try {
+          const res: any = await Network.request({
+            url: `/api/share/${urlShareId}`,
+            method: 'GET',
+          })
+          console.log('Shared result response:', res.data)
+          // 检查是否过期
+          if (res.data?.expired) {
+            Taro.showToast({ title: '分享链接已过期', icon: 'none' })
+            // 跳转到首页
+            setTimeout(() => {
+              Taro.switchTab({ url: '/pages/index/index' })
+            }, 1500)
+            return
           }
-          // 如果分享数据中包含上身图，直接设置
-          if (res.data.tryOnUrl) {
-            setTryOnUrl(res.data.tryOnUrl)
+          if (res.data?.result) {
+            const sharedResult = res.data.result as BaZiResult
+            setResult(sharedResult)
+            // 缓存到本地，方便刷新后仍能查看
+            try {
+              Taro.setStorageSync('baziResult', sharedResult)
+            } catch (e) {
+              console.error('Save shared result to storage failed:', e)
+            }
+            // 如果分享数据中包含上身图，直接设置
+            if (res.data.tryOnUrl) {
+              setTryOnUrl(res.data.tryOnUrl)
+            }
+          } else {
+            // 分享数据不存在，加载本地数据
+            const data = Taro.getStorageSync('baziResult')
+            if (data) setResult(data)
           }
-        } else {
-          // 分享数据不存在，加载本地数据
+        } catch (err) {
+          console.error('Failed to load shared result:', err)
+          // 加载本地数据
           const data = Taro.getStorageSync('baziResult')
           if (data) setResult(data)
+        } finally {
+          setShareLoading(false)
         }
-      }).catch((err) => {
-        console.error('Failed to load shared result:', err)
-        // 加载本地数据
-        const data = Taro.getStorageSync('baziResult')
-        if (data) setResult(data)
-      })
+      })()
     } else {
       // 正常打开，加载本地数据
       const data = Taro.getStorageSync('baziResult')
@@ -342,6 +353,7 @@ const ResultPage = () => {
       console.error('Failed to save/update share data:', err)
     } finally {
       isSavingRef.current = false
+      setShareReady(true)
     }
   }
 
@@ -437,10 +449,26 @@ const ResultPage = () => {
       })
   }, [])
 
-  if (!result) {
+  if (!result || shareLoading) {
     return (
-      <View className="min-h-full bg-white flex items-center justify-center">
-        <Text className="text-gray-400">加载中...</Text>
+      <View className="min-h-full bg-white p-5">
+        <View className="mb-6">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-32" />
+        </View>
+        <Skeleton className="w-full h-96 rounded-2xl mb-6" />
+        <Skeleton className="h-6 w-40 mb-3" />
+        <View className="flex gap-2 mb-6">
+          <Skeleton className="h-10 w-20 rounded-full" />
+          <Skeleton className="h-10 w-20 rounded-full" />
+          <Skeleton className="h-10 w-20 rounded-full" />
+        </View>
+        <Skeleton className="h-6 w-32 mb-3" />
+        <Skeleton className="h-24 w-full rounded-xl mb-6" />
+        <View className="flex gap-3 mt-4">
+          <Skeleton className="h-12 flex-1 rounded-xl" />
+          <Skeleton className="h-12 flex-1 rounded-xl" />
+        </View>
       </View>
     )
   }
@@ -854,16 +882,29 @@ const ResultPage = () => {
         className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
         style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}
       >
-        <Button
-          className="flex-1 bg-white border py-3 rounded-xl"
-          style={{ borderColor: `${themeColor}33` }}
-          openType="share"
-        >
-          <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <Share2 size={18} color={themeColor} />
-            <Text className="text-gray-700">分享好友</Text>
-          </View>
-        </Button>
+        {shareReady ? (
+          <Button
+            className="flex-1 bg-white border py-3 rounded-xl"
+            style={{ borderColor: `${themeColor}33` }}
+            openType="share"
+          >
+            <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Share2 size={18} color={themeColor} />
+              <Text className="text-gray-700">分享好友</Text>
+            </View>
+          </Button>
+        ) : (
+          <Button
+            className="flex-1 bg-white border py-3 rounded-xl opacity-60"
+            style={{ borderColor: `${themeColor}33` }}
+            disabled
+          >
+            <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Share2 size={18} color={themeColor} />
+              <Text className="text-gray-500">准备分享中...</Text>
+            </View>
+          </Button>
+        )}
         <Button
           className="flex-1 bg-white border py-3 rounded-xl"
           style={{ borderColor: `${themeColor}33` }}
