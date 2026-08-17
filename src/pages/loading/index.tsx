@@ -2,7 +2,8 @@ import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
+
+import { Sparkles } from 'lucide-react-taro'
 import { Network } from '@/network'
 import {
   getArchiveById,
@@ -134,11 +135,11 @@ const LoadingPage = () => {
   return (
     <View className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
       <View className="w-full max-w-sm">
-        <Card>
-          <CardContent className="p-6">
+        <Card className="rounded-2xl shadow-sm">
+          <CardContent className="p-8">
             <View className="flex flex-col items-center gap-6">
-              <View className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center animate-pulse">
-                <Text className="block text-3xl">✨</Text>
+              <View className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF8E7' }}>
+                <Sparkles size={40} color="#F5A623" />
               </View>
 
               <View className="text-center">
@@ -151,14 +152,22 @@ const LoadingPage = () => {
               </View>
 
               <View className="w-full">
-                <Progress value={progressValue} className="h-2" />
+                <View className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F0FF' }}>
+                  <View
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${progressValue}%`,
+                      backgroundColor: '#8B5CF6',
+                    }}
+                  />
+                </View>
                 <Text className="block text-xs text-gray-400 text-center mt-2">
                   {Math.round(progressValue)}%
                 </Text>
               </View>
 
-              <View className="w-full bg-amber-50 rounded-lg p-4">
-                <Text className="block text-sm text-amber-800 text-center leading-relaxed">
+              <View className="w-full rounded-xl p-4" style={{ backgroundColor: '#FFF9F0' }}>
+                <Text className="block text-sm text-center leading-relaxed" style={{ color: '#B45309' }}>
                   传统文化与现代穿搭的结合，正在为你编织今日的幸运色彩...
                 </Text>
               </View>
