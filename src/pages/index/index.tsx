@@ -5,6 +5,7 @@ import { ChevronRight, User, Plus, Sparkles, Shirt, Crown } from 'lucide-react-t
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { OutfitGuideContent } from '@/components/outfit-guide-content'
 import {
   type Archive,
   type DailyResult,
@@ -109,15 +110,15 @@ export default function Index() {
     }
 
     const today = new Date().toISOString().split('T')[0]
-    const cached = await getDailyResult(activeArchive.id, today)
-    if (cached) {
-      setDailyResult(cached)
+    const cachedDaily = await getDailyResult(activeArchive.id, today)
+    if (cachedDaily) {
+      setDailyResult(cachedDaily)
+    } else {
+      Taro.navigateTo({
+        url: `/pages/loading/index?mode=daily&archiveId=${activeArchive.id}`,
+      })
       return
     }
-
-    Taro.navigateTo({
-      url: `/pages/loading/index?mode=daily&archiveId=${activeArchive.id}`,
-    })
   }, [])
 
   useDidShow(() => {
@@ -263,23 +264,15 @@ export default function Index() {
               <ChevronRight size={18} color="#9CA3AF" />
             </View>
 
-            <View className="flex flex-col gap-2">
-              <View className="flex items-center gap-2">
-                <Text className="block text-sm text-gray-500">风格主题</Text>
-                <Text className="block text-sm font-medium text-gray-900">{llmPlan.styleTheme}</Text>
-              </View>
-              <View className="flex items-center gap-2">
-                <Text className="block text-sm text-gray-500">幸运配色</Text>
-                <View className="flex items-center gap-2">
-                  <View className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: llmPlan.luckyColors.primaryHex }} />
-                  <Text className="block text-sm text-gray-900">{llmPlan.luckyColors.primary}</Text>
-                </View>
-              </View>
-              <View className="flex items-start gap-2">
-                <Text className="block text-sm text-gray-500 shrink-0">面料建议</Text>
-                <Text className="block text-sm text-gray-900 leading-relaxed">{llmPlan.fabricSuggestion}</Text>
-              </View>
-            </View>
+            <OutfitGuideContent
+              result={baziResult}
+              llmPlan={llmPlan}
+              pageMode="daily"
+              yongShen={dailyResult.dailyYongShen}
+              xiShen={dailyResult.dailyXiShen}
+              themeColor={themeColor}
+              showTitle={false}
+            />
           </CardContent>
         </Card>
       </View>
@@ -360,11 +353,35 @@ export default function Index() {
               <ChevronRight size={18} color="#9CA3AF" />
             </View>
 
-            <Text className="block text-sm text-gray-600 leading-relaxed mb-3">
-              基于你的命盘喜用神 {baziResult.favorableElement}，生成的专属穿搭方向，不随每日变化。
-            </Text>
+            <View className="space-y-3">
+              <View className="bg-gray-50 rounded-xl p-3">
+                <Text className="block text-sm font-medium text-gray-900 mb-2">喜用神分析</Text>
+                <View className="space-y-2">
+                  <View className="flex items-center gap-2">
+                    <Text className="block text-sm text-gray-500">日主</Text>
+                    <Text className="block text-sm font-medium text-gray-900">{baziResult.dayMaster}</Text>
+                  </View>
+                  <View className="flex items-center gap-2">
+                    <Text className="block text-sm text-gray-500">日主强弱</Text>
+                    <Text className="block text-sm font-medium text-gray-900">{baziResult.favorableAnalysis.strength}</Text>
+                  </View>
+                  <View className="flex items-center gap-2">
+                    <Text className="block text-sm text-gray-500">核心用神</Text>
+                    <Text className="block text-sm font-medium" style={{ color: themeColor }}>{baziResult.favorableAnalysis.coreYongShen}</Text>
+                  </View>
+                  <View className="flex items-center gap-2">
+                    <Text className="block text-sm text-gray-500">喜神</Text>
+                    <Text className="block text-sm font-medium" style={{ color: themeColor }}>{baziResult.favorableAnalysis.assistantXiShen}</Text>
+                  </View>
+                  <View className="flex items-start gap-2">
+                    <Text className="block text-sm text-gray-500 shrink-0">用神逻辑</Text>
+                    <Text className="block text-sm text-gray-700 leading-relaxed">{baziResult.favorableAnalysis.logicSummary}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
 
-            <Button variant="outline" size="sm" className="w-full" onClick={handleViewNative}>
+            <Button variant="outline" size="sm" className="w-full mt-4" onClick={handleViewNative}>
               <Text className="block text-sm text-gray-700">查看详情</Text>
             </Button>
           </CardContent>
