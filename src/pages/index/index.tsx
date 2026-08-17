@@ -14,6 +14,7 @@ import {
   getArchives,
   getCurrentArchiveId,
   getDailyResult,
+  clearDailyResult,
   DEFAULT_ARCHIVE,
 } from '@/utils/archiveStorage'
 
@@ -97,8 +98,10 @@ const EXAMPLE_DAILY_RESULT: DailyResult = {
 }
 
 export default function Index() {
+  const todayStr = new Date().toISOString().split('T')[0]
   const [currentArchive, setCurrentArchive] = useState<Archive | null>(null)
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
+  const [hasArchiveChanged, setHasArchiveChanged] = useState(false)
 
   const loadData = useCallback(async () => {
     const archives = await getArchives()
@@ -108,6 +111,7 @@ export default function Index() {
 
     if (activeArchive.isDefault) {
       setDailyResult(EXAMPLE_DAILY_RESULT)
+      setHasArchiveChanged(false)
       return
     }
 
@@ -115,7 +119,9 @@ export default function Index() {
     const cachedDaily = await getDailyResult(activeArchive.id, today)
     if (cachedDaily) {
       setDailyResult(cachedDaily)
+      setHasArchiveChanged(activeArchive.updatedAt > cachedDaily.generatedAt)
     } else {
+      setHasArchiveChanged(false)
       Taro.navigateTo({
         url: `/pages/loading/index?mode=daily&archiveId=${activeArchive.id}`,
       })
@@ -153,6 +159,14 @@ export default function Index() {
     Taro.navigateTo({ url: `/pages/result/index?mode=native&archiveId=${currentArchive.id}` })
   }, [currentArchive, handleAddArchive])
 
+  const handleUpdateArchive = useCallback(() => {
+    if (!currentArchive || currentArchive.isDefault) return
+    clearDailyResult(currentArchive.id, todayStr)
+    Taro.navigateTo({
+      url: `/pages/loading/index?mode=daily&archiveId=${currentArchive.id}`,
+    })
+  }, [currentArchive, todayStr])
+
   const formatDate = useCallback(() => {
     const now = new Date()
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
@@ -184,6 +198,18 @@ export default function Index() {
           <View className="flex items-center gap-3">
             <View>
               <Text className="block text-lg font-semibold text-gray-900">{currentArchive.nickname}</Text>
+              {hasArchiveChanged && !currentArchive.isDefault && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto px-0 py-0 mt-1"
+                  onClick={handleUpdateArchive}
+                >
+                  <Text className="block text-xs" style={{ color: themeColor }}>
+                    档案有变更，立即更新
+                  </Text>
+                </Button>
+              )}
             </View>
           </View>
           <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleSwitchArchive}>

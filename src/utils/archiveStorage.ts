@@ -122,6 +122,12 @@ export function saveDailyResult(result: DailyResult): void {
   safeSet(DAILY_RESULTS_KEY, map)
 }
 
+export function clearDailyResult(archiveId: string, date: string = getToday()): void {
+  const map = getDailyResults()
+  delete map[getDailyResultKey(archiveId, date)]
+  safeSet(DAILY_RESULTS_KEY, map)
+}
+
 // Native results
 export function getNativeResults(): Record<string, NativeResult> {
   return safeGet<Record<string, NativeResult>>(NATIVE_RESULTS_KEY, {})
