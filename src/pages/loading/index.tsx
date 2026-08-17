@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Network } from '@/network'
-import { getArchiveById, saveDailyResult, type DailyResult } from '@/utils/archiveStorage'
+import { getArchiveById, saveDailyResult, getToday, type DailyResult } from '@/utils/archiveStorage'
 import './index.css'
 
 const LOADING_STEPS = [
@@ -37,8 +37,7 @@ const LoadingPage = () => {
 
       setArchive(currentArchive)
 
-      const today = new Date()
-      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+      const dateStr = getToday()
 
       console.log('[Loading] request daily:', { archiveId, date: dateStr })
       const res = await Network.request({

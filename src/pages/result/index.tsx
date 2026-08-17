@@ -8,7 +8,7 @@ import { Share2, RefreshCw, Lock, Loader, Shirt, Square, Footprints, ShoppingBag
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
-import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult } from '@/utils/archiveStorage'
+import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday } from '@/utils/archiveStorage'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
 import './index.css'
 
@@ -274,7 +274,7 @@ const ResultPage = () => {
   const updateDailyCache = (updates: { imageUrl?: string; tryOnUrl?: string }) => {
     try {
       const archiveId = currentArchiveIdRef.current
-      const today = new Date().toISOString().slice(0, 10)
+      const today = getToday()
       const dailyResult = getDailyResult(archiveId, today)
       if (dailyResult) {
         const updated: DailyResult = {
@@ -456,7 +456,7 @@ const ResultPage = () => {
         })
         setResult({ ...payload.baziResult, llmPlan: payload.llmPlan })
       } else {
-        const today = new Date().toISOString().slice(0, 10)
+        const today = getToday()
         const bazi = payload.baziResult
         saveDailyResult({
           archiveId,
@@ -490,7 +490,7 @@ const ResultPage = () => {
         return
       }
     } else {
-      const today = new Date().toISOString().slice(0, 10)
+      const today = getToday()
       const dailyResult = getDailyResult(archiveId, today)
       if (dailyResult?.baziResult) {
         setResult({ ...dailyResult.baziResult, llmPlan: dailyResult.llmPlan })

@@ -15,13 +15,14 @@ import {
   getCurrentArchiveId,
   getDailyResult,
   clearDailyResult,
+  getToday,
   DEFAULT_ARCHIVE,
 } from '@/utils/archiveStorage'
 
 const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/placeholder_compressed_fc42a6fb.jpg?sign=1789570488-e3736db199-0-8a30a66f5bbc9632daba064367ba177cac6a1067704b5b2cd1114e4d0896686d'
 
 const EXAMPLE_DAILY_RESULT: DailyResult = {
-  date: new Date().toISOString().split('T')[0],
+  date: getToday(),
   archiveId: DEFAULT_ARCHIVE.id,
   baziResult: {
     nickname: '示例用户',
@@ -98,7 +99,7 @@ const EXAMPLE_DAILY_RESULT: DailyResult = {
 }
 
 export default function Index() {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = getToday()
   const [currentArchive, setCurrentArchive] = useState<Archive | null>(null)
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
   const [hasArchiveChanged, setHasArchiveChanged] = useState(false)
@@ -115,7 +116,7 @@ export default function Index() {
       return
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = getToday()
     const cachedDaily = await getDailyResult(activeArchive.id, today)
     if (cachedDaily) {
       setDailyResult(cachedDaily)
