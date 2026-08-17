@@ -4,248 +4,168 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Network } from '@/network'
-import { useLoadingTask } from '@/hooks/useLoadingTask'
-import type { BaZiResult } from '@/types/bazi'
+import {
+  getArchiveById,
+  saveDailyResult,
+  saveNativeResult,
+  type DailyResult,
+} from '@/utils/archiveStorage'
 import './index.css'
-
-interface UserData {
-  nickname: string
-  gender: string
-  birthDate: string
-  birthTime: string
-  location: string
-  calendarType?: string
-}
-
-interface HistoryRecord extends BaZiResult {
-  id: string
-  birthDate: string
-  birthTime: string
-  city: string
-  tryOnUrl: string
-  createdAt: number
-}
 
 const LOADING_STEPS = [
   '正在排列四柱...',
   '正在推演旺缺...',
   '正在分析喜用神...',
   '正在生成今日推荐穿搭...',
+  '正在测算今日幸运指数...',
 ]
 
 const LoadingPage = () => {
   const [currentStep, setCurrentStep] = useState(0)
   const [progressValue, setProgressValue] = useState(0)
   const startTimeRef = useRef(Date.now())
-  const [userData, setUserData] = useState<UserData | null>(null)
   const [trustCount] = useState(128456 + Math.floor(Math.random() * 1000))
-  const [isAccelerated, setIsAccelerated] = useState(false)
-  const [features, setFeatures] = useState({ showLoadingSteps: true })
 
-  const saveHistoryRecord = (data: BaZiResult) => {
-    try {
-      const raw = Taro.getStorageSync('outfit_history')
-      const records = Array.isArray(raw) ? (raw as HistoryRecord[]) : []
-      const storedUserData = Taro.getStorageSync('userData')
-      const newRecord: HistoryRecord = {
-        ...data,
-        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        birthDate: storedUserData?.birthDate || '',
-        birthTime: storedUserData?.birthTime || '',
-        city: storedUserData?.location || '',
-        tryOnUrl: '',
-        createdAt: Date.now(),
-      }
-      const filtered = records.filter(
-        (item) => Date.now() - item.createdAt < 30 * 24 * 60 * 60 * 1000
-      )
-      const updated = [newRecord, ...filtered].slice(0, 100)
-      Taro.setStorageSync('outfit_history', updated)
-      console.log('[saveHistoryRecord] saved, count:', updated.length, 'newId:', newRecord.id)
-    } catch (e) {
-      console.error('[saveHistoryRecord] failed:', e)
-      Taro.showToast({ title: '历史记录保存失败', icon: 'none' })
-    }
-  }
-
-  const { showLoadingSteps } = features
-
-  // 使用通用 loading task hook
-  useLoadingTask<UserData, BaZiResult>({
-    url: '/api/bazi/calculate',
-    method: 'POST',
-    params: userData || undefined,
-    timeout: 120000,
-    autoExecute: true, // userData 准备好后自动执行
-    onSuccess: (data) => {
-      console.log('BaZi calculation success:', data)
-      saveHistoryRecord(data)
-      setProgressValue(100)
-      Taro.setStorageSync('baziResult', data)
-      Taro.redirectTo({ url: '/pages/result/index' })
-    },
-    onError: (error) => {
-      console.error('BaZi calculation failed:', error)
-      Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
-    },
-  })
-
-  useDidShow(() => {
-    const data = Taro.getStorageSync('userData')
-    if (data) {
-      setUserData(data)
-    }
-
-    // 获取功能开关配置
-    const loadFeatures = async () => {
-      try {
-        const res = await Network.request({
-          url: '/api/config/features',
-          method: 'GET',
-        })
-        console.log('Features config:', res.data)
-        if (res.data?.data?.features) {
-          setFeatures(res.data.data.features)
-        }
-      } catch (error) {
-        console.error('Failed to load features:', error)
-      }
-    }
-    loadFeatures()
-
-    // 25秒后加速动画，营造正在加速工作的感知
-    const timer = setTimeout(() => {
-      setIsAccelerated(true)
-    }, 25000)
-    return () => clearTimeout(timer)
-  })
-
-  // Step animation
-  useEffect(() => {
-    if (currentStep < LOADING_STEPS.length - 1) {
-      const timer = setTimeout(() => {
-        setCurrentStep((prev) => prev + 1)
-      }, 2500)
-      return () => clearTimeout(timer)
-    }
-  }, [currentStep])
-
-  const genderText = userData?.gender === 'male' ? '男' : '女'
-  
-  // 基于时间的进度条，30 秒走完
   useEffect(() => {
     const timer = setInterval(() => {
-      const elapsed = (Date.now() - startTimeRef.current) / 1000
-      const progress = Math.min((elapsed / 30) * 100, 95)
-      setProgressValue(progress)
-    }, 100)
+      const elapsed = Date.now() - startTimeRef.current
+      const max = 120000
+      const nextValue = Math.min((elapsed / max) * 100, 95)
+      setProgressValue(nextValue)
+      const stepIndex = Math.min(
+        Math.floor((elapsed / max) * LOADING_STEPS.length),
+        LOADING_STEPS.length - 1,
+      )
+      setCurrentStep(stepIndex)
+    }, 500)
     return () => clearInterval(timer)
   }, [])
 
+  useDidShow(() => {
+    const instance = Taro.getCurrentInstance()
+    const archiveId = instance?.router?.params?.archiveId as string | undefined
+    const mode = (instance?.router?.params?.mode as string | undefined) || 'daily'
+
+    if (!archiveId) {
+      Taro.showToast({ title: '缺少档案信息', icon: 'none' })
+      setTimeout(() => Taro.redirectTo({ url: '/pages/index/index' }), 1500)
+      return
+    }
+
+    loadData(archiveId, mode)
+  })
+
+  const loadData = async (archiveId: string, mode: string) => {
+    try {
+      const archive = await getArchiveById(archiveId)
+      if (!archive) {
+        Taro.showToast({ title: '档案不存在', icon: 'none' })
+        setTimeout(() => Taro.redirectTo({ url: '/pages/index/index' }), 1500)
+        return
+      }
+
+      const payload = {
+        nickname: archive.nickname,
+        gender: archive.gender,
+        birthDate: archive.birthDate,
+        birthTime: archive.birthTime,
+        location: archive.location,
+        calendarType: archive.calendarType,
+        age: archive.age,
+        stylePreference: archive.stylePreference,
+      }
+
+      const today = new Date().toISOString().split('T')[0]
+
+      if (mode === 'native') {
+        const res = await Network.request({
+          url: '/api/bazi/native',
+          method: 'POST',
+          data: payload,
+        })
+        console.log('[Loading] native response:', res.data)
+        const data = res.data?.data
+        await saveNativeResult({
+          archiveId,
+          baziResult: data.baziResult,
+          llmPlan: data.llmPlan,
+          generatedAt: Date.now(),
+        })
+      } else {
+        const res = await Network.request({
+          url: '/api/bazi/daily',
+          method: 'POST',
+          data: payload,
+        })
+        console.log('[Loading] daily response:', res.data)
+        const data = res.data?.data
+        const dailyResult: DailyResult = {
+          date: today,
+          archiveId,
+          baziResult: data.baziResult,
+          llmPlan: data.llmPlan,
+          luckyScore: data.luckyScore,
+          ganZhiDate: data.ganZhiDate,
+          dailyYongShen: data.dailyYongShen,
+          dailyXiShen: data.dailyXiShen,
+          generatedAt: Date.now(),
+        }
+        await saveDailyResult(dailyResult)
+      }
+
+      setProgressValue(100)
+      setTimeout(() => {
+        Taro.redirectTo({ url: '/pages/index/index' })
+      }, 500)
+    } catch (error) {
+      console.error('[Loading] loadData failed:', error)
+      Taro.showModal({
+        title: '加载失败',
+        content: '今日内容生成失败，是否重试？',
+        showCancel: false,
+        confirmText: '重试',
+        success: () => {
+          loadData(archiveId, mode)
+        },
+      })
+    }
+  }
+
   return (
-    <View className="min-h-full bg-white px-6 py-8 flex flex-col">
-      {/* Animation Area */}
-      <View className="flex flex-col items-center pt-8 pb-6">
-        {/* 五行流动动画 */}
-        <View className={`wuxing-orbit-container mb-6 ${isAccelerated ? 'wuxing-speedup' : ''}`}>
-          <View className="wuxing-orbit-ring" />
-          <View className="wuxing-core-ring" />
-          <View className="wuxing-core" />
-          <View className="wuxing-dot wuxing-dot-wood" />
-          <View className="wuxing-dot wuxing-dot-fire" />
-          <View className="wuxing-dot wuxing-dot-earth" />
-          <View className="wuxing-dot wuxing-dot-metal" />
-          <View className="wuxing-dot wuxing-dot-water" />
-        </View>
-
-        {/* Current Step Text */}
-        <Text className="block text-base font-medium text-gray-900 mb-1">
-          勾画中...
-        </Text>
-
-        {/* Progress Bar */}
-        <View className="w-full mt-5 px-4">
-          <Progress value={progressValue} className="h-2" style={{ "--primary": "#1F2937", "--secondary": "#E5E7EB" } as React.CSSProperties} />
-        </View>
-      </View>
-
-      {/* User Info Summary */}
-      {userData && (
-        <View className="mb-5">
-          <Card className="bg-gray-50 border-gray-100">
-            <CardContent className="p-4">
-              <Text className="block text-base font-semibold text-black mb-3">
-                个人信息
-              </Text>
-              <View className="flex flex-col gap-3">
-                <View className="flex justify-between">
-                  <Text className="text-xs text-gray-500">昵称</Text>
-                  <Text className="text-sm text-gray-900">
-                    {userData.nickname}
-                  </Text>
-                </View>
-                <View className="flex justify-between">
-                  <Text className="text-xs text-gray-500">性别</Text>
-                  <Text className="text-sm text-gray-900">{genderText}</Text>
-                </View>
-                <View className="flex justify-between">
-                  <Text className="text-xs text-gray-500">出生日期</Text>
-                  <Text className="text-sm text-gray-900">
-                    {userData.birthDate}
-                  </Text>
-                </View>
-                <View className="flex justify-between">
-                  <Text className="text-xs text-gray-500">出生时辰</Text>
-                  <Text className="text-sm text-gray-900">
-                    {userData.birthTime}
-                  </Text>
-                </View>
-                <View className="flex justify-between">
-                  <Text className="text-xs text-gray-500">所在城市</Text>
-                  <Text className="text-sm text-gray-900">
-                    {userData.location}
-                  </Text>
-                </View>
+    <View className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+      <View className="w-full max-w-sm">
+        <Card>
+          <CardContent className="p-6">
+            <View className="flex flex-col items-center gap-6">
+              <View className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center animate-pulse">
+                <Text className="block text-3xl">✨</Text>
               </View>
-            </CardContent>
-          </Card>
-        </View>
-      )}
 
-      {/* Progress Steps */}
-      {showLoadingSteps && (
-        <View className="flex-1 flex flex-col justify-end pb-8">
-          <View className="flex flex-col gap-3 mb-6">
-            {LOADING_STEPS.map((step, index) => (
-              <View key={step} className="flex items-center gap-3">
-                <View
-                  className={`w-2 h-2 rounded-full ${
-                    index <= currentStep
-                      ? 'bg-gray-500'
-                      : 'bg-gray-200'
-                  }`}
-                />
-                <Text
-                  className={`text-sm ${
-                    index <= currentStep
-                      ? 'text-gray-700 font-medium'
-                      : 'text-gray-400'
-                  }`}
-                >
-                  {step}
+              <View className="text-center">
+                <Text className="block text-xl font-bold text-gray-900 mb-2">
+                  {LOADING_STEPS[currentStep]}
+                </Text>
+                <Text className="block text-sm text-gray-500">
+                  已帮助 {trustCount.toLocaleString()} 位用户生成今日穿搭
                 </Text>
               </View>
-            ))}
-          </View>
 
-          {/* Trust Indicator */}
-          <View className="flex justify-center">
-            <Text className="text-xs text-gray-400">
-              已有 {trustCount.toLocaleString()} 人完成测算
-            </Text>
-          </View>
-        </View>
-      )}
+              <View className="w-full">
+                <Progress value={progressValue} className="h-2" />
+                <Text className="block text-xs text-gray-400 text-center mt-2">
+                  {Math.round(progressValue)}%
+                </Text>
+              </View>
+
+              <View className="w-full bg-amber-50 rounded-lg p-4">
+                <Text className="block text-sm text-amber-800 text-center leading-relaxed">
+                  传统文化与现代穿搭的结合，正在为你编织今日的幸运色彩...
+                </Text>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+      </View>
     </View>
   )
 }

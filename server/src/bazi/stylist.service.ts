@@ -30,6 +30,16 @@ export interface StylistResult {
   negativePrompt: string
 }
 
+export interface LuckyScore {
+  total: number
+  love: number
+  career: number
+  family: number
+  life: number
+  study: number
+  description: string
+}
+
 @Injectable()
 export class StylistService {
   async generatePlan(
@@ -41,6 +51,7 @@ export class StylistService {
       yongShen: string
       xiShen: string
       dayMaster?: string
+      mode?: 'daily' | 'native'
     },
     headers?: Record<string, string>,
   ): Promise<StylistResult> {
@@ -52,6 +63,7 @@ export class StylistService {
       yongShen,
       xiShen,
       dayMaster,
+      mode = 'daily',
     } = params
 
     const genderText = gender === 'female' || gender === '女' ? '女性' : '男性'
@@ -60,7 +72,12 @@ export class StylistService {
       ? '用户无明确风格偏好，请根据五行用神/喜神、季节特点和性别年龄自由发挥，给出最适合的穿搭风格。'
       : `用户明确偏好「${stylePreference}」风格，请在该风格框架内进行搭配。`
 
-    const prompt = `你是一位精通五行色彩学和现代时尚搭配的造型顾问。请根据以下用户信息生成一份结构化穿搭方案：
+    const modeTitle = mode === 'native' ? '本命穿搭方案' : '今日穿搭方案'
+    const timeContext = mode === 'native'
+      ? '这是基于用户本命八字用神/喜神的长期穿搭指导，不随日期变化。'
+      : '这是基于今日干支与用户八字的综合分析，给出今日专属穿搭建议。'
+
+    const prompt = `你是一位精通五行色彩学和现代时尚搭配的造型顾问。请根据以下用户信息生成一份${modeTitle}：
 
 【用户信息】
 - 性别：${genderText}
@@ -71,6 +88,7 @@ export class StylistService {
 - 八字日主：${dayMaster}
 - 八字用神（最需要补的五行）：${yongShen}
 - 八字喜神（辅助调候的五行）：${xiShen}
+- ${timeContext}
 
 【输出要求】
 请输出严格合法的 JSON，不要包含 markdown 代码块标记，不要添加任何解释性文字。JSON 结构如下：
@@ -125,6 +143,95 @@ export class StylistService {
     })
 
     return this.parseResult(response.content)
+  }
+
+  async generateLuckyScore(
+    params: {
+      gender: string
+      age?: number
+      dayMaster?: string
+      yongShen: string
+      xiShen: string
+    },
+    headers?: Record<string, string>,
+  ): Promise<LuckyScore> {
+    const { gender, age = 25, dayMaster, yongShen, xiShen } = params
+    const genderText = gender === 'female' || gender === '女' ? '女性' : '男性'
+
+    const prompt = `你是一位精通八字命理的运势分析师。请根据以下用户信息生成今日幸运指数：
+
+【用户信息】
+- 性别：${genderText}
+- 年龄：${age}岁
+- 八字日主：${dayMaster || '未知'}
+- 今日用神五行：${yongShen}
+- 今日喜神五行：${xiShen}
+
+【输出要求】
+请输出严格合法的 JSON，不要包含 markdown 代码块标记，不要添加任何解释性文字。JSON 结构如下：
+
+{
+  "total": "综合幸运指数，40-99之间的整数",
+  "love": "爱情指数，40-99之间的整数",
+  "career": "事业指数，40-99之间的整数",
+  "family": "家庭指数，40-99之间的整数",
+  "life": "生活指数，40-99之间的整数",
+  "study": "学习指数，40-99之间的整数",
+  "description": "基于用神喜神给出的一段今日运势描述，2-3句话，温暖积极，与穿搭相关但不直接推销"
+}
+
+注意：
+1. 各项指数必须是整数，综合指数建议取五项的平均值或根据当日五行强弱微调。
+2. 描述要结合用神/喜神五行给出，例如用神为木可提生机勃勃、用神为金可提果断利落。
+3. 只输出 JSON，不要任何额外文字。`
+
+    const config = new Config()
+    const forwardHeaders = headers ? HeaderUtils.extractForwardHeaders(headers) : undefined
+    const client = new LLMClient(config, forwardHeaders)
+
+    const messages = [{ role: 'user' as const, content: prompt }]
+    const response = await client.invoke(messages, {
+      model: 'kimi-k2-5-260127',
+      thinking: 'disabled',
+    })
+
+    return this.parseLuckyScore(response.content)
+  }
+
+  private parseLuckyScore(content: string): LuckyScore {
+    try {
+      const data = JSON.parse(content)
+      return this.normalizeLuckyScore(data)
+    } catch {
+      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/)
+      if (codeBlockMatch?.[1]) {
+        const data = JSON.parse(codeBlockMatch[1].trim())
+        return this.normalizeLuckyScore(data)
+      }
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (jsonMatch?.[0]) {
+        const data = JSON.parse(jsonMatch[0])
+        return this.normalizeLuckyScore(data)
+      }
+      throw new Error('无法解析幸运指数 JSON')
+    }
+  }
+
+  private normalizeLuckyScore(data: Record<string, unknown>): LuckyScore {
+    const clamp = (n: unknown) => {
+      const num = typeof n === 'number' ? n : Number(n)
+      if (Number.isNaN(num)) return 70
+      return Math.max(40, Math.min(99, Math.round(num)))
+    }
+    return {
+      total: clamp(data.total),
+      love: clamp(data.love),
+      career: clamp(data.career),
+      family: clamp(data.family),
+      life: clamp(data.life),
+      study: clamp(data.study),
+      description: String(data.description || '今日运势平稳，保持积极心态'),
+    }
   }
 
   private parseResult(content: string): StylistResult {

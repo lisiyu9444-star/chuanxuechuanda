@@ -1,343 +1,385 @@
-import { View, Text, Picker } from '@tarojs/components'
-import Taro, { useShareAppMessage, useShareTimeline } from '@tarojs/taro'
-import { useState, useMemo } from 'react'
+import { useState, useCallback } from 'react'
+import Taro, { useDidShow } from '@tarojs/taro'
+import { View, Text, Image } from '@tarojs/components'
+import { ChevronRight, User, Plus, Sparkles, Shirt, Crown } from 'lucide-react-taro'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Venus, Mars, ChevronDown, Check } from 'lucide-react-taro'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import './index.css'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  type Archive,
+  type DailyResult,
+  type LuckyScore,
+  type StylistResult,
+  getArchives,
+  getCurrentArchiveId,
+  getDailyResult,
+  DEFAULT_ARCHIVE,
+} from '@/utils/archiveStorage'
 
-const COMMON_STYLES = [
-  '简约风', '通勤风', '休闲风', '运动风', '复古风', '新中式',
-  '法式', '韩系', '日系', '欧美风', '英伦风', '田园风',
-  '波西米亚', 'Y2K', '朋克风', '极简风', '中性风',
-  '多巴胺穿搭', '美拉德穿搭'
-]
-
-const FEMALE_STYLES = ['甜美风', '淑女风', '名媛风', '可爱风', '优雅风', '浪漫风']
-
-const MALE_STYLES = ['嘻哈风', '街头风', '工装风', '商务风', '阳光少年风', '硬朗风']
-
-const calculateAge = (birthDate: string) => {
-  const today = new Date()
-  const birth = new Date(birthDate)
-  let age = today.getFullYear() - birth.getFullYear()
-  const monthDiff = today.getMonth() - birth.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
-  return Math.max(1, age)
+const EXAMPLE_DAILY_RESULT: DailyResult = {
+  date: new Date().toISOString().split('T')[0],
+  archiveId: DEFAULT_ARCHIVE.id,
+  baziResult: {
+    nickname: '示例用户',
+    gender: 'female',
+    dayMaster: '甲木',
+    dayMasterElement: '木',
+    fourPillars: [
+      { name: '年柱', ganZhi: '乙亥', stem: '乙', branch: '亥', stemElement: '木', branchElement: '水', naYin: '山头火', tenGod: '劫财' },
+      { name: '月柱', ganZhi: '丁卯', stem: '丁', branch: '卯', stemElement: '火', branchElement: '木', naYin: '炉中火', tenGod: '伤官' },
+      { name: '日柱', ganZhi: '甲子', stem: '甲', branch: '子', stemElement: '木', branchElement: '水', naYin: '海中金', tenGod: '日主' },
+      { name: '时柱', ganZhi: '己巳', stem: '己', branch: '巳', stemElement: '土', branchElement: '火', naYin: '大林木', tenGod: '正财' },
+    ],
+    fiveElements: [
+      { name: '金', count: 0 },
+      { name: '木', count: 3 },
+      { name: '水', count: 2 },
+      { name: '火', count: 2 },
+      { name: '土', count: 1 },
+    ],
+    favorableElement: '水',
+    favorableAnalysis: {
+      dayMaster: '甲木',
+      strength: '中和偏旺',
+      coreYongShen: '水',
+      assistantXiShen: '金',
+      taboo: '火土过旺',
+      logicSummary: '日主甲木生于春季，木气当令，日主得时。八字中水木较旺，宜以水来滋润，金来修剪。',
+    },
+    outfit: {
+      style: '简约通勤',
+      colors: ['黑色', '深蓝色', '白色', '银灰色'],
+      description: '示例档案的穿搭方向，以水润木、金修剪为主。',
+      prompt: '示例档案穿搭提示词',
+      backgroundColor: '#F5F1E8',
+    },
+    imageUrl: '',
+  },
+  llmPlan: {
+    luckyColors: {
+      primary: '深海蓝',
+      secondary: '珍珠白',
+      accent: '雾银灰',
+      primaryHex: '#1E3A5F',
+      secondaryHex: '#F8F6F1',
+      accentHex: '#9CA3AF',
+    },
+    styleTheme: '韩系温柔通勤风',
+    outfitPlan: {
+      outerwear: '米白色针织开衫',
+      top: '雾霾蓝 silk shirt',
+      bottom: '高腰垂感阔腿裤',
+      shoes: '杏色乐福鞋',
+      bag: '白色豆腐包',
+      accessories: ['珍珠耳钉', '细银项链'],
+    },
+    fabricSuggestion: '春季适合柔软亲肤的棉麻与针织面料，透气且有垂坠感。',
+    occasions: ['通勤：整套搭配直接出门，干练不失温柔', '约会：解开一粒扣子，挽起袖口更随性'],
+    imagePrompt: '示例图片提示词',
+    negativePrompt: '示例负面提示词',
+  } as StylistResult,
+  luckyScore: {
+    total: 85,
+    love: 88,
+    career: 82,
+    family: 80,
+    life: 86,
+    study: 84,
+    description: '今日水木相生，灵感如泉涌。适合穿带有流动感的深蓝色系，贵人运会悄然提升。',
+  } as LuckyScore,
+  ganZhiDate: { month: '丁卯', day: '甲子' },
+  dailyYongShen: '水',
+  dailyXiShen: '金',
+  generatedAt: Date.now(),
 }
 
-const getDefaultStyle = () => '简约风'
+export default function Index() {
+  const [currentArchive, setCurrentArchive] = useState<Archive | null>(null)
+  const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
 
-const getStyleOptions = (gender: string) => {
-  const options = gender === 'male'
-    ? [...COMMON_STYLES, ...MALE_STYLES]
-    : [...COMMON_STYLES, ...FEMALE_STYLES]
-  return ['无偏好', ...options]
-}
+  const loadData = useCallback(async () => {
+    const archives = await getArchives()
+    const currentId = await getCurrentArchiveId()
+    const activeArchive = archives.find((a) => a.id === currentId) || archives[0]
+    setCurrentArchive(activeArchive)
 
-const SHICHEN_OPTIONS = [
-  '子时 (23:00-01:00)',
-  '丑时 (01:00-03:00)',
-  '寅时 (03:00-05:00)',
-  '卯时 (05:00-07:00)',
-  '辰时 (07:00-09:00)',
-  '巳时 (09:00-11:00)',
-  '午时 (11:00-13:00)',
-  '未时 (13:00-15:00)',
-  '申时 (15:00-17:00)',
-  '酉时 (17:00-19:00)',
-  '戌时 (19:00-21:00)',
-  '亥时 (21:00-23:00)',
-]
-
-const CITIES = [
-  '北京', '上海', '广州', '深圳', '杭州', '成都', '重庆', '武汉',
-  '南京', '天津', '苏州', '西安', '长沙', '沈阳', '青岛', '郑州',
-  '大连', '东莞', '宁波', '厦门', '福州', '无锡', '合肥', '昆明',
-  '哈尔滨', '济南', '佛山', '长春', '温州', '石家庄', '南宁', '常州',
-  '泉州', '南昌', '贵阳', '太原', '烟台', '嘉兴', '南通', '金华',
-  '珠海', '惠州', '徐州', '海口', '乌鲁木齐', '绍兴', '中山', '台州',
-  '兰州', '呼和浩特',
-]
-
-const DEFAULT_NICKNAMES = [
-  'La Vie', "C'est la vie", 'Belle', 'Douceur', 'Étoile',
-  'Aurora', 'Luna', 'Stella', 'Flora', 'Iris',
-  '莫奈的睡莲', '梵高的星空', '德加的舞女', '日落大道', '比弗利山',
-  '塞纳河畔', '左岸咖啡', '蒙马特', '波西米亚', '西西里',
-]
-
-const getRandomNickname = () => DEFAULT_NICKNAMES[Math.floor(Math.random() * DEFAULT_NICKNAMES.length)]
-
-const IndexPage = () => {
-  const [nickname, setNickname] = useState(getRandomNickname())
-  const [gender, setGender] = useState('female')
-  const [calendarType, setCalendarType] = useState('solar')
-  const [birthDate, setBirthDate] = useState('2000-01-01')
-  const [shichenIndex, setShichenIndex] = useState(-1)
-  const [cityIndex, setCityIndex] = useState(0)
-  const [stylePreference, setStylePreference] = useState(getDefaultStyle())
-  const [styleSheetOpen, setStyleSheetOpen] = useState(false)
-
-  const styleOptions = useMemo(() => getStyleOptions(gender), [gender])
-
-  useShareAppMessage(() => ({
-    title: '测一测你的幸运穿搭',
-    path: '/pages/index/index',
-    // 不设置 imageUrl，微信会自动截取当前页面作为分享图
-  }))
-
-  useShareTimeline(() => ({
-    title: '测一测你的幸运穿搭',
-    // 不设置 imageUrl，微信会自动截取当前页面作为分享图
-  }))
-
-  Taro.useDidShow(() => {
-    try {
-      const saved = Taro.getStorageSync('formData')
-      if (saved) {
-        const savedGender = saved.gender || 'female'
-        setNickname(saved.nickname || getRandomNickname())
-        setGender(savedGender)
-        setCalendarType(saved.calendarType || 'solar')
-        setBirthDate(saved.birthDate || '2000-01-01')
-        const si = SHICHEN_OPTIONS.findIndex(s => s.includes(saved.birthTime || ''))
-        setShichenIndex(si >= 0 ? si : -1)
-        const ci = CITIES.findIndex(c => c === saved.location)
-        setCityIndex(ci >= 0 ? ci : 0)
-        const styles = getStyleOptions(savedGender)
-        const savedStyle = saved.stylePreference
-        setStylePreference(savedStyle && styles.some(s => s === savedStyle) ? savedStyle : getDefaultStyle())
-      }
-    } catch (e) {
-      // ignore
+    if (activeArchive.isDefault) {
+      setDailyResult(EXAMPLE_DAILY_RESULT)
+      return
     }
 
+    const today = new Date().toISOString().split('T')[0]
+    const cached = await getDailyResult(activeArchive.id, today)
+    if (cached) {
+      setDailyResult(cached)
+      return
+    }
+
+    Taro.navigateTo({
+      url: `/pages/loading/index?mode=daily&archiveId=${activeArchive.id}`,
+    })
+  }, [])
+
+  useDidShow(() => {
+    loadData()
   })
 
-  const handleSubmit = () => {
-    const trimmedNickname = nickname.trim()
-    if (!trimmedNickname) {
-      Taro.showToast({ title: '请输入昵称', icon: 'none' })
-      return
-    }
-    if (trimmedNickname.length > 20) {
-      Taro.showToast({ title: '昵称最多 20 个字符', icon: 'none' })
-      return
-    }
-    if (cityIndex < 0 || cityIndex >= CITIES.length) {
-      Taro.showToast({ title: '请选择所在城市', icon: 'none' })
-      return
-    }
-    if (!birthDate) {
-      Taro.showToast({ title: '请选择出生日期', icon: 'none' })
-      return
-    }
-    if (shichenIndex < 0 || shichenIndex >= SHICHEN_OPTIONS.length) {
-      Taro.showToast({ title: '选择时辰，未知选午时', icon: 'none' })
-      return
-    }
+  const handleSwitchArchive = useCallback(() => {
+    Taro.navigateTo({ url: '/pages/archive/list/index' })
+  }, [])
 
-    const age = calculateAge(birthDate)
-    const userData = {
-      nickname: nickname.trim(),
-      gender,
-      calendarType,
-      birthDate,
-      birthTime: SHICHEN_OPTIONS[shichenIndex],
-      location: CITIES[cityIndex],
-      age,
-      stylePreference: stylePreference === '无偏好' ? '自由搭配' : (stylePreference || getDefaultStyle()),
-    }
+  const handleAddArchive = useCallback(() => {
+    Taro.navigateTo({ url: '/pages/archive/form/index' })
+  }, [])
 
-    Taro.setStorageSync('formData', userData)
-    Taro.setStorageSync('userData', userData)
-    Taro.navigateTo({ url: '/pages/loading/index' })
+  const handleViewResult = useCallback(() => {
+    if (!currentArchive) return
+    if (currentArchive.isDefault) {
+      handleAddArchive()
+      return
+    }
+    Taro.navigateTo({ url: `/pages/result/index?archiveId=${currentArchive.id}` })
+  }, [currentArchive, handleAddArchive])
+
+  const handleViewNative = useCallback(() => {
+    if (!currentArchive) return
+    if (currentArchive.isDefault) {
+      handleAddArchive()
+      return
+    }
+    Taro.navigateTo({ url: `/pages/result/index?mode=native&archiveId=${currentArchive.id}` })
+  }, [currentArchive, handleAddArchive])
+
+  const handleUnlockImage = useCallback(
+    async (type: 'flat' | 'tryOn') => {
+      if (!currentArchive || currentArchive.isDefault) {
+        handleAddArchive()
+        return
+      }
+      if (!dailyResult) return
+      Taro.navigateTo({
+        url: `/pages/result/index?archiveId=${currentArchive.id}&unlock=${type}`,
+      })
+    },
+    [currentArchive, dailyResult, handleAddArchive],
+  )
+
+  const formatDate = useCallback(() => {
+    const now = new Date()
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`
+  }, [])
+
+  if (!currentArchive || !dailyResult) {
+    return (
+      <View className="min-h-screen bg-gray-50 p-4">
+        <Skeleton className="h-8 w-40 mb-4" />
+        <Skeleton className="h-48 w-full mb-4" />
+        <Skeleton className="h-64 w-full mb-4" />
+        <Skeleton className="h-40 w-full" />
+      </View>
+    )
   }
 
+  const { luckyScore, llmPlan, baziResult } = dailyResult
+  const themeColor = llmPlan.luckyColors?.primaryHex || '#1E3A5F'
+
   return (
-    <View className="min-h-full bg-white px-6 pt-4 pb-24">
-      {/* Form */}
-      <View className="flex flex-col gap-5">
-        {/* Nickname */}
-        <View>
-          <Text className="block text-xs text-gray-500 mb-2">昵称</Text>
-          <View className="bg-gray-50 rounded-xl px-4 py-3">
-            <Input
-              className="w-full bg-transparent border-0 text-gray-900 placeholder:text-gray-400"
-              placeholder="请输入昵称"
-              value={nickname}
-              maxlength={20}
-              onInput={(e) => setNickname(e.detail.value.slice(0, 20))}
-            />
-          </View>
-        </View>
-
-        {/* Gender */}
-        <View>
-          <Text className="block text-xs text-gray-500 mb-2">性别</Text>
-          <View className="flex gap-3">
+    <View className="min-h-screen bg-gray-50 pb-8">
+      {/* 顶部档案切换 */}
+      <View className="bg-white px-4 pt-12 pb-4">
+        <View className="flex items-center justify-between">
+          <View className="flex items-center gap-3">
             <View
-              className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
-                gender === 'female'
-                  ? 'border-gray-900 bg-gray-50'
-                  : 'border-gray-200 bg-gray-50'
-              }`}
-              onClick={() => setGender('female')}
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: themeColor }}
             >
-              <Venus size={20} color={gender === 'female' ? '#1F2937' : '#9CA3AF'} />
-              <Text className={`block ml-2 text-base font-medium ${gender === 'female' ? 'text-gray-900' : 'text-gray-500'}`}>女</Text>
+              <User size={20} color="#FFFFFF" />
             </View>
-            <View
-              className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
-                gender === 'male'
-                  ? 'border-gray-900 bg-gray-50'
-                  : 'border-gray-200 bg-gray-50'
-              }`}
-              onClick={() => setGender('male')}
-            >
-              <Mars size={20} color={gender === 'male' ? '#1F2937' : '#9CA3AF'} />
-              <Text className={`block ml-2 text-base font-medium ${gender === 'male' ? 'text-gray-900' : 'text-gray-500'}`}>男</Text>
+            <View>
+              <Text className="block text-lg font-semibold text-gray-900">{currentArchive.nickname}</Text>
+              <Text className="block text-xs text-gray-500">{formatDate()}</Text>
             </View>
           </View>
-        </View>
-
-        {/* Calendar Type + Birth Date */}
-        <View>
-          <Text className="block text-xs text-gray-500 mb-2">出生日期</Text>
-          <View className="flex gap-3 mb-3">
-            <View
-              className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
-                calendarType === 'solar'
-                  ? 'border-gray-900 bg-gray-50'
-                  : 'border-gray-200 bg-gray-50'
-              }`}
-              onClick={() => setCalendarType('solar')}
-            >
-              <Text className={`block text-base font-medium ${calendarType === 'solar' ? 'text-gray-900' : 'text-gray-500'}`}>阳历</Text>
-            </View>
-            <View
-              className={`flex-1 flex items-center justify-center py-3 rounded-xl border-2 ${
-                calendarType === 'lunar'
-                  ? 'border-gray-900 bg-gray-50'
-                  : 'border-gray-200 bg-gray-50'
-              }`}
-              onClick={() => setCalendarType('lunar')}
-            >
-              <Text className={`block text-base font-medium ${calendarType === 'lunar' ? 'text-gray-900' : 'text-gray-500'}`}>农历</Text>
-            </View>
-          </View>
-          <Picker
-            mode="date"
-            start="1940-01-01"
-            end="2025-12-31"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.detail.value)}
-          >
-            <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
-              <Text className={`block ${birthDate ? 'text-gray-900' : 'text-gray-400'}`}>
-                {birthDate || '请选择出生日期'}
-              </Text>
-              <ChevronDown size={18} color="#9CA3AF" />
-            </View>
-          </Picker>
-        </View>
-
-        {/* Birth Time */}
-        <View>
-          <Text className="block text-xs text-gray-500 mb-2">出生时辰</Text>
-          <Picker
-            mode="selector"
-            range={SHICHEN_OPTIONS}
-            value={shichenIndex}
-            onChange={(e) => setShichenIndex(Number(e.detail.value))}
-          >
-            <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
-              <Text className={`block ${shichenIndex >= 0 ? 'text-gray-900' : 'text-gray-400'}`}>
-                {shichenIndex >= 0 ? SHICHEN_OPTIONS[shichenIndex] : '选择时辰，未知选午时'}
-              </Text>
-              <ChevronDown size={18} color="#9CA3AF" />
-            </View>
-          </Picker>
-        </View>
-
-        {/* City */}
-        <View>
-          <Text className="block text-xs text-gray-500 mb-2">出生城市</Text>
-          <Picker
-            mode="selector"
-            range={CITIES}
-            value={cityIndex}
-            onChange={(e) => setCityIndex(Number(e.detail.value))}
-          >
-            <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
-              <Text className="block text-gray-900">{CITIES[cityIndex]}</Text>
-              <ChevronDown size={18} color="#9CA3AF" />
-            </View>
-          </Picker>
-        </View>
-
-        {/* Style Preference */}
-        <View>
-          <Text className="block text-xs text-gray-500 mb-2">穿搭风格偏好</Text>
-          <View
-            className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between"
-            onClick={() => setStyleSheetOpen(true)}
-          >
-            <Text className={`block ${stylePreference ? 'text-gray-900' : 'text-gray-400'}`}>
-              {stylePreference || `选择风格（${gender === 'female' ? '女' : '男'}性推荐）`}
-            </Text>
-            <ChevronDown size={18} color="#9CA3AF" />
-          </View>
-          <Sheet open={styleSheetOpen} onOpenChange={setStyleSheetOpen}>
-            <SheetContent side="bottom" className="h-3/5 rounded-t-3xl">
-              <SheetHeader>
-                <SheetTitle>选择穿搭风格</SheetTitle>
-              </SheetHeader>
-              <ScrollArea className="h-[calc(100%-80px)] mt-4">
-                <View className="flex flex-col gap-2 px-4 pb-6">
-                  {styleOptions.map((style) => (
-                    <View
-                      key={style}
-                      className={`py-3 px-4 rounded-xl border-2 flex items-center justify-between ${
-                        stylePreference === style
-                          ? 'border-gray-900 bg-gray-50'
-                          : 'border-gray-100 bg-white'
-                      }`}
-                      onClick={() => {
-                        setStylePreference(style)
-                        setTimeout(() => setStyleSheetOpen(false), 120)
-                      }}
-                    >
-                      <Text className={`block ${stylePreference === style ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
-                        {style}
-                      </Text>
-                      {stylePreference === style && <Check size={18} color="#1F2937" />}
-                    </View>
-                  ))}
-                </View>
-              </ScrollArea>
-            </SheetContent>
-          </Sheet>
-        </View>
-
-        {/* Submit Button */}
-        <View className="pt-2 pb-8">
-          <Button
-            className="w-full text-white font-bold py-4 rounded-xl text-base border-0 shadow-sm"
-            style={{ background: '#1F2937' }}
-            onClick={handleSubmit}
-          >
-            <Text className="text-white font-bold">查看今日穿搭</Text>
+          <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleSwitchArchive}>
+            <Text className="block text-sm text-gray-600">切换档案</Text>
+            <ChevronRight size={16} color="#6B7280" />
           </Button>
         </View>
       </View>
+
+      {/* 幸运指数 */}
+      <View className="px-4 mt-4">
+        <Card>
+          <CardContent className="p-4">
+            <View className="flex items-center gap-2 mb-4">
+              <Sparkles size={18} color={themeColor} />
+              <Text className="block text-base font-semibold text-gray-900">幸运指数</Text>
+            </View>
+
+            <View className="flex items-center gap-4 mb-4">
+              <View
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: `${themeColor}15` }}
+              >
+                <Text className="block text-2xl font-bold" style={{ color: themeColor }}>
+                  {luckyScore.total}
+                </Text>
+              </View>
+              <View className="flex-1">
+                <Text className="block text-sm text-gray-600 leading-relaxed">{luckyScore.description}</Text>
+              </View>
+            </View>
+
+            <View className="grid grid-cols-5 gap-2">
+              {[
+                { label: '爱情', value: luckyScore.love },
+                { label: '事业', value: luckyScore.career },
+                { label: '家庭', value: luckyScore.family },
+                { label: '生活', value: luckyScore.life },
+                { label: '学习', value: luckyScore.study },
+              ].map((item) => (
+                <View key={item.label} className="flex flex-col items-center gap-1">
+                  <Text className="block text-xs text-gray-500">{item.label}</Text>
+                  <Text className="block text-sm font-semibold" style={{ color: themeColor }}>
+                    {item.value}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+
+      {/* 穿搭指南 */}
+      <View className="px-4 mt-4">
+        <Card className="active:opacity-80" onClick={handleViewResult}>
+          <CardContent className="p-4">
+            <View className="flex items-center justify-between mb-3">
+              <View className="flex items-center gap-2">
+                <Shirt size={18} color={themeColor} />
+                <Text className="block text-base font-semibold text-gray-900">穿搭指南</Text>
+              </View>
+              <ChevronRight size={18} color="#9CA3AF" />
+            </View>
+
+            <View className="flex flex-col gap-2">
+              <View className="flex items-center gap-2">
+                <Text className="block text-sm text-gray-500">风格主题</Text>
+                <Text className="block text-sm font-medium text-gray-900">{llmPlan.styleTheme}</Text>
+              </View>
+              <View className="flex items-center gap-2">
+                <Text className="block text-sm text-gray-500">幸运配色</Text>
+                <View className="flex items-center gap-2">
+                  <View className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: llmPlan.luckyColors.primaryHex }} />
+                  <Text className="block text-sm text-gray-900">{llmPlan.luckyColors.primary}</Text>
+                </View>
+              </View>
+              <View className="flex items-start gap-2">
+                <Text className="block text-sm text-gray-500 shrink-0">面料建议</Text>
+                <Text className="block text-sm text-gray-900 leading-relaxed">{llmPlan.fabricSuggestion}</Text>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+
+      {/* 今日穿搭 */}
+      <View className="px-4 mt-4">
+        <Card>
+          <CardContent className="p-4">
+            <View className="flex items-center justify-between mb-3">
+              <View className="flex items-center gap-2">
+                <Crown size={18} color={themeColor} />
+                <Text className="block text-base font-semibold text-gray-900">今日穿搭</Text>
+              </View>
+              <Button variant="ghost" size="sm" onClick={handleViewResult}>
+                <Text className="block text-sm" style={{ color: themeColor }}>查看详情</Text>
+              </Button>
+            </View>
+
+            <View className="flex flex-row gap-3">
+              <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative" onClick={handleViewResult}>
+                {dailyResult.imageUrl ? (
+                  <Image src={dailyResult.imageUrl} className="w-full h-full" mode="aspectFill" />
+                ) : (
+                  <View className="absolute inset-0 flex items-center justify-center">
+                    <Text className="block text-sm text-gray-500">待解锁</Text>
+                  </View>
+                )}
+                <View className="absolute bottom-2 left-2 right-2">
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    style={{ backgroundColor: themeColor }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleUnlockImage('flat')
+                    }}
+                  >
+                    <Text className="block text-white text-xs">{dailyResult.imageUrl ? '查看平铺图' : '解锁平铺图'}</Text>
+                  </Button>
+                </View>
+              </View>
+              <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative" onClick={handleViewResult}>
+                {dailyResult.tryOnUrl ? (
+                  <Image src={dailyResult.tryOnUrl} className="w-full h-full" mode="aspectFill" />
+                ) : (
+                  <View className="absolute inset-0 flex items-center justify-center">
+                    <Text className="block text-sm text-gray-500">待解锁</Text>
+                  </View>
+                )}
+                <View className="absolute bottom-2 left-2 right-2">
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    style={{ backgroundColor: themeColor }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleUnlockImage('tryOn')
+                    }}
+                  >
+                    <Text className="block text-white text-xs">{dailyResult.tryOnUrl ? '查看上身图' : '解锁上身图'}</Text>
+                  </Button>
+                </View>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+
+      {/* 本命穿搭 */}
+      <View className="px-4 mt-4">
+        <Card className="active:opacity-80" onClick={handleViewNative}>
+          <CardContent className="p-4">
+            <View className="flex items-center justify-between mb-3">
+              <View className="flex items-center gap-2">
+                <Crown size={18} color={themeColor} />
+                <Text className="block text-base font-semibold text-gray-900">本命穿搭</Text>
+              </View>
+              <ChevronRight size={18} color="#9CA3AF" />
+            </View>
+
+            <Text className="block text-sm text-gray-600 leading-relaxed mb-3">
+              基于你的命盘喜用神 {baziResult.favorableElement}，生成的专属穿搭方向，不随每日变化。
+            </Text>
+
+            <Button variant="outline" size="sm" className="w-full" onClick={handleViewNative}>
+              <Text className="block text-sm text-gray-700">查看详情</Text>
+            </Button>
+          </CardContent>
+        </Card>
+      </View>
+
+      {/* 空档案提示 */}
+      {currentArchive.isDefault && (
+        <View className="px-4 mt-4">
+          <Button className="w-full" style={{ backgroundColor: themeColor }} onClick={handleAddArchive}>
+            <Plus size={18} color="#FFFFFF" />
+            <Text className="block text-white ml-2">添加我的档案</Text>
+          </Button>
+        </View>
+      )}
     </View>
   )
 }
-
-export default IndexPage

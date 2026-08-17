@@ -8,7 +8,7 @@ import { Share2, RefreshCw, Lock, Loader, Shirt, Square, Footprints, ShoppingBag
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
-import type { BaZiResult } from '@/types/bazi'
+import type { BaZiResult, StylistResult } from '@/types/bazi'
 import './index.css'
 
 const COLOR_MAP: Record<string, string> = {
@@ -160,12 +160,47 @@ const ELEMENT_COLORS: Record<string, string> = {
   '水': '#3b82f6',
 }
 
+interface LuckyScore {
+  total: number
+  love: number
+  career: number
+  family: number
+  life: number
+  study: number
+  description: string
+}
+
+interface DailyResult {
+  date: string
+  archiveId: string
+  baziResult: BaZiResult
+  llmPlan: StylistResult
+  luckyScore: LuckyScore
+  ganZhiDate: { month: string; day: string }
+  dailyYongShen: string
+  dailyXiShen: string
+  imageUrl?: string
+  tryOnUrl?: string
+  generatedAt: number
+}
+
+interface NativeResult {
+  archiveId: string
+  baziResult: BaZiResult
+  llmPlan: StylistResult
+  generatedAt: number
+}
+
 const ResultPage = () => {
   const [result, setResult] = useState<BaZiResult | null>(null)
   // 图片 Tab 切换：'flat' = 平铺图, 'tryon' = 上身图
   const [activeTab, setActiveTab] = useState<'flat' | 'tryon'>('flat')
   // 上身图 URL（生成后缓存）
   const [tryOnUrl, setTryOnUrl] = useState<string>('')
+  // 平铺图 URL（本地解锁后缓存）
+  const [flatImageUrl, setFlatImageUrl] = useState<string>('')
+  // 当前页面模式：'daily' 今日穿搭 | 'native' 本命穿搭
+  const [pageMode, setPageMode] = useState<'daily' | 'native'>('daily')
   // 功能开关：分享功能是否开启
   // 功能开关：是否显示玄学相关内容（八字概览、喜用神分析），穿搭模块始终展示
   const [showBaZiContent, setShowBaZiContent] = useState(true)
@@ -181,6 +216,8 @@ const ResultPage = () => {
   const isSavingRef = useRef(false)
   // 标记是否从分享链接打开
   const fromShareRef = useRef(false)
+  // 当前档案 ID
+  const currentArchiveIdRef = useRef('')
 
   // 更新历史记录中的上身图 URL
   const updateHistoryTryOnUrl = (imageUrl: string, newTryOnUrl: string) => {
@@ -218,6 +255,8 @@ const ResultPage = () => {
         if (result?.imageUrl) {
           updateHistoryTryOnUrl(result.imageUrl, data.tryOnUrl)
         }
+        // 更新 dailyResult 缓存中的上身图
+        updateDailyCache({ tryOnUrl: data.tryOnUrl })
       } else {
         Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
       }
@@ -228,15 +267,99 @@ const ResultPage = () => {
     },
   })
 
-  // 获取今日用神主题色
-  const themeColor = result?.dailyYongShen
-    ? ELEMENT_COLORS[result.dailyYongShen] || '#9333ea'
-    : '#9333ea'
+  // 平铺图解锁加载态
+  const [flatImageLoading, setFlatImageLoading] = useState(false)
+
+  // 更新 dailyResult 本地缓存
+  const updateDailyCache = (updates: { imageUrl?: string; tryOnUrl?: string }) => {
+    try {
+      const archiveId = currentArchiveIdRef.current
+      const today = new Date().toISOString().slice(0, 10)
+      const key = `dailyResult:${archiveId}:${today}`
+      const dailyResult: DailyResult = Taro.getStorageSync(key)
+      if (dailyResult) {
+        const updated = { ...dailyResult, ...updates }
+        Taro.setStorageSync(key, updated)
+      }
+    } catch (e) {
+      console.error('Update daily cache failed:', e)
+    }
+  }
+
+  // 解锁平铺图
+  const handleUnlockFlatImage = async () => {
+    if (!result?.llmPlan?.imagePrompt) {
+      Taro.showToast({ title: '缺少生图描述，请重试', icon: 'none' })
+      return
+    }
+    const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
+    if (isWeapp) {
+      const watched = await showAd()
+      if (!watched) {
+        Taro.showToast({ title: '请完整观看视频以解锁', icon: 'none' })
+        return
+      }
+    }
+    setFlatImageLoading(true)
+    try {
+      const res: any = await Network.request({
+        url: '/api/bazi/generate-image',
+        method: 'POST',
+        data: {
+          imagePrompt: result.llmPlan.imagePrompt,
+          taskId: `flat-${Date.now()}`,
+        },
+      })
+      console.log('Generate flat image response:', res.data)
+      const imageUrl = res.data?.data?.imageUrl
+      if (imageUrl) {
+        setFlatImageUrl(imageUrl)
+        updateDailyCache({ imageUrl })
+      } else {
+        Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
+      }
+    } catch (err) {
+      console.error('Generate flat image failed:', err)
+      Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
+    } finally {
+      setFlatImageLoading(false)
+    }
+  }
+
+  // 解锁上身图
+  const handleUnlockTryOn = async () => {
+    if (!result) return
+    const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
+    if (isWeapp) {
+      const watched = await showAd()
+      if (!watched) {
+        Taro.showToast({ title: '请完整观看视频以解锁上身图', icon: 'none' })
+        return
+      }
+    }
+    generateTryOn({
+      imageUrl: flatImageUrl || result.imageUrl,
+      outfit: result.outfit,
+      gender: result.gender,
+      age: result.age,
+    })
+  }
+
+  // 获取主题色：今日穿搭用今日用神，本命穿搭用本命用神
+  const themeColor = pageMode === 'native'
+    ? ELEMENT_COLORS[result?.favorableElement || ''] || '#9333ea'
+    : result?.dailyYongShen
+      ? ELEMENT_COLORS[result.dailyYongShen] || '#9333ea'
+      : '#9333ea'
 
   useDidShow(() => {
-    // 检查是否从分享链接打开
+    // 检查页面模式与分享参数
     const router = Taro.getCurrentInstance().router
     const shareIdFromUrl = router?.params?.shareId
+    const mode = (router?.params?.mode as 'daily' | 'native') || 'daily'
+    const archiveId = router?.params?.archiveId || Taro.getStorageSync('currentArchiveId') || ''
+    currentArchiveIdRef.current = archiveId
+    setPageMode(mode)
     setUrlShareId(shareIdFromUrl || '')
 
     if (shareIdFromUrl) {
@@ -275,29 +398,38 @@ const ResultPage = () => {
             }
           } else {
             // 分享数据不存在，加载本地数据
-            const data = Taro.getStorageSync('baziResult')
-            if (data) setResult(data)
+            loadLocalResult(mode, archiveId)
           }
         } catch (err) {
           console.error('Failed to load shared result:', err)
           // 加载本地数据
-          const data = Taro.getStorageSync('baziResult')
-          if (data) setResult(data)
+          loadLocalResult(mode, archiveId)
         } finally {
           setShareLoading(false)
         }
       })()
     } else {
       // 正常打开，加载本地数据
-      const data = Taro.getStorageSync('baziResult')
-      if (data) {
-        setResult(data)
-        if (data.tryOnUrl) {
-          setTryOnUrl(data.tryOnUrl)
-        }
-      }
+      loadLocalResult(mode, archiveId)
     }
   })
+
+  const loadLocalResult = (mode: 'daily' | 'native', archiveId: string) => {
+    if (mode === 'native') {
+      const nativeResult: NativeResult = Taro.getStorageSync(`nativeResult:${archiveId}`)
+      if (nativeResult?.baziResult) {
+        setResult({ ...nativeResult.baziResult, llmPlan: nativeResult.llmPlan })
+      }
+    } else {
+      const today = new Date().toISOString().slice(0, 10)
+      const dailyResult: DailyResult = Taro.getStorageSync(`dailyResult:${archiveId}:${today}`)
+      if (dailyResult?.baziResult) {
+        setResult({ ...dailyResult.baziResult, llmPlan: dailyResult.llmPlan })
+        setFlatImageUrl(dailyResult.imageUrl || '')
+        setTryOnUrl(dailyResult.tryOnUrl || '')
+      }
+    }
+  }
 
   // 保存/更新分享数据到服务器
   const saveShareData = async (currentTryOnUrl?: string) => {
@@ -431,17 +563,23 @@ const ResultPage = () => {
 
   // 小程序分享配置
   Taro.useShareAppMessage(() => {
+    const title = pageMode === 'native'
+      ? `${result?.nickname || '我'}的本命穿搭，快来看看！`
+      : `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`
     return {
-      title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
-      path: shareId ? `/pages/result/index?shareId=${shareId}` : '/pages/result/index',
+      title,
+      path: shareId ? `/pages/result/index?shareId=${shareId}&mode=${pageMode}` : `/pages/result/index?mode=${pageMode}`,
       // 不设置 imageUrl，微信会自动截取当前页面作为分享图
     }
   })
 
   Taro.useShareTimeline(() => {
+    const title = pageMode === 'native'
+      ? `${result?.nickname || '我'}的本命穿搭，快来看看！`
+      : `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`
     return {
-      title: `${result?.nickname || '我'}的专属穿搭推荐，快来看看！`,
-      query: shareId ? `shareId=${shareId}` : '',
+      title,
+      query: shareId ? `shareId=${shareId}&mode=${pageMode}` : `mode=${pageMode}`,
       // 不设置 imageUrl，微信会自动截取当前页面作为分享图
     }
   })
@@ -533,12 +671,43 @@ const ResultPage = () => {
         <View className="relative w-full rounded-2xl overflow-hidden bg-gray-100" style={{ paddingBottom: '133.33%' }}>
           <View className="absolute inset-0">
             {activeTab === 'flat' ? (
-              <Image
-                src={result.imageUrl}
-                className="w-full h-full"
-                mode="aspectFill"
-                lazyLoad
-              />
+              flatImageLoading ? (
+                <View className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
+                  <Loader size={40} color={themeColor} className="animate-spin" />
+                  <Text className="block mt-4 text-base font-medium" style={{ color: themeColor }}>
+                    正在生成平铺图...
+                  </Text>
+                  <Text className="block mt-2 text-sm text-gray-400">
+                    需要等待30s左右，请耐心等待
+                  </Text>
+                </View>
+              ) : flatImageUrl || result.imageUrl ? (
+                <Image
+                  src={flatImageUrl || result.imageUrl}
+                  className="w-full h-full"
+                  mode="aspectFill"
+                  lazyLoad
+                />
+              ) : (
+                <View className="w-full h-full flex flex-col items-center justify-center px-6">
+                  <View className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                    <Lock size={28} color="#6b7280" />
+                  </View>
+                  <Text className="block text-gray-700 text-base font-semibold mb-2">
+                    今日穿搭平铺图未解锁
+                  </Text>
+                  <Text className="block text-gray-400 text-sm text-center mb-6 px-4">
+                    解锁后生成专属穿搭平铺图，约需等待30秒
+                  </Text>
+                  <Button
+                    variant="outline"
+                    className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700"
+                    onClick={handleUnlockFlatImage}
+                  >
+                    <Text className="block text-sm font-medium">点击解锁平铺图</Text>
+                  </Button>
+                </View>
+              )
             ) : tryOnUrl ? (
               <Image
                 src={tryOnUrl}
@@ -570,22 +739,7 @@ const ResultPage = () => {
                 <Button
                   variant="outline"
                   className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700"
-                  onClick={async () => {
-                    const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
-                    if (isWeapp) {
-                      const watched = await showAd()
-                      if (!watched) {
-                        Taro.showToast({ title: '请完整观看视频以解锁上身图', icon: 'none' })
-                        return
-                      }
-                    }
-                    generateTryOn({
-                      imageUrl: result.imageUrl,
-                      outfit: result.outfit,
-                      gender: result.gender,
-                      age: result.age,
-                    })
-                  }}
+                  onClick={handleUnlockTryOn}
                 >
                   <Text className="block text-sm font-medium">点击生成上身试穿图</Text>
                 </Button>
@@ -687,8 +841,8 @@ const ResultPage = () => {
                   {result.favorableAnalysis.logicSummary}
                 </Text>
               </View>
-              {/* 每日用神 */}
-              {result.dailyYongShen && (
+              {/* 每日用神 - 仅今日穿搭展示 */}
+              {pageMode === 'daily' && result.dailyYongShen && (
                 <View className="mt-3 bg-gray-50 rounded-lg p-3">
                   <View className="flex items-center gap-2 mb-2">
                     <View
@@ -732,7 +886,7 @@ const ResultPage = () => {
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
               <Text className="block text-base font-semibold text-gray-900 mb-3">
-                今日穿搭
+                {pageMode === 'native' ? '本命穿搭' : '今日穿搭'}
               </Text>
               {result.llmPlan ? (
                 <View className="space-y-4">

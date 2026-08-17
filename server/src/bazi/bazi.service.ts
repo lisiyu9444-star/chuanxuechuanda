@@ -40,7 +40,7 @@ export interface OutfitRecommendation {
   colorRule: string
 }
 
-interface BaZiResult {
+export interface BaZiResult {
   nickname: string
   gender: string
   dayMaster: string
@@ -1227,4 +1227,9 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     console.log(`[CancelService] Task ${taskId} not found in active tasks`)
     return false
   }
+}
+
+export function getTodayStr(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }

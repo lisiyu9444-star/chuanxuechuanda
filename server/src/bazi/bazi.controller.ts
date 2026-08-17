@@ -6,8 +6,8 @@ import {
   Req,
 } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
-import { BaziService, FourPillar, FavorableAnalysis, OutfitRecommendation, getCurrentGanZhiDate } from './bazi.service'
-import { StylistService, StylistResult } from './stylist.service'
+import { BaziService, BaZiResult, FourPillar, FavorableAnalysis, OutfitRecommendation, getCurrentGanZhiDate, getTodayStr } from './bazi.service'
+import { StylistService, StylistResult, LuckyScore } from './stylist.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -150,6 +150,180 @@ export class BaziController {
     const success = this.baziService.cancelTask(body.taskId)
     console.log('[Cancel] Cancel result:', success)
     return { data: { success } }
+  }
+
+  @Post('daily')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async daily(
+    @Body()
+    body: {
+      nickname: string
+      gender: string
+      birthDate: string
+      birthTime: string
+      location: string
+      calendarType?: 'solar' | 'lunar'
+      age?: number
+      stylePreference?: string
+    },
+    @Req() req,
+  ): Promise<{
+    data: {
+      baziResult: BaZiResult
+      llmPlan: StylistResult
+      luckyScore: LuckyScore
+      date: string
+    }
+  }> {
+    const { nickname, gender, birthDate, birthTime, calendarType, age, stylePreference } = body
+
+    let solarBirthDate = birthDate
+    if (calendarType === 'lunar') {
+      try {
+        const { Lunar } = require('lunar-javascript')
+        const parts = birthDate.split('-')
+        const lunar = Lunar.fromYmd(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
+        const solar = lunar.getSolar()
+        solarBirthDate = `${solar.getYear()}-${String(solar.getMonth()).padStart(2, '0')}-${String(solar.getDay()).padStart(2, '0')}`
+      } catch (error) {
+        console.error('农历转换失败:', error)
+      }
+    }
+
+    const baziResult = this.baziService.calculateBaZi(solarBirthDate, birthTime, gender)
+    const forwardHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>)
+
+    const [llmPlan, luckyScore] = await Promise.all([
+      this.stylistService.generatePlan({
+        gender: gender === 'female' ? '女' : '男',
+        age,
+        season: baziResult.outfit.season,
+        stylePreference: stylePreference || '简约通勤风',
+        yongShen: baziResult.dailyYongShen || baziResult.favorableElement,
+        xiShen: baziResult.dailyXiShen || baziResult.favorableAnalysis.assistantXiShen,
+        dayMaster: baziResult.dayMaster,
+        mode: 'daily',
+      }, forwardHeaders),
+      this.stylistService.generateLuckyScore({
+        gender: gender === 'female' ? '女' : '男',
+        age,
+        dayMaster: baziResult.dayMaster,
+        yongShen: baziResult.dailyYongShen || baziResult.favorableElement,
+        xiShen: baziResult.dailyXiShen || baziResult.favorableAnalysis.assistantXiShen,
+      }, forwardHeaders),
+    ])
+
+    const ganZhiDate = getCurrentGanZhiDate()
+
+    return {
+      data: {
+        baziResult: {
+          nickname,
+          gender,
+          dayMaster: baziResult.dayMaster,
+          dayMasterElement: baziResult.dayMasterElement,
+          fourPillars: baziResult.fourPillars,
+          fiveElements: baziResult.fiveElements,
+          favorableElement: baziResult.favorableElement,
+          favorableAnalysis: baziResult.favorableAnalysis,
+          outfit: baziResult.outfit,
+          imageUrl: '',
+          age,
+          ganZhiDate,
+          dailyYongShen: baziResult.dailyYongShen || baziResult.favorableElement,
+          dailyXiShen: baziResult.dailyXiShen || baziResult.favorableAnalysis.assistantXiShen,
+        } as BaZiResult,
+        llmPlan,
+        luckyScore,
+        date: getTodayStr(),
+      },
+    }
+  }
+
+  @Post('native')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async native(
+    @Body()
+    body: {
+      nickname: string
+      gender: string
+      birthDate: string
+      birthTime: string
+      location: string
+      calendarType?: 'solar' | 'lunar'
+      age?: number
+      stylePreference?: string
+    },
+    @Req() req,
+  ): Promise<{
+    data: {
+      baziResult: BaZiResult
+      llmPlan: StylistResult
+    }
+  }> {
+    const { nickname, gender, birthDate, birthTime, calendarType, age, stylePreference } = body
+
+    let solarBirthDate = birthDate
+    if (calendarType === 'lunar') {
+      try {
+        const { Lunar } = require('lunar-javascript')
+        const parts = birthDate.split('-')
+        const lunar = Lunar.fromYmd(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
+        const solar = lunar.getSolar()
+        solarBirthDate = `${solar.getYear()}-${String(solar.getMonth()).padStart(2, '0')}-${String(solar.getDay()).padStart(2, '0')}`
+      } catch (error) {
+        console.error('农历转换失败:', error)
+      }
+    }
+
+    const baziResult = this.baziService.calculateBaZi(solarBirthDate, birthTime, gender)
+    const forwardHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>)
+
+    const llmPlan = await this.stylistService.generatePlan({
+      gender: gender === 'female' ? '女' : '男',
+      age,
+      season: baziResult.outfit.season,
+      stylePreference: stylePreference || '简约通勤风',
+      yongShen: baziResult.favorableElement,
+      xiShen: baziResult.favorableAnalysis.assistantXiShen,
+      dayMaster: baziResult.dayMaster,
+      mode: 'native',
+    }, forwardHeaders)
+
+    return {
+      data: {
+        baziResult: {
+          nickname,
+          gender,
+          dayMaster: baziResult.dayMaster,
+          dayMasterElement: baziResult.dayMasterElement,
+          fourPillars: baziResult.fourPillars,
+          fiveElements: baziResult.fiveElements,
+          favorableElement: baziResult.favorableElement,
+          favorableAnalysis: baziResult.favorableAnalysis,
+          outfit: baziResult.outfit,
+          imageUrl: '',
+          age,
+        } as BaZiResult,
+        llmPlan,
+      },
+    }
+  }
+
+  @Post('generate-image')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async generateImage(
+    @Body() body: { imagePrompt: string; taskId?: string },
+    @Req() req,
+  ): Promise<{ data: { imageUrl: string; taskId: string } }> {
+    const { imagePrompt, taskId: clientTaskId } = body
+    const taskId = clientTaskId || uuidv4()
+    const forwardHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>)
+    const imageUrl = await this.baziService.generateOutfitImage(imagePrompt, forwardHeaders, taskId)
+    return { data: { imageUrl, taskId } }
   }
 
   // LLM 穿搭顾问测试接口

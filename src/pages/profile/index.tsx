@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Trash2, Clock, Shirt } from 'lucide-react-taro'
+import { Trash2, Clock, Shirt, User } from 'lucide-react-taro'
 import type { HistoryRecord } from '@/types/bazi'
 
 const HISTORY_KEY = 'outfit_history'
@@ -70,9 +70,22 @@ export default function ProfilePage() {
       <View className="px-4 pt-6 pb-4 bg-white">
         <Text className="block text-xl font-bold text-gray-900">我的</Text>
         <Text className="block text-sm text-gray-500 mt-1">历史记录保留近 30 天</Text>
+        <View
+          className="mt-4 flex items-center gap-3 p-4 bg-gray-50 rounded-xl active:bg-gray-100"
+          onClick={() => Taro.navigateTo({ url: '/pages/archive/list/index' })}
+        >
+          <View className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+            <User size={22} color="#6b7280" />
+          </View>
+          <View className="flex-1">
+            <Text className="block text-base font-medium text-gray-900">档案管理</Text>
+            <Text className="block text-sm text-gray-500">添加、编辑、切换个人档案</Text>
+          </View>
+          <Text className="block text-sm text-gray-400">›</Text>
+        </View>
       </View>
 
-      <ScrollArea className="h-[calc(100vh-100px)]">
+      <ScrollArea className="h-[calc(100vh-188px)]">
         <View className="p-4">
           {loading ? (
             <View className="flex items-center justify-center py-20">
