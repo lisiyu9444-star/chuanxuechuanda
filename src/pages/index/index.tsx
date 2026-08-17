@@ -82,11 +82,7 @@ const EXAMPLE_DAILY_RESULT: DailyResult = {
       accessories: ['橄榄绿棒球帽', '银色大圈耳环', '银色多层项链'],
     },
     fabricSuggestion: '挺括尼龙夹克防风有型，棉质工装裤透气耐磨，针织背心贴身柔软，适合春秋换季与城市户外活动。',
-    occasions: [
-      '周末出游：夹克+棒球帽轻松应对早晚温差，拍照也出片',
-      '城市漫步：工装裤多口袋实用，解放双手，随性自在',
-      '朋友聚会：银色配饰点亮整体造型，率性中带精致感',
-    ],
+    occasions: ['周末出游', '城市漫步', '朋友聚会'],
     imagePrompt: 'Sage green bomber jacket, white cropped tank top, light grey cargo pants, silver crossbody bag, olive baseball cap, silver hoop earrings, layered necklaces, white and silver chunky sneakers, cream marble background, fashion flat lay, 3:4 vertical, high-end photography',
     negativePrompt: 'cluttered background, distorted hands, low quality, blurry, oversaturated colors, cropped items',
   } as StylistResult,
