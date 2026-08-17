@@ -207,7 +207,7 @@ export default function Index() {
                   className="h-auto px-0 py-0 mt-1"
                   onClick={handleUpdateArchive}
                 >
-                  <Text className="block text-xs text-violet-600">
+                  <Text className="block text-xs text-slate-900">
                     档案有变更，立即更新
                   </Text>
                 </Button>
@@ -247,7 +247,7 @@ export default function Index() {
               ].map((item) => (
                 <View key={item.label} className="flex flex-col items-center gap-1">
                   <Text className="block text-xs text-gray-500">{item.label}</Text>
-                  <Text className="block text-sm font-semibold text-violet-600">
+                  <Text className="block text-sm font-semibold text-slate-900">
                     {item.value}
                   </Text>
                 </View>
@@ -277,7 +277,7 @@ export default function Index() {
                   <View className="absolute bottom-2 left-2 right-2">
                     <Button
                       size="sm"
-                      className="w-full bg-violet-600 hover:bg-violet-700"
+                      className="w-full bg-slate-900 hover:bg-slate-800"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleViewResult()
@@ -298,7 +298,7 @@ export default function Index() {
                   <View className="absolute bottom-2 left-2 right-2">
                     <Button
                       size="sm"
-                      className="w-full bg-violet-600 hover:bg-violet-700"
+                      className="w-full bg-slate-900 hover:bg-slate-800"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleViewResult()
@@ -384,7 +384,7 @@ export default function Index() {
       {/* 空档案提示 */}
       {currentArchive.isDefault && (
         <View className="px-4 mt-4">
-          <Button className="w-full bg-violet-600 hover:bg-violet-700" onClick={handleAddArchive}>
+          <Button className="w-full bg-slate-900 hover:bg-slate-800" onClick={handleAddArchive}>
             <Plus size={18} color="#FFFFFF" />
             <Text className="block text-white ml-2">添加我的档案</Text>
           </Button>

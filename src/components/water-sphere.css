@@ -52,6 +52,6 @@
   left: 50%;
   transform: translate(-50%, -50%);
   font-weight: 700;
-  color: #7c3aed;
+  color: #1f2937; /* slate-900 通用深色 */
   z-index: 10;
 }
