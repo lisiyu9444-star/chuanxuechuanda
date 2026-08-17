@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OutfitGuideContent } from '@/components/outfit-guide-content'
+import { WaterSphere } from '@/components/water-sphere'
 import {
   type Archive,
   type DailyResult,
@@ -206,7 +207,7 @@ export default function Index() {
                   className="h-auto px-0 py-0 mt-1"
                   onClick={handleUpdateArchive}
                 >
-                  <Text className="block text-xs" style={{ color: themeColor }}>
+                  <Text className="block text-xs text-violet-600">
                     档案有变更，立即更新
                   </Text>
                 </Button>
@@ -230,14 +231,7 @@ export default function Index() {
             </View>
 
             <View className="flex items-center gap-4 mb-4">
-              <View
-                className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: `${themeColor}15` }}
-              >
-                <Text className="block text-2xl font-bold" style={{ color: themeColor }}>
-                  {luckyScore.total}
-                </Text>
-              </View>
+              <WaterSphere score={luckyScore.total} size={84} />
               <View className="flex-1">
                 <Text className="block text-sm text-gray-600 leading-relaxed">{luckyScore.description}</Text>
               </View>
@@ -253,7 +247,7 @@ export default function Index() {
               ].map((item) => (
                 <View key={item.label} className="flex flex-col items-center gap-1">
                   <Text className="block text-xs text-gray-500">{item.label}</Text>
-                  <Text className="block text-sm font-semibold" style={{ color: themeColor }}>
+                  <Text className="block text-sm font-semibold text-violet-600">
                     {item.value}
                   </Text>
                 </View>
@@ -283,8 +277,7 @@ export default function Index() {
                   <View className="absolute bottom-2 left-2 right-2">
                     <Button
                       size="sm"
-                      className="w-full"
-                      style={{ backgroundColor: themeColor }}
+                      className="w-full bg-violet-600 hover:bg-violet-700"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleViewResult()
@@ -305,8 +298,7 @@ export default function Index() {
                   <View className="absolute bottom-2 left-2 right-2">
                     <Button
                       size="sm"
-                      className="w-full"
-                      style={{ backgroundColor: themeColor }}
+                      className="w-full bg-violet-600 hover:bg-violet-700"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleViewResult()
@@ -392,7 +384,7 @@ export default function Index() {
       {/* 空档案提示 */}
       {currentArchive.isDefault && (
         <View className="px-4 mt-4">
-          <Button className="w-full" style={{ backgroundColor: themeColor }} onClick={handleAddArchive}>
+          <Button className="w-full bg-violet-600 hover:bg-violet-700" onClick={handleAddArchive}>
             <Plus size={18} color="#FFFFFF" />
             <Text className="block text-white ml-2">添加我的档案</Text>
           </Button>
