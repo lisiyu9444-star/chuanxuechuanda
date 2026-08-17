@@ -16,7 +16,7 @@ export const DEFAULT_ARCHIVE: Archive = {
   birthTime: '午时 (11:00-13:00)',
   location: '上海',
   age: 27,
-  stylePreference: '韩系温柔风',
+  stylePreference: '率性工装风',
   isDefault: true,
   createdAt: Date.now(),
   updatedAt: Date.now(),
