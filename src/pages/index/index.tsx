@@ -153,20 +153,6 @@ export default function Index() {
     Taro.navigateTo({ url: `/pages/result/index?mode=native&archiveId=${currentArchive.id}` })
   }, [currentArchive, handleAddArchive])
 
-  const handleUnlockImage = useCallback(
-    async (type: 'flat' | 'tryOn') => {
-      if (!currentArchive || currentArchive.isDefault) {
-        handleAddArchive()
-        return
-      }
-      if (!dailyResult) return
-      Taro.navigateTo({
-        url: `/pages/result/index?archiveId=${currentArchive.id}&unlock=${type}`,
-      })
-    },
-    [currentArchive, dailyResult, handleAddArchive],
-  )
-
   const formatDate = useCallback(() => {
     const now = new Date()
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
@@ -254,8 +240,9 @@ export default function Index() {
       <View className="px-4 mt-4">
         <Card>
           <CardContent className="p-4">
-            <View className="mb-3">
+            <View className="mb-3 flex flex-row items-center justify-between">
               <Text className="block text-base font-semibold text-gray-900">今日穿搭</Text>
+              <ChevronRight size={20} color="#9ca3af" />
             </View>
 
             <View className="flex flex-row gap-3">
@@ -265,19 +252,21 @@ export default function Index() {
                 ) : (
                   <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback flat image load failed')} />
                 )}
-                <View className="absolute bottom-2 left-2 right-2">
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    style={{ backgroundColor: themeColor }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleUnlockImage('flat')
-                    }}
-                  >
-                    <Text className="block text-white text-xs">{dailyResult.imageUrl ? '查看平铺图' : '解锁平铺图'}</Text>
-                  </Button>
-                </View>
+                {!dailyResult.imageUrl && (
+                  <View className="absolute bottom-2 left-2 right-2">
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      style={{ backgroundColor: themeColor }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleViewResult()
+                      }}
+                    >
+                      <Text className="block text-white text-xs">解锁平铺图</Text>
+                    </Button>
+                  </View>
+                )}
               </View>
               <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative" onClick={handleViewResult}>
                 {dailyResult.tryOnUrl ? (
@@ -285,19 +274,21 @@ export default function Index() {
                 ) : (
                   <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback tryOn image load failed')} />
                 )}
-                <View className="absolute bottom-2 left-2 right-2">
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    style={{ backgroundColor: themeColor }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleUnlockImage('tryOn')
-                    }}
-                  >
-                    <Text className="block text-white text-xs">{dailyResult.tryOnUrl ? '查看上身图' : '解锁上身图'}</Text>
-                  </Button>
-                </View>
+                {!dailyResult.tryOnUrl && (
+                  <View className="absolute bottom-2 left-2 right-2">
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      style={{ backgroundColor: themeColor }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleViewResult()
+                      }}
+                    >
+                      <Text className="block text-white text-xs">解锁上身图</Text>
+                    </Button>
+                  </View>
+                )}
               </View>
             </View>
           </CardContent>
@@ -308,8 +299,9 @@ export default function Index() {
       <View className="px-4 mt-4">
         <Card className="active:opacity-80" onClick={handleViewResult}>
           <CardContent className="p-4">
-            <View className="mb-3">
+            <View className="mb-3 flex flex-row items-center justify-between">
               <Text className="block text-base font-semibold text-gray-900">穿搭指南</Text>
+              <ChevronRight size={20} color="#9ca3af" />
             </View>
 
             <OutfitGuideContent
@@ -330,8 +322,9 @@ export default function Index() {
       <View className="px-4 mt-4">
         <Card className="active:opacity-80" onClick={handleViewNative}>
           <CardContent className="p-4">
-            <View className="mb-3">
+            <View className="mb-3 flex flex-row items-center justify-between">
               <Text className="block text-base font-semibold text-gray-900">本命穿搭</Text>
+              <ChevronRight size={20} color="#9ca3af" />
             </View>
 
             <View className="space-y-3">
