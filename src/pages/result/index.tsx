@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Share2, RefreshCw, Lock, Loader, Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
+import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
 import type { BaZiResult } from '@/types/bazi'
 import './index.css'
 
@@ -193,6 +194,14 @@ const ResultPage = () => {
       console.error('Update history tryOnUrl failed:', e)
     }
   }
+
+  // 激励视频广告（仅微信小程序环境生效）
+  const { showAd } = useRewardedVideoAd({
+    adUnitId: 'adunit-8310bd6159a47249',
+    onError: (err) => {
+      console.error('[ResultPage] rewarded video ad error', err)
+    },
+  })
 
   // 上身图生成任务（使用 useLoadingTask 管理）
   const {
@@ -561,12 +570,22 @@ const ResultPage = () => {
                 <Button
                   variant="outline"
                   className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700"
-                  onClick={() => generateTryOn({
-                    imageUrl: result.imageUrl,
-                    outfit: result.outfit,
-                    gender: result.gender,
-                    age: result.age,
-                  })}
+                  onClick={async () => {
+                    const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
+                    if (isWeapp) {
+                      const watched = await showAd()
+                      if (!watched) {
+                        Taro.showToast({ title: '请完整观看视频以解锁上身图', icon: 'none' })
+                        return
+                      }
+                    }
+                    generateTryOn({
+                      imageUrl: result.imageUrl,
+                      outfit: result.outfit,
+                      gender: result.gender,
+                      age: result.age,
+                    })
+                  }}
                 >
                   <Text className="block text-sm font-medium">点击生成上身试穿图</Text>
                 </Button>
