@@ -216,6 +216,8 @@ const ResultPage = () => {
   const fromShareRef = useRef(false)
   // 当前档案 ID
   const currentArchiveIdRef = useRef('')
+  // 从首页带过来的解锁类型
+  const unlockTypeRef = useRef<'flat' | 'tryOn' | null>(null)
 
   // 更新历史记录中的上身图 URL
   const updateHistoryTryOnUrl = (imageUrl: string, newTryOnUrl: string) => {
@@ -273,11 +275,15 @@ const ResultPage = () => {
     try {
       const archiveId = currentArchiveIdRef.current
       const today = new Date().toISOString().slice(0, 10)
-      const key = `dailyResult:${archiveId}:${today}`
-      const dailyResult: DailyResult = Taro.getStorageSync(key)
+      const dailyResult = getDailyResult(archiveId, today)
       if (dailyResult) {
-        const updated = { ...dailyResult, ...updates }
-        Taro.setStorageSync(key, updated)
+        const updated: DailyResult = {
+          ...dailyResult,
+          ...updates,
+          baziResult: { ...dailyResult.baziResult, ...updates },
+          generatedAt: Date.now(),
+        }
+        saveDailyResult(updated)
       }
     } catch (e) {
       console.error('Update daily cache failed:', e)
@@ -408,6 +414,10 @@ const ResultPage = () => {
       })()
     } else {
       // 正常打开，加载本地数据
+      const unlock = router?.params?.unlock as 'flat' | 'tryOn' | undefined
+      if (unlock === 'flat' || unlock === 'tryOn') {
+        unlockTypeRef.current = unlock
+      }
       loadLocalResult(mode, archiveId)
     }
   })
@@ -570,6 +580,19 @@ const ResultPage = () => {
   useEffect(() => {
     if (result && !shareId) {
       saveShareData()
+    }
+  }, [result])
+
+  // 当 result 加载完成后，自动处理从首页带过来的解锁请求
+  useEffect(() => {
+    if (result && unlockTypeRef.current) {
+      const type = unlockTypeRef.current
+      unlockTypeRef.current = null
+      if (type === 'flat') {
+        handleUnlockFlatImage()
+      } else if (type === 'tryOn') {
+        handleUnlockTryOn()
+      }
     }
   }, [result])
 
