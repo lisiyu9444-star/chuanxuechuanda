@@ -17,6 +17,8 @@ import {
   DEFAULT_ARCHIVE,
 } from '@/utils/archiveStorage'
 
+const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/image/generate_image_2744f703-9ff0-40d9-b0b6-ee9a64c25c03.jpeg?sign=1818434804-0853f26d4a-0-3264c45d4d6c3b50e81a9a8b4db67f5b241de8f4aaab4b4d2c1f5adcd9b0ee35'
+
 const EXAMPLE_DAILY_RESULT: DailyResult = {
   date: new Date().toISOString().split('T')[0],
   archiveId: DEFAULT_ARCHIVE.id,
@@ -189,7 +191,7 @@ export default function Index() {
     <View className="min-h-screen bg-gray-50 pb-8">
       {/* 顶部档案切换 - 吸顶 */}
       <View
-        className="bg-white px-4 pt-12 pb-4 z-50"
+        className="bg-white px-4 pt-3 pb-3 z-50 border-b border-gray-100"
         style={{ position: 'sticky', top: 0 }}
       >
         <View className="flex items-center justify-between">
@@ -206,7 +208,7 @@ export default function Index() {
       </View>
 
       {/* 幸运指数 */}
-      <View className="px-4 mt-4">
+      <View className="px-4 pt-4">
         <Card>
           <CardContent className="p-4">
             <View className="flex items-center justify-between mb-4">
@@ -261,9 +263,7 @@ export default function Index() {
                 {dailyResult.imageUrl ? (
                   <Image src={dailyResult.imageUrl} className="w-full h-full" mode="aspectFill" />
                 ) : (
-                  <View className="absolute inset-0 flex items-center justify-center">
-                    <Text className="block text-sm text-gray-500">待解锁</Text>
-                  </View>
+                  <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" />
                 )}
                 <View className="absolute bottom-2 left-2 right-2">
                   <Button
@@ -283,9 +283,7 @@ export default function Index() {
                 {dailyResult.tryOnUrl ? (
                   <Image src={dailyResult.tryOnUrl} className="w-full h-full" mode="aspectFill" />
                 ) : (
-                  <View className="absolute inset-0 flex items-center justify-center">
-                    <Text className="block text-sm text-gray-500">待解锁</Text>
-                  </View>
+                  <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" />
                 )}
                 <View className="absolute bottom-2 left-2 right-2">
                   <Button
