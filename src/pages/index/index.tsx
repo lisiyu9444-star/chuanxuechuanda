@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OutfitGuideContent } from '@/components/outfit-guide-content'
-import { LuckyStarWater } from '@/components/lucky-star-water'
 import {
   type Archive,
   type DailyResult,
@@ -20,6 +19,7 @@ import {
   DEFAULT_ARCHIVE,
 } from '@/utils/archiveStorage'
 
+const LUCKY_STAR_HAPPY_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/Xing_Yun_Xing_Kai_Xin_06859ac3.png?sign=1789581330-df152f5439-0-702422be9367ca1f93714edfbd23fe10a4cc2e3cfeba0f7460db309261585b47'
 const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/placeholder_compressed_fc42a6fb.jpg?sign=1789570488-e3736db199-0-8a30a66f5bbc9632daba064367ba177cac6a1067704b5b2cd1114e4d0896686d'
 
 const EXAMPLE_DAILY_RESULT: DailyResult = {
@@ -233,7 +233,12 @@ export default function Index() {
             </View>
 
             <View className="flex items-center gap-4 mb-4">
-              <LuckyStarWater score={luckyScore.total} size={84} />
+              <Image
+                className="w-20 h-20"
+                src={LUCKY_STAR_HAPPY_URL}
+                mode="aspectFit"
+                lazyLoad
+              />
               <View className="flex-1">
                 <Text className="block text-sm text-gray-600 leading-relaxed">{luckyScore.description}</Text>
               </View>
