@@ -17,7 +17,7 @@ import {
   DEFAULT_ARCHIVE,
 } from '@/utils/archiveStorage'
 
-const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/image/generate_image_2744f703-9ff0-40d9-b0b6-ee9a64c25c03.jpeg?sign=1818434804-0853f26d4a-0-3264c45d4d6c3b50e81a9a8b4db67f5b241de8f4aaab4b4d2c1f5adcd9b0ee35'
+const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/image/generate_image_c87d5080-c5ca-4520-8a8a-3bedb9f2f8b2.jpeg?sign=1818514085-7f3b4dd14a-0-43a16a075c0b889af11872d5201f5c2f4bba242fe6848a627bd64a17c60900f3'
 
 const EXAMPLE_DAILY_RESULT: DailyResult = {
   date: new Date().toISOString().split('T')[0],
@@ -261,9 +261,9 @@ export default function Index() {
             <View className="flex flex-row gap-3">
               <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative" onClick={handleViewResult}>
                 {dailyResult.imageUrl ? (
-                  <Image src={dailyResult.imageUrl} className="w-full h-full" mode="aspectFill" />
+                  <Image src={dailyResult.imageUrl} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] flat image load failed')} />
                 ) : (
-                  <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" />
+                  <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback flat image load failed')} />
                 )}
                 <View className="absolute bottom-2 left-2 right-2">
                   <Button
@@ -281,9 +281,9 @@ export default function Index() {
               </View>
               <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative" onClick={handleViewResult}>
                 {dailyResult.tryOnUrl ? (
-                  <Image src={dailyResult.tryOnUrl} className="w-full h-full" mode="aspectFill" />
+                  <Image src={dailyResult.tryOnUrl} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] tryOn image load failed')} />
                 ) : (
-                  <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" />
+                  <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback tryOn image load failed')} />
                 )}
                 <View className="absolute bottom-2 left-2 right-2">
                   <Button
