@@ -25,8 +25,8 @@ const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_stora
 const EXAMPLE_DAILY_RESULT: DailyResult = {
   date: getToday(),
   archiveId: DEFAULT_ARCHIVE.id,
-  imageUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/image/generate_image_60a4d963-55fe-485f-93d1-f82adf0150d3.jpeg?sign=1818523585-7969e0e795-0-6fafc9ab4840d50ab11b38d4ee5a3932bbe31cbb4ce95e13d9a1b28dd129a21a',
-  tryOnUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/image/generate_image_f3f7f6a7-2e99-4e46-a8eb-a5f88dcfc180.jpeg?sign=1818523621-e73652e23c-0-68d939e13ba6bb4e3c9f29e8641af831db1b5ef01f0a2d9f665d739af332c805',
+  imageUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/example_flat_compressed_fcb0c028.jpg?sign=1789580235-48c8362e20-0-039add2bf90ca3078948e464fff0ad253513740f2a4b217f882689de5c03d485',
+  tryOnUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/example_tryon_compressed_2655e65c.jpg?sign=1789580235-a42be68c89-0-7bf09693ea868ced5274e4b0859a3d57c3feba8e455666990526a190c1f9cdd8',
   baziResult: {
     nickname: '小幸运',
     gender: 'female',
@@ -61,7 +61,7 @@ const EXAMPLE_DAILY_RESULT: DailyResult = {
       prompt: 'Sage green bomber jacket, white cropped tank top, light grey cargo pants, silver crossbody bag, olive baseball cap, silver hoop earrings, layered necklaces, white and silver chunky sneakers, cream marble background, fashion flat lay, 3:4 vertical, high-end photography',
       backgroundColor: '#F0F2EF',
     },
-    imageUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/image/generate_image_60a4d963-55fe-485f-93d1-f82adf0150d3.jpeg?sign=1818523585-7969e0e795-0-6fafc9ab4840d50ab11b38d4ee5a3932bbe31cbb4ce95e13d9a1b28dd129a21a',
+    imageUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/example_flat_compressed_fcb0c028.jpg?sign=1789580235-48c8362e20-0-039add2bf90ca3078948e464fff0ad253513740f2a4b217f882689de5c03d485',
   },
   llmPlan: {
     luckyColors: {
