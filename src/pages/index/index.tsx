@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OutfitGuideContent } from '@/components/outfit-guide-content'
-import { WaterSphere } from '@/components/water-sphere'
+import { LuckyStarWater } from '@/components/lucky-star-water'
 import {
   type Archive,
   type DailyResult,
@@ -231,7 +231,7 @@ export default function Index() {
             </View>
 
             <View className="flex items-center gap-4 mb-4">
-              <WaterSphere score={luckyScore.total} size={84} />
+              <LuckyStarWater score={luckyScore.total} size={84} />
               <View className="flex-1">
                 <Text className="block text-sm text-gray-600 leading-relaxed">{luckyScore.description}</Text>
               </View>

@@ -1,0 +1,106 @@
+.lucky-star-water {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star-shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+}
+
+.star-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.star-bg,
+.star-water,
+.star-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.star-bg {
+  background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.star-water {
+  top: auto;
+  bottom: 0;
+  height: 50%;
+  background: linear-gradient(to top, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+  transition: height 1s ease-out;
+  overflow: hidden;
+}
+
+.wave {
+  position: absolute;
+  left: -50%;
+  width: 200%;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+}
+
+.wave-1 {
+  top: -8px;
+  animation: star-wave-1 2.8s linear infinite;
+}
+
+.wave-2 {
+  top: -6px;
+  opacity: 0.7;
+  animation: star-wave-2 3.6s linear infinite;
+}
+
+@keyframes star-wave-1 {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-25%);
+  }
+}
+
+@keyframes star-wave-2 {
+  0% {
+    transform: translateX(-10%);
+  }
+  100% {
+    transform: translateX(-35%);
+  }
+}
+
+.star-shine {
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.1) 35%, transparent 55%);
+  pointer-events: none;
+}
+
+.star-score {
+  position: relative;
+  z-index: 10;
+  font-weight: 800;
+  line-height: 1;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.star-score-dark {
+  color: #1f2937;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+.star-score-light {
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
