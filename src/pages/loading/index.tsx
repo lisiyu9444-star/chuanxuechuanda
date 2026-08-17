@@ -31,7 +31,7 @@ const LoadingPage = () => {
       const currentArchive = getArchiveById(archiveId)
       if (!currentArchive) {
         Taro.showToast({ title: '档案不存在', icon: 'none' })
-        setTimeout(() => Taro.redirectTo({ url: '/pages/index/index' }), 1500)
+        setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
         return
       }
 
@@ -74,11 +74,11 @@ const LoadingPage = () => {
       }
       saveDailyResult(dailyResult)
       setProgressValue(100)
-      Taro.redirectTo({ url: '/pages/index/index' })
+      Taro.switchTab({ url: '/pages/index/index' })
     } catch (error) {
       console.error('[Loading] daily request failed:', error)
       Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
-      setTimeout(() => Taro.redirectTo({ url: '/pages/index/index' }), 1500)
+      setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
     }
   }
 
@@ -89,7 +89,7 @@ const LoadingPage = () => {
       loadData(archiveId as string)
     } else {
       Taro.showToast({ title: '缺少档案信息', icon: 'none' })
-      setTimeout(() => Taro.redirectTo({ url: '/pages/index/index' }), 1500)
+      setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
     }
 
     const timer = setTimeout(() => {
