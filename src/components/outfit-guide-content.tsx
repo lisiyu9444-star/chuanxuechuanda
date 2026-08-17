@@ -51,6 +51,7 @@ interface OutfitGuideContentProps {
   themeColor: string
   pageMode?: 'daily' | 'native'
   showTitle?: boolean
+  showBaziOverview?: boolean
 }
 
 export function OutfitGuideContent({
@@ -61,6 +62,7 @@ export function OutfitGuideContent({
   themeColor,
   pageMode = 'daily',
   showTitle = true,
+  showBaziOverview = true,
 }: OutfitGuideContentProps) {
   const llmPlan = llmPlanProp || result.llmPlan
   const yongShen = yongShenProp || result.dailyYongShen
@@ -71,7 +73,7 @@ export function OutfitGuideContent({
   return (
     <View className="flex flex-col gap-4">
       {/* 八字概览 */}
-      {showBaZiContent && (
+      {showBaziOverview && showBaZiContent && (
         <Card className="bg-white border-gray-100 shadow-sm">
           <CardContent className="p-4">
             <View className="flex items-center justify-between mb-3">

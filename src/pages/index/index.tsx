@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
-import { ChevronRight, User, Plus, Sparkles, Shirt, Crown } from 'lucide-react-taro'
+import { ChevronRight, Plus } from 'lucide-react-taro'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -191,12 +191,6 @@ export default function Index() {
       <View className="bg-white px-4 pt-12 pb-4">
         <View className="flex items-center justify-between">
           <View className="flex items-center gap-3">
-            <View
-              className="w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: themeColor }}
-            >
-              <User size={20} color="#FFFFFF" />
-            </View>
             <View>
               <Text className="block text-lg font-semibold text-gray-900">{currentArchive.nickname}</Text>
               <Text className="block text-xs text-gray-500">{formatDate()}</Text>
@@ -213,10 +207,7 @@ export default function Index() {
       <View className="px-4 mt-4">
         <Card>
           <CardContent className="p-4">
-            <View className="flex items-center gap-2 mb-4">
-              <Sparkles size={18} color={themeColor} />
-              <Text className="block text-base font-semibold text-gray-900">幸运指数</Text>
-            </View>
+            <Text className="block text-base font-semibold text-gray-900 mb-4">幸运指数</Text>
 
             <View className="flex items-center gap-4 mb-4">
               <View
@@ -257,10 +248,7 @@ export default function Index() {
         <Card className="active:opacity-80" onClick={handleViewResult}>
           <CardContent className="p-4">
             <View className="flex items-center justify-between mb-3">
-              <View className="flex items-center gap-2">
-                <Shirt size={18} color={themeColor} />
-                <Text className="block text-base font-semibold text-gray-900">穿搭指南</Text>
-              </View>
+              <Text className="block text-base font-semibold text-gray-900">穿搭指南</Text>
               <ChevronRight size={18} color="#9CA3AF" />
             </View>
 
@@ -272,6 +260,7 @@ export default function Index() {
               xiShen={dailyResult.dailyXiShen}
               themeColor={themeColor}
               showTitle={false}
+              showBaziOverview={false}
             />
           </CardContent>
         </Card>
@@ -282,10 +271,7 @@ export default function Index() {
         <Card>
           <CardContent className="p-4">
             <View className="flex items-center justify-between mb-3">
-              <View className="flex items-center gap-2">
-                <Crown size={18} color={themeColor} />
-                <Text className="block text-base font-semibold text-gray-900">今日穿搭</Text>
-              </View>
+              <Text className="block text-base font-semibold text-gray-900">今日穿搭</Text>
               <Button variant="ghost" size="sm" onClick={handleViewResult}>
                 <Text className="block text-sm" style={{ color: themeColor }}>查看详情</Text>
               </Button>
@@ -346,10 +332,7 @@ export default function Index() {
         <Card className="active:opacity-80" onClick={handleViewNative}>
           <CardContent className="p-4">
             <View className="flex items-center justify-between mb-3">
-              <View className="flex items-center gap-2">
-                <Crown size={18} color={themeColor} />
-                <Text className="block text-base font-semibold text-gray-900">本命穿搭</Text>
-              </View>
+              <Text className="block text-base font-semibold text-gray-900">本命穿搭</Text>
               <ChevronRight size={18} color="#9CA3AF" />
             </View>
 

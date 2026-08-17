@@ -8,6 +8,7 @@ import { Share2, RefreshCw, Lock, Loader, Shirt, Square, Footprints, ShoppingBag
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
+import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult } from '@/utils/archiveStorage'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
 import './index.css'
 
@@ -184,12 +185,7 @@ interface DailyResult {
   generatedAt: number
 }
 
-interface NativeResult {
-  archiveId: string
-  baziResult: BaZiResult
-  llmPlan: StylistResult
-  generatedAt: number
-}
+
 
 const ResultPage = () => {
   const [result, setResult] = useState<BaZiResult | null>(null)
@@ -208,6 +204,8 @@ const ResultPage = () => {
   const [shareId, setShareId] = useState('')
   // 从分享链接进入时的加载态
   const [shareLoading, setShareLoading] = useState(false)
+  // 页面数据加载态
+  const [pageLoading, setPageLoading] = useState(false)
   // 分享数据是否准备就绪（shareId 已生成）
   const [shareReady, setShareReady] = useState(false)
   // 从分享链接打开时携带的 shareId
@@ -414,21 +412,88 @@ const ResultPage = () => {
     }
   })
 
-  const loadLocalResult = (mode: 'daily' | 'native', archiveId: string) => {
+  const fetchAndCacheResult = async (mode: 'daily' | 'native', archiveId: string) => {
+    setPageLoading(true)
+    try {
+      const archive = getArchiveById(archiveId)
+      if (!archive) {
+        Taro.showToast({ title: '档案不存在', icon: 'none' })
+        return
+      }
+      const endpoint = mode === 'native' ? '/api/bazi/native' : '/api/bazi/daily'
+      const res: any = await Network.request({
+        url: endpoint,
+        method: 'POST',
+        data: {
+          nickname: archive.nickname,
+          gender: archive.gender,
+          calendarType: archive.calendarType,
+          birthDate: archive.birthDate,
+          birthTime: archive.birthTime,
+          location: archive.location,
+          age: archive.age,
+          stylePreference: archive.stylePreference,
+        },
+      })
+      console.log(`[Result] ${endpoint} response:`, res.data)
+      const payload = res.data?.data
+      if (!payload?.baziResult) {
+        Taro.showToast({ title: '数据加载失败', icon: 'none' })
+        return
+      }
+      if (mode === 'native') {
+        saveNativeResult({
+          archiveId,
+          baziResult: payload.baziResult,
+          llmPlan: payload.llmPlan,
+          generatedAt: Date.now(),
+        })
+        setResult({ ...payload.baziResult, llmPlan: payload.llmPlan })
+      } else {
+        const today = new Date().toISOString().slice(0, 10)
+        saveDailyResult({
+          archiveId,
+          date: today,
+          baziResult: payload.baziResult,
+          llmPlan: payload.llmPlan,
+          luckyScore: payload.luckyScore,
+          ganZhiDate: payload.ganZhiDate,
+          dailyYongShen: payload.dailyYongShen,
+          dailyXiShen: payload.dailyXiShen,
+          imageUrl: payload.baziResult.imageUrl || undefined,
+          tryOnUrl: undefined,
+          generatedAt: Date.now(),
+        })
+        setResult({ ...payload.baziResult, llmPlan: payload.llmPlan })
+        setFlatImageUrl(payload.baziResult.imageUrl || '')
+      }
+    } catch (err) {
+      console.error('[Result] fetch result failed:', err)
+      Taro.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
+    } finally {
+      setPageLoading(false)
+    }
+  }
+
+  const loadLocalResult = async (mode: 'daily' | 'native', archiveId: string) => {
     if (mode === 'native') {
-      const nativeResult: NativeResult = Taro.getStorageSync(`nativeResult:${archiveId}`)
+      const nativeResult = getNativeResult(archiveId)
       if (nativeResult?.baziResult) {
         setResult({ ...nativeResult.baziResult, llmPlan: nativeResult.llmPlan })
+        return
       }
     } else {
       const today = new Date().toISOString().slice(0, 10)
-      const dailyResult: DailyResult = Taro.getStorageSync(`dailyResult:${archiveId}:${today}`)
+      const dailyResult = getDailyResult(archiveId, today)
       if (dailyResult?.baziResult) {
         setResult({ ...dailyResult.baziResult, llmPlan: dailyResult.llmPlan })
         setFlatImageUrl(dailyResult.imageUrl || '')
         setTryOnUrl(dailyResult.tryOnUrl || '')
+        return
       }
     }
+    // 本地无缓存时自动请求
+    await fetchAndCacheResult(mode, archiveId)
   }
 
   // 保存/更新分享数据到服务器
@@ -618,6 +683,17 @@ const ResultPage = () => {
         <View className="flex gap-3 mt-4">
           <Skeleton className="h-12 flex-1 rounded-xl" />
           <Skeleton className="h-12 flex-1 rounded-xl" />
+        </View>
+      </View>
+    )
+  }
+
+  if (!result || pageLoading) {
+    return (
+      <View className="min-h-full bg-white flex items-center justify-center px-6">
+        <View className="flex flex-col items-center">
+          <Loader className="animate-spin mb-3" size={32} color="#6366f1" />
+          <Text className="block text-gray-500">正在准备穿搭方案...</Text>
         </View>
       </View>
     )
