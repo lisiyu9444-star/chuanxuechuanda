@@ -187,13 +187,15 @@ export default function Index() {
 
   return (
     <View className="min-h-screen bg-gray-50 pb-8">
-      {/* 顶部档案切换 */}
-      <View className="bg-white px-4 pt-12 pb-4">
+      {/* 顶部档案切换 - 吸顶 */}
+      <View
+        className="bg-white px-4 pt-12 pb-4 z-50"
+        style={{ position: 'sticky', top: 0 }}
+      >
         <View className="flex items-center justify-between">
           <View className="flex items-center gap-3">
             <View>
               <Text className="block text-lg font-semibold text-gray-900">{currentArchive.nickname}</Text>
-              <Text className="block text-xs text-gray-500">{formatDate()}</Text>
             </View>
           </View>
           <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleSwitchArchive}>
@@ -207,7 +209,10 @@ export default function Index() {
       <View className="px-4 mt-4">
         <Card>
           <CardContent className="p-4">
-            <Text className="block text-base font-semibold text-gray-900 mb-4">幸运指数</Text>
+            <View className="flex items-center justify-between mb-4">
+              <Text className="block text-base font-semibold text-gray-900">幸运指数</Text>
+              <Text className="block text-xs text-gray-400">{formatDate()}</Text>
+            </View>
 
             <View className="flex items-center gap-4 mb-4">
               <View
@@ -243,38 +248,12 @@ export default function Index() {
         </Card>
       </View>
 
-      {/* 穿搭指南 */}
-      <View className="px-4 mt-4">
-        <Card className="active:opacity-80" onClick={handleViewResult}>
-          <CardContent className="p-4">
-            <View className="flex items-center justify-between mb-3">
-              <Text className="block text-base font-semibold text-gray-900">穿搭指南</Text>
-              <ChevronRight size={18} color="#9CA3AF" />
-            </View>
-
-            <OutfitGuideContent
-              result={baziResult}
-              llmPlan={llmPlan}
-              pageMode="daily"
-              yongShen={dailyResult.dailyYongShen}
-              xiShen={dailyResult.dailyXiShen}
-              themeColor={themeColor}
-              showTitle={false}
-              showBaziOverview={false}
-            />
-          </CardContent>
-        </Card>
-      </View>
-
       {/* 今日穿搭 */}
       <View className="px-4 mt-4">
         <Card>
           <CardContent className="p-4">
-            <View className="flex items-center justify-between mb-3">
+            <View className="mb-3">
               <Text className="block text-base font-semibold text-gray-900">今日穿搭</Text>
-              <Button variant="ghost" size="sm" onClick={handleViewResult}>
-                <Text className="block text-sm" style={{ color: themeColor }}>查看详情</Text>
-              </Button>
             </View>
 
             <View className="flex flex-row gap-3">
@@ -327,13 +306,34 @@ export default function Index() {
         </Card>
       </View>
 
+      {/* 穿搭指南 */}
+      <View className="px-4 mt-4">
+        <Card className="active:opacity-80" onClick={handleViewResult}>
+          <CardContent className="p-4">
+            <View className="mb-3">
+              <Text className="block text-base font-semibold text-gray-900">穿搭指南</Text>
+            </View>
+
+            <OutfitGuideContent
+              result={dailyResult.baziResult}
+              llmPlan={dailyResult.llmPlan}
+              pageMode="daily"
+              yongShen={dailyResult.dailyYongShen}
+              xiShen={dailyResult.dailyXiShen}
+              themeColor={themeColor}
+              showTitle={false}
+              showBaziOverview={false}
+            />
+          </CardContent>
+        </Card>
+      </View>
+
       {/* 本命穿搭 */}
       <View className="px-4 mt-4">
         <Card className="active:opacity-80" onClick={handleViewNative}>
           <CardContent className="p-4">
-            <View className="flex items-center justify-between mb-3">
+            <View className="mb-3">
               <Text className="block text-base font-semibold text-gray-900">本命穿搭</Text>
-              <ChevronRight size={18} color="#9CA3AF" />
             </View>
 
             <View className="space-y-3">
