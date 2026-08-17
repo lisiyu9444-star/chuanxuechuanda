@@ -17,7 +17,7 @@ import {
   DEFAULT_ARCHIVE,
 } from '@/utils/archiveStorage'
 
-const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/image/generate_image_c87d5080-c5ca-4520-8a8a-3bedb9f2f8b2.jpeg?sign=1818514085-7f3b4dd14a-0-43a16a075c0b889af11872d5201f5c2f4bba242fe6848a627bd64a17c60900f3'
+const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/placeholder_compressed_fc42a6fb.jpg?sign=1789570488-e3736db199-0-8a30a66f5bbc9632daba064367ba177cac6a1067704b5b2cd1114e4d0896686d'
 
 const EXAMPLE_DAILY_RESULT: DailyResult = {
   date: new Date().toISOString().split('T')[0],

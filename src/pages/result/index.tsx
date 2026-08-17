@@ -153,6 +153,8 @@ function getColorHex(name: string): string {
 }
 
 
+const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/placeholder_compressed_fc42a6fb.jpg?sign=1789570488-e3736db199-0-8a30a66f5bbc9632daba064367ba177cac6a1067704b5b2cd1114e4d0896686d'
+
 const ELEMENT_COLORS: Record<string, string> = {
   '木': '#22c55e',
   '火': '#ef4444',
@@ -789,22 +791,32 @@ const ResultPage = () => {
                 />
               ) : (
                 <View className="w-full h-full flex flex-col items-center justify-center px-6">
-                  <View className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                    <Lock size={28} color="#6b7280" />
+                  <Image
+                    src={FALLBACK_IMAGE_URL}
+                    className="absolute inset-0 w-full h-full"
+                    mode="aspectFill"
+                    lazyLoad
+                    onError={() => console.warn('Fallback image load failed')}
+                  />
+                  <View className="absolute inset-0 bg-white" style={{ opacity: 0.6 }} />
+                  <View className="relative z-10 flex flex-col items-center justify-center">
+                    <View className="w-16 h-16 rounded-full bg-white backdrop-blur flex items-center justify-center mb-4 shadow-sm" style={{ opacity: 0.9 }}>
+                      <Lock size={28} color="#6b7280" />
+                    </View>
+                    <Text className="block text-gray-800 text-base font-semibold mb-2">
+                      今日穿搭平铺图未解锁
+                    </Text>
+                    <Text className="block text-gray-500 text-sm text-center mb-6 px-4">
+                      解锁后生成专属穿搭平铺图，约需等待30秒
+                    </Text>
+                    <Button
+                      variant="outline"
+                      className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700 bg-white"
+                      onClick={handleUnlockFlatImage}
+                    >
+                      <Text className="block text-sm font-medium">点击解锁平铺图</Text>
+                    </Button>
                   </View>
-                  <Text className="block text-gray-700 text-base font-semibold mb-2">
-                    今日穿搭平铺图未解锁
-                  </Text>
-                  <Text className="block text-gray-400 text-sm text-center mb-6 px-4">
-                    解锁后生成专属穿搭平铺图，约需等待30秒
-                  </Text>
-                  <Button
-                    variant="outline"
-                    className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700"
-                    onClick={handleUnlockFlatImage}
-                  >
-                    <Text className="block text-sm font-medium">点击解锁平铺图</Text>
-                  </Button>
                 </View>
               )
             ) : tryOnUrl ? (
@@ -826,22 +838,33 @@ const ResultPage = () => {
               </View>
             ) : (
               <View className="w-full h-full flex flex-col items-center justify-center px-6">
-                <View className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <Lock size={28} color="#6b7280" />
+                <Image
+                  src={FALLBACK_IMAGE_URL}
+                  className="absolute inset-0 w-full h-full"
+                  mode="aspectFill"
+                  lazyLoad
+                  onError={() => console.warn('Fallback image load failed')}
+                />
+                <View className="absolute inset-0 bg-white" style={{ opacity: 0.6 }} />
+                <View className="relative z-10 flex flex-col items-center justify-center">
+                  <View className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm" style={{ opacity: 0.9 }}>
+                    <Lock size={28} color="#6b7280" />
+                  </View>
+                  <Text className="block text-gray-800 text-base font-semibold mb-2">
+                    上身试穿图未生成
+                  </Text>
+                  <Text className="block text-gray-500 text-sm text-center mb-6 px-4">
+                    基于平铺图生成模特上身效果，约需等待30秒
+                  </Text>
+                  <Button
+                    variant="outline"
+                    className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700 bg-white"
+                    style={{ opacity: 0.8 }}
+                    onClick={handleUnlockTryOn}
+                  >
+                    <Text className="block text-sm font-medium">点击生成上身试穿图</Text>
+                  </Button>
                 </View>
-                <Text className="block text-gray-700 text-base font-semibold mb-2">
-                  上身试穿图未生成
-                </Text>
-                <Text className="block text-gray-400 text-sm text-center mb-6 px-4">
-                  基于平铺图生成模特上身效果，约需等待30秒
-                </Text>
-                <Button
-                  variant="outline"
-                  className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700"
-                  onClick={handleUnlockTryOn}
-                >
-                  <Text className="block text-sm font-medium">点击生成上身试穿图</Text>
-                </Button>
               </View>
             )}
           </View>
