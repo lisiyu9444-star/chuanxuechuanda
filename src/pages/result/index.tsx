@@ -457,21 +457,22 @@ const ResultPage = () => {
         setResult({ ...payload.baziResult, llmPlan: payload.llmPlan })
       } else {
         const today = new Date().toISOString().slice(0, 10)
+        const bazi = payload.baziResult
         saveDailyResult({
           archiveId,
           date: today,
-          baziResult: payload.baziResult,
+          baziResult: bazi,
           llmPlan: payload.llmPlan,
           luckyScore: payload.luckyScore,
-          ganZhiDate: payload.ganZhiDate,
-          dailyYongShen: payload.dailyYongShen,
-          dailyXiShen: payload.dailyXiShen,
-          imageUrl: payload.baziResult.imageUrl || undefined,
+          ganZhiDate: bazi.ganZhiDate,
+          dailyYongShen: bazi.dailyYongShen || bazi.favorableElement,
+          dailyXiShen: bazi.dailyXiShen || bazi.favorableAnalysis?.assistantXiShen,
+          imageUrl: bazi.imageUrl || undefined,
           tryOnUrl: undefined,
           generatedAt: Date.now(),
         })
-        setResult({ ...payload.baziResult, llmPlan: payload.llmPlan })
-        setFlatImageUrl(payload.baziResult.imageUrl || '')
+        setResult({ ...bazi, llmPlan: payload.llmPlan })
+        setFlatImageUrl(bazi.imageUrl || '')
       }
     } catch (err) {
       console.error('[Result] fetch result failed:', err)
