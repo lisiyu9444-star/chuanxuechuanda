@@ -39,9 +39,15 @@ const ArchiveListPage = () => {
     Taro.navigateTo({ url: `/pages/archive/form/index?id=${archive.id}` })
   }
 
+  const userArchives = archives.filter(a => !a.isDefault)
+
   const handleDelete = (archive: Archive) => {
     if (archive.isDefault) {
       Taro.showToast({ title: '示例档案不可删除', icon: 'none' })
+      return
+    }
+    if (userArchives.length <= 1) {
+      Taro.showToast({ title: '至少保留一个档案', icon: 'none' })
       return
     }
     Taro.showModal({
@@ -74,7 +80,7 @@ const ArchiveListPage = () => {
       </View>
 
       <View className="flex flex-col gap-3">
-        {archives.map((archive) => {
+        {userArchives.map((archive) => {
           const isActive = archive.id === currentId
           return (
             <Card
@@ -86,9 +92,6 @@ const ArchiveListPage = () => {
                   <View className="flex-1" onClick={() => handleSwitch(archive)}>
                     <View className="flex items-center gap-2 mb-1">
                       <Text className="block text-base font-semibold text-gray-900">{archive.nickname}</Text>
-                      {archive.isDefault && (
-                        <Text className="block text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded-full">示例</Text>
-                      )}
                       {isActive && (
                         <Text className="block text-xs px-2 py-1 bg-gray-900 text-white rounded-full">当前</Text>
                       )}
@@ -109,14 +112,12 @@ const ArchiveListPage = () => {
                     >
                       <Pencil size={16} color="#4B5563" />
                     </View>
-                    {!archive.isDefault && (
-                      <View
-                        className="p-2 rounded-full bg-red-50"
-                        onClick={() => handleDelete(archive)}
-                      >
-                        <Trash2 size={16} color="#ef4444" />
-                      </View>
-                    )}
+                    <View
+                      className="p-2 rounded-full bg-red-50"
+                      onClick={() => handleDelete(archive)}
+                    >
+                      <Trash2 size={16} color="#ef4444" />
+                    </View>
                   </View>
                 </View>
               </CardContent>
@@ -125,7 +126,7 @@ const ArchiveListPage = () => {
         })}
       </View>
 
-      {!archives.some(a => !a.isDefault) && (
+      {userArchives.length === 0 && (
         <View className="mt-8 p-6 bg-white rounded-2xl text-center">
           <Text className="block text-gray-500 mb-4">还没有真实档案，添加后即可查看专属运势</Text>
           <Button className="w-full bg-gray-900 text-white py-3 rounded-xl" onClick={handleAdd}>
