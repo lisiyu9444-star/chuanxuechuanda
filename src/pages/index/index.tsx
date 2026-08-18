@@ -17,6 +17,7 @@ import {
   clearDailyResultsByArchive,
   getToday,
   DEFAULT_ARCHIVE,
+  getNativeResult,
 } from '@/utils/archiveStorage'
 
 const LUCKY_STAR_HAPPY_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/Xing_Yun_Xing_Kai_Xin_06859ac3.png?sign=1789581330-df152f5439-0-702422be9367ca1f93714edfbd23fe10a4cc2e3cfeba0f7460db309261585b47'
@@ -169,6 +170,12 @@ export default function Index() {
     if (!currentArchive) return
     if (currentArchive.isDefault) {
       handleAddArchive()
+      return
+    }
+    // 已有本命穿搭缓存则直接进入结果页，避免重复 loading
+    const nativeResult = getNativeResult(currentArchive.id)
+    if (nativeResult?.baziResult) {
+      Taro.navigateTo({ url: `/pages/result/index?mode=native&archiveId=${currentArchive.id}` })
       return
     }
     Taro.navigateTo({ url: `/pages/loading/index?mode=native&archiveId=${currentArchive.id}` })

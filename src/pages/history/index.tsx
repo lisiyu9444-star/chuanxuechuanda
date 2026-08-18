@@ -47,7 +47,7 @@ export default function HistoryPage() {
       return
     }
     Taro.navigateTo({
-      url: `/pages/result/index?mode=history&archiveId=${record.archiveId}&date=${record.date}`
+      url: `/pages/result/index?mode=history&archiveId=${record.archiveId}&date=${record.date || ''}&recordMode=${record.mode}`
     })
   }
 
@@ -116,7 +116,7 @@ export default function HistoryPage() {
                         {record.nickname || '穿搭记录'}
                       </Text>
                       <Text className="block text-sm text-slate-500 mt-1">
-                        {formatDate(record.date)}
+                        {record.mode === 'native' ? '本命穿搭' : (record.date ? formatDate(record.date) : '')}
                       </Text>
 
                       {/* 幸运色 */}

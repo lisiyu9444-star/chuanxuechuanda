@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Network } from '@/network'
 import { getArchiveById, saveDailyResult, saveNativeResult, getToday, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
+import { saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import './index.css'
 
 const getLoadingSteps = (mode: 'daily' | 'native') => [
@@ -72,8 +73,10 @@ const LoadingPage = () => {
           generatedAt: Date.now(),
         }
         saveNativeResult(nativeResult)
+        // 本命穿搭也生成历史记录，与今日穿搭独立存储
+        saveHistoryFromNativeResult(nativeResult, currentArchive)
         setProgressValue(100)
-        Taro.navigateTo({ url: `/pages/result/index?mode=native&archiveId=${archiveId}` })
+        Taro.redirectTo({ url: `/pages/result/index?mode=native&archiveId=${archiveId}` })
         return
       }
 

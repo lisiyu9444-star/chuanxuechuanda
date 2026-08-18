@@ -9,7 +9,7 @@ import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday } from '@/utils/archiveStorage'
-import { saveHistoryFromDailyResult } from '@/utils/historyStorage'
+import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
 import type { NativeResult } from '@/types/archive'
 import './index.css'
@@ -199,9 +199,9 @@ const ResultPage = () => {
   const [tryOnUrl, setTryOnUrl] = useState<string>('')
   // 平铺图 URL（本地解锁后缓存）
   const [flatImageUrl, setFlatImageUrl] = useState<string>('')
-  // 当前页面模式：'daily' 今日穿搭 | 'native' 本命穿搭
-  const [pageMode, setPageMode] = useState<'daily' | 'native'>('daily')
-  const pageModeRef = useRef<'daily' | 'native'>('daily')
+  // 当前页面模式：'daily' 今日穿搭 | 'native' 本命穿搭 | 'history' 历史记录
+  const [pageMode, setPageMode] = useState<'daily' | 'native' | 'history'>('daily')
+  const pageModeRef = useRef<'daily' | 'native' | 'history'>('daily')
   // 功能开关：分享功能是否开启
   // 功能开关：是否显示玄学相关内容（八字概览、喜用神分析），穿搭模块始终展示
   const [showBaZiContent, setShowBaZiContent] = useState(true)
@@ -259,6 +259,10 @@ const ResultPage = () => {
         if (pageModeRef.current === 'native') {
           // 本命穿搭上身图独立存储，不混入今日穿搭
           updateNativeCache({ tryOnUrl: data.tryOnUrl })
+          if (nativeResultRef.current) {
+            const archive = getArchiveById(nativeResultRef.current.archiveId)
+            saveHistoryFromNativeResult(nativeResultRef.current, archive, { tryOnUrl: data.tryOnUrl })
+          }
         } else {
           if (dailyResultRef.current) {
             syncHistoryRecord(dailyResultRef.current, { tryOnUrl: data.tryOnUrl })
@@ -347,6 +351,10 @@ const ResultPage = () => {
         setFlatImageUrl(imageUrl)
         if (pageModeRef.current === 'native') {
           updateNativeCache({ imageUrl })
+          if (nativeResultRef.current) {
+            const archive = getArchiveById(nativeResultRef.current.archiveId)
+            saveHistoryFromNativeResult(nativeResultRef.current, archive, { imageUrl })
+          }
         } else {
           updateDailyCache({ imageUrl })
           if (dailyResultRef.current) {
@@ -388,19 +396,21 @@ const ResultPage = () => {
     })
   }
 
-  // 获取主题色：今日穿搭用今日用神，本命穿搭用本命用神
-  const themeColor = pageMode === 'native'
-    ? ELEMENT_COLORS[result?.favorableElement || ''] || '#9333ea'
-    : result?.dailyYongShen
+  // 获取主题色：今日穿搭用今日用神，本命穿搭/历史记录用本命用神
+  const themeColor = pageMode === 'daily'
+    ? (result?.dailyYongShen
       ? ELEMENT_COLORS[result.dailyYongShen] || '#9333ea'
-      : '#9333ea'
+      : '#9333ea')
+    : ELEMENT_COLORS[result?.favorableElement || ''] || '#9333ea'
 
   useDidShow(() => {
     // 检查页面模式与分享参数
     const router = Taro.getCurrentInstance().router
     const shareIdFromUrl = router?.params?.shareId
-    const mode = (router?.params?.mode as 'daily' | 'native') || 'daily'
+    const mode = (router?.params?.mode as 'daily' | 'native' | 'history') || 'daily'
     const archiveId = router?.params?.archiveId || Taro.getStorageSync('currentArchiveId') || ''
+    const recordMode = (router?.params?.recordMode as 'daily' | 'native') || 'daily'
+    const historyDate = router?.params?.date
     currentArchiveIdRef.current = archiveId
     setPageMode(mode)
     pageModeRef.current = mode
@@ -442,19 +452,19 @@ const ResultPage = () => {
             }
           } else {
             // 分享数据不存在，加载本地数据
-            loadLocalResult(mode, archiveId)
+            loadLocalResult(mode, archiveId, historyDate, recordMode)
           }
         } catch (err) {
           console.error('Failed to load shared result:', err)
           // 加载本地数据
-          loadLocalResult(mode, archiveId)
+          loadLocalResult(mode, archiveId, historyDate, recordMode)
         } finally {
           setShareLoading(false)
         }
       })()
     } else {
       // 正常打开，加载本地数据
-      loadLocalResult(mode, archiveId)
+      loadLocalResult(mode, archiveId, historyDate, recordMode)
     }
   })
 
@@ -540,7 +550,32 @@ const ResultPage = () => {
     }
   }
 
-  const loadLocalResult = async (mode: 'daily' | 'native', archiveId: string) => {
+  const loadLocalResult = async (
+    mode: 'daily' | 'native' | 'history',
+    archiveId: string,
+    historyDate?: string,
+    recordMode: 'daily' | 'native' = 'daily'
+  ) => {
+    if (mode === 'history') {
+      const { getHistoryRecords } = await import('@/utils/historyStorage')
+      const records = getHistoryRecords()
+      const record = records.find(
+        r => r.archiveId === archiveId && r.mode === recordMode && (recordMode === 'native' || r.date === historyDate)
+      )
+      if (record) {
+        setResult({ ...record, llmPlan: record.llmPlan })
+        setFlatImageUrl(record.imageUrl || '')
+        setTryOnUrl(record.tryOnUrl || '')
+        setPageMode(recordMode)
+        pageModeRef.current = recordMode
+        return
+      }
+      // 未找到历史记录时降级为实时请求
+      Taro.showToast({ title: '历史记录已失效', icon: 'none' })
+      await fetchAndCacheResult(recordMode, archiveId)
+      return
+    }
+
     if (mode === 'native') {
       const nativeResult = getNativeResult(archiveId)
       if (nativeResult?.baziResult) {
@@ -563,7 +598,7 @@ const ResultPage = () => {
       }
     }
     // 本地无缓存时自动请求
-    await fetchAndCacheResult(mode, archiveId)
+    await fetchAndCacheResult(mode as 'daily' | 'native', archiveId)
   }
 
   // 保存/更新分享数据到服务器
