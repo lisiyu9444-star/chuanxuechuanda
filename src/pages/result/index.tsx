@@ -756,20 +756,18 @@ const ResultPage = () => {
         {/* Tab Header */}
         <View className="flex gap-2 mb-3">
           <View
-            className={`flex-1 py-2 rounded-lg flex items-center justify-center ${activeTab === 'flat' ? 'border' : 'bg-gray-50 border border-gray-100'}`}
-            style={activeTab === 'flat' ? { backgroundColor: `${themeColor}08`, borderColor: `${themeColor}33` } : {}}
+            className={`flex-1 py-2 rounded-lg flex items-center justify-center border ${activeTab === 'flat' ? 'bg-slate-100 border-slate-200' : 'bg-gray-50 border-gray-100'}`}
             onClick={() => handleTabChange('flat')}
           >
-            <Text className={`text-sm ${activeTab === 'flat' ? 'font-medium' : 'text-gray-500'}`} style={activeTab === 'flat' ? { color: themeColor } : {}}>
+            <Text className={`text-sm ${activeTab === 'flat' ? 'font-medium text-slate-900' : 'text-gray-500'}`}>
               平铺图
             </Text>
           </View>
           <View
-            className={`flex-1 py-2 rounded-lg flex items-center justify-center ${activeTab === 'tryon' ? 'border' : 'bg-gray-50 border border-gray-100'}`}
-            style={activeTab === 'tryon' ? { backgroundColor: `${themeColor}08`, borderColor: `${themeColor}33` } : {}}
+            className={`flex-1 py-2 rounded-lg flex items-center justify-center border ${activeTab === 'tryon' ? 'bg-slate-100 border-slate-200' : 'bg-gray-50 border-gray-100'}`}
             onClick={() => handleTabChange('tryon')}
           >
-            <Text className={`text-sm ${activeTab === 'tryon' ? 'font-medium' : 'text-gray-500'}`} style={activeTab === 'tryon' ? { color: themeColor } : {}}>
+            <Text className={`text-sm ${activeTab === 'tryon' ? 'font-medium text-slate-900' : 'text-gray-500'}`}>
               上身图
             </Text>
           </View>
@@ -1190,34 +1188,31 @@ const ResultPage = () => {
         >
           {shareReady ? (
             <Button
-              className="flex-1 bg-white border py-3 rounded-xl"
-              style={{ borderColor: `${themeColor}33` }}
+              className="flex-1 bg-white border border-slate-200 py-3 rounded-xl"
               openType="share"
             >
               <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Share2 size={18} color={themeColor} />
+                <Share2 size={18} color="#1f2937" />
                 <Text className="text-gray-700">分享好友</Text>
               </View>
             </Button>
           ) : (
             <Button
-              className="flex-1 bg-white border py-3 rounded-xl opacity-60"
-              style={{ borderColor: `${themeColor}33` }}
+              className="flex-1 bg-white border border-slate-200 py-3 rounded-xl opacity-60"
               disabled
             >
               <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Share2 size={18} color={themeColor} />
+                <Share2 size={18} color="#1f2937" />
                 <Text className="text-gray-500">准备分享中...</Text>
               </View>
             </Button>
           )}
           <Button
-            className="flex-1 bg-white border py-3 rounded-xl"
-            style={{ borderColor: `${themeColor}33` }}
+            className="flex-1 bg-white border border-slate-200 py-3 rounded-xl"
             onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
           >
             <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <RefreshCw size={18} color={themeColor} />
+              <RefreshCw size={18} color="#1f2937" />
               <Text className="text-gray-700">再测一次</Text>
             </View>
           </Button>

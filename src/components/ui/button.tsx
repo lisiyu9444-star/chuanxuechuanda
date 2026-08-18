@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus:outline-none focus-visible:outline-none active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors outline-none focus:outline-none focus-visible:outline-none active:outline-none active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [-webkit-tap-highlight-color:transparent] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -52,13 +52,14 @@ const Button = React.forwardRef<React.ElementRef<typeof View>, ButtonProps>(
         <NativeButton
           className={cn(
             buttonVariants({ variant, size, className }),
-            "border-none after:border-none",
+            "border-none after:border-none outline-none",
             disabled && "opacity-50 pointer-events-none"
           )}
           ref={ref}
           openType={openType}
           disabled={disabled}
           plain
+          hoverClass="none"
           {...props}
         />
       )
@@ -72,11 +73,7 @@ const Button = React.forwardRef<React.ElementRef<typeof View>, ButtonProps>(
         )}
         ref={ref}
         {...({ tabIndex } as { tabIndex?: number })}
-        hoverClass={
-          disabled
-            ? undefined
-            : "border-ring ring-2 ring-ring ring-offset-2 ring-offset-background"
-        }
+        hoverClass={disabled ? undefined : "none"}
         {...props}
       />
     )

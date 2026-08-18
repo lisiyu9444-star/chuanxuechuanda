@@ -64,8 +64,8 @@ export default function ProfilePage() {
               onClick={handleManageArchives}
             >
               <View className="flex items-center gap-3">
-                <View className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
-                  <FolderOpen size={20} color="#7c3aed" />
+                <View className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                  <FolderOpen size={20} color="#1f2937" />
                 </View>
                 <View className="text-left">
                   <Text className="block text-base font-medium text-slate-900">档案管理</Text>
@@ -83,12 +83,12 @@ export default function ProfilePage() {
               onClick={handleViewHistory}
             >
               <View className="flex items-center gap-3">
-                <View className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Clock size={20} color="#3b82f6" />
+                <View className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Clock size={20} color="#1f2937" />
                 </View>
                 <View className="text-left">
                   <Text className="block text-base font-medium text-slate-900">历史记录</Text>
-                  <Text className="block text-xs text-slate-500 mt-1">查看过往穿搭与运势</Text>
+                  <Text className="block text-xs text-slate-500 mt-1">查看过往穿搭</Text>
                 </View>
               </View>
               <ChevronRight size={18} color="#9ca3af" />
