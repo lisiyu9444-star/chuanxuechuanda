@@ -11,6 +11,7 @@ import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday } from '@/utils/archiveStorage'
 import { saveHistoryFromDailyResult } from '@/utils/historyStorage'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
+import type { NativeResult } from '@/types/archive'
 import './index.css'
 
 const COLOR_MAP: Record<string, string> = {
@@ -200,6 +201,7 @@ const ResultPage = () => {
   const [flatImageUrl, setFlatImageUrl] = useState<string>('')
   // 当前页面模式：'daily' 今日穿搭 | 'native' 本命穿搭
   const [pageMode, setPageMode] = useState<'daily' | 'native'>('daily')
+  const pageModeRef = useRef<'daily' | 'native'>('daily')
   // 功能开关：分享功能是否开启
   // 功能开关：是否显示玄学相关内容（八字概览、喜用神分析），穿搭模块始终展示
   const [showBaZiContent, setShowBaZiContent] = useState(true)
@@ -221,6 +223,8 @@ const ResultPage = () => {
   const currentArchiveIdRef = useRef('')
   // 当前完整的 DailyResult 缓存（用于历史记录同步）
   const dailyResultRef = useRef<DailyResult | null>(null)
+  // 当前完整的 NativeResult 缓存（用于本命穿搭图片状态同步）
+  const nativeResultRef = useRef<NativeResult | null>(null)
 
   // 同步当前结果到历史记录
   const syncHistoryRecord = (dailyResult: DailyResult, patch?: { imageUrl?: string; tryOnUrl?: string }) => {
@@ -252,11 +256,16 @@ const ResultPage = () => {
       console.log('Try-on success:', data)
       if (data?.tryOnUrl) {
         setTryOnUrl(data.tryOnUrl)
-        if (dailyResultRef.current) {
-          syncHistoryRecord(dailyResultRef.current, { tryOnUrl: data.tryOnUrl })
+        if (pageModeRef.current === 'native') {
+          // 本命穿搭上身图独立存储，不混入今日穿搭
+          updateNativeCache({ tryOnUrl: data.tryOnUrl })
+        } else {
+          if (dailyResultRef.current) {
+            syncHistoryRecord(dailyResultRef.current, { tryOnUrl: data.tryOnUrl })
+          }
+          // 更新 dailyResult 缓存中的上身图
+          updateDailyCache({ tryOnUrl: data.tryOnUrl })
         }
-        // 更新 dailyResult 缓存中的上身图
-        updateDailyCache({ tryOnUrl: data.tryOnUrl })
       } else {
         Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
       }
@@ -290,6 +299,24 @@ const ResultPage = () => {
     }
   }
 
+  // 更新 nativeResult 本地缓存（本命穿搭图片独立存储）
+  const updateNativeCache = (updates: { imageUrl?: string; tryOnUrl?: string }) => {
+    try {
+      const archiveId = currentArchiveIdRef.current
+      const nativeResult = getNativeResult(archiveId)
+      if (nativeResult) {
+        const updated: NativeResult = {
+          ...nativeResult,
+          ...updates,
+          generatedAt: Date.now(),
+        }
+        saveNativeResult(updated)
+      }
+    } catch (e) {
+      console.error('Update native cache failed:', e)
+    }
+  }
+
   // 解锁平铺图
   const handleUnlockFlatImage = async () => {
     if (!result?.llmPlan?.imagePrompt) {
@@ -318,9 +345,13 @@ const ResultPage = () => {
       const imageUrl = res.data?.data?.imageUrl
       if (imageUrl) {
         setFlatImageUrl(imageUrl)
-        updateDailyCache({ imageUrl })
-        if (dailyResultRef.current) {
-          syncHistoryRecord(dailyResultRef.current, { imageUrl })
+        if (pageModeRef.current === 'native') {
+          updateNativeCache({ imageUrl })
+        } else {
+          updateDailyCache({ imageUrl })
+          if (dailyResultRef.current) {
+            syncHistoryRecord(dailyResultRef.current, { imageUrl })
+          }
         }
       } else {
         Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
@@ -372,6 +403,7 @@ const ResultPage = () => {
     const archiveId = router?.params?.archiveId || Taro.getStorageSync('currentArchiveId') || ''
     currentArchiveIdRef.current = archiveId
     setPageMode(mode)
+    pageModeRef.current = mode
     setUrlShareId(shareIdFromUrl || '')
 
     if (shareIdFromUrl) {
@@ -469,12 +501,14 @@ const ResultPage = () => {
         return
       }
       if (mode === 'native') {
-        saveNativeResult({
+        const nativeResult: NativeResult = {
           archiveId,
           baziResult: payload.baziResult,
           llmPlan: payload.llmPlan,
           generatedAt: Date.now(),
-        })
+        }
+        saveNativeResult(nativeResult)
+        nativeResultRef.current = nativeResult
         setResult({ ...payload.baziResult, llmPlan: payload.llmPlan })
       } else {
         const today = getToday()
@@ -511,6 +545,9 @@ const ResultPage = () => {
       const nativeResult = getNativeResult(archiveId)
       if (nativeResult?.baziResult) {
         setResult({ ...nativeResult.baziResult, llmPlan: nativeResult.llmPlan })
+        setFlatImageUrl(nativeResult.imageUrl || '')
+        setTryOnUrl(nativeResult.tryOnUrl || '')
+        nativeResultRef.current = nativeResult
         return
       }
     } else {

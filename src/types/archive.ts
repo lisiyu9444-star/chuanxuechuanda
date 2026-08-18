@@ -45,6 +45,8 @@ export interface NativeResult {
   archiveId: string
   baziResult: BaZiResult
   llmPlan: StylistResult
+  imageUrl?: string
+  tryOnUrl?: string
   generatedAt: number
 }
 
