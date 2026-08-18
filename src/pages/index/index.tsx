@@ -171,7 +171,7 @@ export default function Index() {
       handleAddArchive()
       return
     }
-    Taro.navigateTo({ url: `/pages/result/index?mode=native&archiveId=${currentArchive.id}` })
+    Taro.navigateTo({ url: `/pages/loading/index?mode=native&archiveId=${currentArchive.id}` })
   }, [currentArchive, handleAddArchive])
 
   const handleUpdateArchive = useCallback(() => {
@@ -374,7 +374,7 @@ export default function Index() {
 
             <View className="space-y-3">
               <View className="bg-gray-50 rounded-xl p-3">
-                <Text className="block text-sm font-medium text-gray-900 mb-2">喜用神分析</Text>
+                <Text className="block text-sm font-medium text-gray-900 mb-2">个人分析</Text>
                 <View className="space-y-2">
                   <View className="flex items-center gap-2">
                     <Text className="block text-sm text-gray-500">日主</Text>
@@ -393,7 +393,7 @@ export default function Index() {
                     <Text className="block text-sm font-medium" style={{ color: themeColor }}>{baziResult.favorableAnalysis.assistantXiShen}</Text>
                   </View>
                   <View className="flex items-start gap-2">
-                    <Text className="block text-sm text-gray-500 shrink-0">用神逻辑</Text>
+                    <Text className="block text-sm text-gray-500 shrink-0">逻辑</Text>
                     <Text className="block text-sm text-gray-700 leading-relaxed">{baziResult.favorableAnalysis.logicSummary}</Text>
                   </View>
                 </View>

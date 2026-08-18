@@ -336,7 +336,8 @@ const ResultPage = () => {
   // 解锁上身图
   const handleUnlockTryOn = async () => {
     if (!result) return
-    if (!result.imageUrl) {
+    const hasFlatImage = Boolean(flatImageUrl || result.imageUrl)
+    if (!hasFlatImage) {
       Taro.showToast({ title: '请先解锁平铺图', icon: 'none' })
       return
     }
@@ -739,7 +740,7 @@ const ResultPage = () => {
       {/* Header */}
       <View className="flex flex-col items-center mb-5">
         <Text className="block text-xl font-bold text-gray-900 mb-2">
-          {result.nickname} 今日专属穿搭推荐
+          {result.nickname} {pageMode === 'native' ? '本命穿搭推荐' : '今日专属穿搭推荐'}
         </Text>
         <Text className="block text-sm text-gray-400">
           {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
@@ -935,7 +936,7 @@ const ResultPage = () => {
           <Card className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
               <Text className="block text-sm font-medium text-gray-900 mb-3">
-                喜用神分析
+                个人分析
               </Text>
               <View className="flex items-center gap-3 mb-3">
                 <View
@@ -1142,11 +1143,11 @@ const ResultPage = () => {
                           style={{
                             borderWidth: '1px',
                             borderStyle: 'solid',
-                            borderColor: `${themeColor}33`,
-                            backgroundColor: `${themeColor}0d`
+                            borderColor: `${themeColor}66`,
+                            backgroundColor: `${themeColor}1a`
                           }}
                         >
-                          <Text className="block text-xs font-medium" style={{ color: themeColor }}>{scene}</Text>
+                          <Text className="block text-sm font-medium" style={{ color: themeColor }}>{scene.split('：')[0]}</Text>
                         </View>
                       ))}
                     </View>

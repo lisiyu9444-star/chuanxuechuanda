@@ -334,22 +334,21 @@ export function OutfitGuideContent({
                   <Text className="block text-sm font-semibold text-gray-700">适用场景</Text>
                   <View className="flex flex-wrap gap-2">
                     {llmPlan.occasions.map((scene, index) => {
-                      const [tag, desc] = scene.split('：')
+                      const tag = scene.split('：')[0]
                       return (
                         <View
                           key={index}
-                          className="px-3 py-2 rounded-xl"
+                          className="px-3 py-1 rounded-full"
                           style={{
                             borderWidth: '1px',
                             borderStyle: 'solid',
-                            borderColor: `${themeColor}33`,
-                            backgroundColor: `${themeColor}0d`,
+                            borderColor: `${themeColor}66`,
+                            backgroundColor: `${themeColor}1a`,
                           }}
                         >
-                          <Text className="block text-xs font-medium" style={{ color: themeColor }}>
+                          <Text className="block text-sm font-medium" style={{ color: themeColor }}>
                             {tag}
                           </Text>
-                          {desc && <Text className="block text-xs text-gray-500 mt-1">{desc}</Text>}
                         </View>
                       )
                     })}

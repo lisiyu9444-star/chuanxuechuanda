@@ -4,14 +4,14 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Network } from '@/network'
-import { getArchiveById, saveDailyResult, getToday, type DailyResult } from '@/utils/archiveStorage'
+import { getArchiveById, saveDailyResult, saveNativeResult, getToday, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import './index.css'
 
-const LOADING_STEPS = [
+const getLoadingSteps = (mode: 'daily' | 'native') => [
   '正在排列四柱...',
   '正在推演旺缺...',
   '正在分析喜用神...',
-  '正在生成今日推荐穿搭...',
+  mode === 'native' ? '正在生成本命穿搭方案...' : '正在生成今日推荐穿搭...',
 ]
 
 const LoadingPage = () => {
@@ -21,9 +21,11 @@ const LoadingPage = () => {
   const [archive, setArchive] = useState<{ nickname: string; gender: string; birthDate: string; birthTime: string; location: string; stylePreference?: string } | null>(null)
   const [trustCount] = useState(128456 + Math.floor(Math.random() * 1000))
   const [isAccelerated, setIsAccelerated] = useState(false)
+  const [mode, setMode] = useState<'daily' | 'native'>('daily')
   const requestedRef = useRef(false)
+  const loadingSteps = getLoadingSteps(mode)
 
-  const loadData = async (archiveId: string) => {
+  const loadData = async (archiveId: string, pageMode: 'daily' | 'native' = 'daily') => {
     if (requestedRef.current) return
     requestedRef.current = true
 
@@ -38,10 +40,10 @@ const LoadingPage = () => {
       setArchive(currentArchive)
 
       const dateStr = getToday()
-
-      console.log('[Loading] request daily:', { archiveId, date: dateStr })
+      const endpoint = pageMode === 'native' ? '/api/bazi/native' : '/api/bazi/daily'
+      console.log(`[Loading] request ${pageMode}:`, { archiveId, date: dateStr, endpoint })
       const res = await Network.request({
-        url: '/api/bazi/daily',
+        url: endpoint,
         method: 'POST',
         data: {
           nickname: currentArchive.nickname,
@@ -55,11 +57,24 @@ const LoadingPage = () => {
         },
         timeout: 120000,
       })
-      console.log('[Loading] daily response:', res.data)
+      console.log(`[Loading] ${pageMode} response:`, res.data)
 
       const apiData = res.data?.data
       if (!apiData) {
         throw new Error('返回数据为空')
+      }
+
+      if (pageMode === 'native') {
+        const nativeResult: NativeResult = {
+          archiveId,
+          baziResult: apiData.baziResult,
+          llmPlan: apiData.llmPlan,
+          generatedAt: Date.now(),
+        }
+        saveNativeResult(nativeResult)
+        setProgressValue(100)
+        Taro.navigateTo({ url: `/pages/result/index?mode=native&archiveId=${archiveId}` })
+        return
       }
 
       const dailyResult: DailyResult = {
@@ -75,7 +90,7 @@ const LoadingPage = () => {
       setProgressValue(100)
       Taro.switchTab({ url: '/pages/index/index' })
     } catch (error) {
-      console.error('[Loading] daily request failed:', error)
+      console.error(`[Loading] ${pageMode} request failed:`, error)
       Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
       setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
     }
@@ -84,8 +99,10 @@ const LoadingPage = () => {
   useDidShow(() => {
     const params = Taro.getCurrentInstance().router?.params
     const archiveId = params?.archiveId
+    const pageMode = (params?.mode as 'daily' | 'native') || 'daily'
+    setMode(pageMode)
     if (archiveId) {
-      loadData(archiveId as string)
+      loadData(archiveId as string, pageMode)
     } else {
       Taro.showToast({ title: '缺少档案信息', icon: 'none' })
       setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
@@ -98,7 +115,7 @@ const LoadingPage = () => {
   })
 
   useEffect(() => {
-    if (currentStep < LOADING_STEPS.length - 1) {
+    if (currentStep < loadingSteps.length - 1) {
       const timer = setTimeout(() => {
         setCurrentStep((prev) => prev + 1)
       }, 2500)
@@ -196,7 +213,7 @@ const LoadingPage = () => {
       {/* Progress Steps */}
       <View className="flex-1 flex flex-col justify-end pb-8">
         <View className="flex flex-col gap-3 mb-6">
-          {LOADING_STEPS.map((step, index) => (
+          {loadingSteps.map((step, index) => (
             <View key={step} className="flex items-center gap-3">
               <View
                 className={`w-2 h-2 rounded-full ${
