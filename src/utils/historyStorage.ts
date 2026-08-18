@@ -89,3 +89,7 @@ export function deleteHistoryRecord(id: string) {
   const filtered = records.filter(r => r.id !== id)
   saveHistoryRecords(filtered)
 }
+
+export function clearHistoryRecords() {
+  saveHistoryRecords([])
+}

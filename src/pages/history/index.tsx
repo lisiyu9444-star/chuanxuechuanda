@@ -4,12 +4,11 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronRight, Trash2 } from 'lucide-react-taro'
-import { getHistoryRecords, deleteHistoryRecord, type HistoryRecordItem } from '@/utils/historyStorage'
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog'
+import { getHistoryRecords, deleteHistoryRecord, clearHistoryRecords, type HistoryRecordItem } from '@/utils/historyStorage'
 
 export default function HistoryPage() {
   const [records, setRecords] = useState<HistoryRecordItem[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   const loadRecords = () => {
     const list = getHistoryRecords()
@@ -18,15 +17,35 @@ export default function HistoryPage() {
 
   useDidShow(() => {
     loadRecords()
+    setActiveId(null)
   })
 
   const handleDelete = (id: string) => {
     deleteHistoryRecord(id)
     loadRecords()
-    setSelectedId(null)
+    setActiveId(null)
+  }
+
+  const handleClearAll = () => {
+    Taro.showModal({
+      title: '清空记录',
+      content: '确定要清空所有历史记录吗？删除后无法恢复。',
+      confirmColor: '#1f2937',
+      success: (res) => {
+        if (res.confirm) {
+          clearHistoryRecords()
+          loadRecords()
+          setActiveId(null)
+        }
+      }
+    })
   }
 
   const handleViewDetail = (record: HistoryRecordItem) => {
+    if (activeId) {
+      setActiveId(null)
+      return
+    }
     Taro.navigateTo({
       url: `/pages/result/index?mode=history&archiveId=${record.archiveId}&date=${record.date}`
     })
@@ -39,9 +58,21 @@ export default function HistoryPage() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      <View className="px-4 pt-6 pb-4">
-        <Text className="block text-2xl font-bold text-slate-900 mb-1">历史记录</Text>
-        <Text className="block text-sm text-slate-500">过往穿搭与运势回顾</Text>
+      <View className="px-4 pt-6 pb-4 flex items-center justify-between">
+        <View>
+          <Text className="block text-lg font-semibold text-slate-900">历史记录</Text>
+          <Text className="block text-sm text-slate-500 mt-1">查看过往穿搭</Text>
+        </View>
+        {records.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-500 hover:text-slate-900 h-8 px-2"
+            onClick={handleClearAll}
+          >
+            <Text className="text-xs">清空</Text>
+          </Button>
+        )}
       </View>
 
       <View className="px-4 pb-8 space-y-3">
@@ -56,16 +87,17 @@ export default function HistoryPage() {
           </Card>
         ) : (
           records.map(record => (
-            <Card key={record.id} className="border-0 shadow-sm">
-              <CardContent className="p-3">
+            <Card key={record.id} className="border-0 shadow-sm overflow-visible">
+              <CardContent className="p-3 relative">
                 <Button
                   variant="ghost"
                   className="w-full h-auto p-0 justify-start active:bg-slate-50"
                   onClick={() => handleViewDetail(record)}
+                  onLongPress={() => setActiveId(record.id)}
                 >
                   <View className="flex items-center gap-3 w-full">
-                    {/* 缩略图：与首页今日穿搭保持一致，约 80x107 的 3:4 比例 */}
-                    <View className="relative w-20 h-[107px] rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                    {/* 缩略图：与结果页保持一致，3:4 比例防止裁剪 */}
+                    <View className="relative w-20 aspect-[3/4] rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
                       {record.tryOnUrl || record.imageUrl ? (
                         <Image
                           src={record.tryOnUrl || record.imageUrl || ''}
@@ -86,18 +118,36 @@ export default function HistoryPage() {
                       <Text className="block text-sm text-slate-500 mt-1">
                         {formatDate(record.date)}
                       </Text>
-                      <Text className="block text-xs text-slate-400 mt-1 truncate">
-                        {record.llmPlan?.styleTheme || '今日穿搭方案'}
-                      </Text>
+
+                      {/* 幸运色 */}
+                      {record.llmPlan?.luckyColors && (
+                        <View className="flex flex-wrap items-center gap-2 mt-2">
+                          {record.llmPlan.luckyColors.primary && (
+                            <Text className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                              主色：{record.llmPlan.luckyColors.primary}
+                            </Text>
+                          )}
+                          {record.llmPlan.luckyColors.secondary && (
+                            <Text className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                              辅色：{record.llmPlan.luckyColors.secondary}
+                            </Text>
+                          )}
+                          {record.llmPlan.luckyColors.accent && (
+                            <Text className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                              点缀：{record.llmPlan.luckyColors.accent}
+                            </Text>
+                          )}
+                        </View>
+                      )}
 
                       <View className="flex items-center gap-2 mt-2">
                         {record.imageUrl && (
-                          <Text className="text-xs px-2 py-1 rounded-full bg-violet-50 text-violet-600">
+                          <Text className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
                             平铺图
                           </Text>
                         )}
                         {record.tryOnUrl && (
-                          <Text className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600">
+                          <Text className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
                             上身图
                           </Text>
                         )}
@@ -108,32 +158,40 @@ export default function HistoryPage() {
                   </View>
                 </Button>
 
-                <View className="flex justify-end mt-2">
-                  <AlertDialog open={selectedId === record.id} onOpenChange={(open) => !open && setSelectedId(null)}>
-                    <AlertDialogTrigger>
+                {/* 长按删除菜单 */}
+                {activeId === record.id && (
+                  <>
+                    <View
+                      className="absolute inset-0 bg-black bg-opacity-40 rounded-xl z-10 flex items-center justify-center"
+                      onClick={() => setActiveId(null)}
+                    >
                       <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
-                        className="h-8 px-2 text-slate-400 hover:text-red-500"
-                        onClick={() => setSelectedId(record.id)}
+                        className="bg-slate-800 text-white hover:bg-slate-900 border-0 h-9 px-4"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          Taro.showModal({
+                            title: '删除记录',
+                            content: '确定要删除这条穿搭记录吗？删除后无法恢复。',
+                            confirmColor: '#1f2937',
+                            cancelColor: '#6b7280',
+                            success: (res) => {
+                              if (res.confirm) {
+                                handleDelete(record.id)
+                              } else {
+                                setActiveId(null)
+                              }
+                            }
+                          })
+                        }}
                       >
-                        <Trash2 size={16} color="#94a3b8" />
+                        <Trash2 size={14} color="#ffffff" className="mr-1" />
+                        <Text className="text-sm text-white">删除</Text>
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>删除记录</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          确定要删除这条穿搭记录吗？删除后无法恢复。
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setSelectedId(null)}>取消</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(record.id)}>删除</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </View>
+                    </View>
+                  </>
+                )}
               </CardContent>
             </Card>
           ))
