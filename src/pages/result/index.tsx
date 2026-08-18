@@ -336,6 +336,10 @@ const ResultPage = () => {
   // 解锁上身图
   const handleUnlockTryOn = async () => {
     if (!result) return
+    if (!result.imageUrl) {
+      Taro.showToast({ title: '请先解锁平铺图', icon: 'none' })
+      return
+    }
     const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
     if (isWeapp) {
       const watched = await showAd()
@@ -817,7 +821,7 @@ const ResultPage = () => {
                       className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700 bg-white"
                       onClick={handleUnlockFlatImage}
                     >
-                      <Text className="block text-sm font-medium">点击解锁平铺图</Text>
+                      <Text className="block text-sm font-medium">解锁平铺图</Text>
                     </Button>
                   </View>
                 </View>
@@ -865,7 +869,7 @@ const ResultPage = () => {
                     style={{ opacity: 0.8 }}
                     onClick={handleUnlockTryOn}
                   >
-                    <Text className="block text-sm font-medium">点击生成上身试穿图</Text>
+                    <Text className="block text-sm font-medium">解锁上身图</Text>
                   </Button>
                 </View>
               </View>

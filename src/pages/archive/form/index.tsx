@@ -10,7 +10,6 @@ import {
   getArchiveById,
   saveArchive,
   generateArchiveId,
-  setCurrentArchiveId,
 } from '@/utils/archiveStorage'
 import type { Archive } from '@/types/archive'
 import './index.css'
@@ -165,7 +164,7 @@ const ArchiveFormPage = () => {
     }
 
     saveArchive(newArchive)
-    setCurrentArchiveId(newArchive.id)
+    // 新建/编辑档案后保持原选中档案不变，用户可在列表页手动切换
     Taro.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => {
       Taro.navigateBack()
