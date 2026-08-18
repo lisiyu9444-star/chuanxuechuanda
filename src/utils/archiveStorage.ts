@@ -128,6 +128,16 @@ export function clearDailyResult(archiveId: string, date: string = getToday()): 
   safeSet(DAILY_RESULTS_KEY, map)
 }
 
+export function clearDailyResultsByArchive(archiveId: string): void {
+  const map = getDailyResults()
+  Object.keys(map).forEach((key) => {
+    if (key.startsWith(`${archiveId}:`)) {
+      delete map[key]
+    }
+  })
+  safeSet(DAILY_RESULTS_KEY, map)
+}
+
 // Native results
 export function getNativeResults(): Record<string, NativeResult> {
   return safeGet<Record<string, NativeResult>>(NATIVE_RESULTS_KEY, {})

@@ -9,6 +9,7 @@ import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday } from '@/utils/archiveStorage'
+import { saveHistoryFromDailyResult } from '@/utils/historyStorage'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
 import './index.css'
 
@@ -218,17 +219,16 @@ const ResultPage = () => {
   const fromShareRef = useRef(false)
   // 当前档案 ID
   const currentArchiveIdRef = useRef('')
+  // 当前完整的 DailyResult 缓存（用于历史记录同步）
+  const dailyResultRef = useRef<DailyResult | null>(null)
 
-  // 更新历史记录中的上身图 URL
-  const updateHistoryTryOnUrl = (imageUrl: string, newTryOnUrl: string) => {
+  // 同步当前结果到历史记录
+  const syncHistoryRecord = (dailyResult: DailyResult, patch?: { imageUrl?: string; tryOnUrl?: string }) => {
     try {
-      const records: any[] = Taro.getStorageSync('outfit_history') || []
-      const updated = records.map((item) =>
-        item.imageUrl === imageUrl ? { ...item, tryOnUrl: newTryOnUrl } : item
-      )
-      Taro.setStorageSync('outfit_history', updated)
+      const archive = getArchiveById(dailyResult.archiveId)
+      saveHistoryFromDailyResult(dailyResult, archive, patch)
     } catch (e) {
-      console.error('Update history tryOnUrl failed:', e)
+      console.error('Sync history record failed:', e)
     }
   }
 
@@ -252,8 +252,8 @@ const ResultPage = () => {
       console.log('Try-on success:', data)
       if (data?.tryOnUrl) {
         setTryOnUrl(data.tryOnUrl)
-        if (result?.imageUrl) {
-          updateHistoryTryOnUrl(result.imageUrl, data.tryOnUrl)
+        if (dailyResultRef.current) {
+          syncHistoryRecord(dailyResultRef.current, { tryOnUrl: data.tryOnUrl })
         }
         // 更新 dailyResult 缓存中的上身图
         updateDailyCache({ tryOnUrl: data.tryOnUrl })
@@ -319,6 +319,9 @@ const ResultPage = () => {
       if (imageUrl) {
         setFlatImageUrl(imageUrl)
         updateDailyCache({ imageUrl })
+        if (dailyResultRef.current) {
+          syncHistoryRecord(dailyResultRef.current, { imageUrl })
+        }
       } else {
         Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
       }
@@ -418,6 +421,19 @@ const ResultPage = () => {
     }
   })
 
+  // 首页跳转锚点定位：anchor=outfit 时滚动到今日穿搭模块
+  useEffect(() => {
+    if (!result) return
+    const router = Taro.getCurrentInstance().router
+    if (router?.params?.anchor === 'outfit') {
+      setTimeout(() => {
+        Taro.pageScrollTo({ selector: '#outfit-section', duration: 300 }).catch((err) => {
+          console.error('Scroll to outfit section failed:', err)
+        })
+      }, 300)
+    }
+  }, [result])
+
   const fetchAndCacheResult = async (mode: 'daily' | 'native', archiveId: string) => {
     setPageLoading(true)
     try {
@@ -458,7 +474,7 @@ const ResultPage = () => {
       } else {
         const today = getToday()
         const bazi = payload.baziResult
-        saveDailyResult({
+        const dailyResult: DailyResult = {
           archiveId,
           date: today,
           baziResult: bazi,
@@ -470,9 +486,12 @@ const ResultPage = () => {
           imageUrl: bazi.imageUrl || undefined,
           tryOnUrl: undefined,
           generatedAt: Date.now(),
-        })
+        }
+        saveDailyResult(dailyResult)
         setResult({ ...bazi, llmPlan: payload.llmPlan })
         setFlatImageUrl(bazi.imageUrl || '')
+        dailyResultRef.current = dailyResult
+        syncHistoryRecord(dailyResult)
       }
     } catch (err) {
       console.error('[Result] fetch result failed:', err)
@@ -496,6 +515,8 @@ const ResultPage = () => {
         setResult({ ...dailyResult.baziResult, llmPlan: dailyResult.llmPlan })
         setFlatImageUrl(dailyResult.imageUrl || '')
         setTryOnUrl(dailyResult.tryOnUrl || '')
+        dailyResultRef.current = dailyResult
+        syncHistoryRecord(dailyResult)
         return
       }
     }
@@ -987,7 +1008,7 @@ const ResultPage = () => {
           )}
 
           {/* Outfit Recommendation - Always visible */}
-          <Card className="bg-white border-gray-100 shadow-sm">
+          <Card id="outfit-section" className="bg-white border-gray-100 shadow-sm">
             <CardContent className="p-4">
               <Text className="block text-base font-semibold text-gray-900 mb-3">
                 {pageMode === 'native' ? '本命穿搭' : '今日穿搭'}

@@ -14,7 +14,7 @@ import {
   getArchives,
   getCurrentArchiveId,
   getDailyResult,
-  clearDailyResult,
+  clearDailyResultsByArchive,
   getToday,
   DEFAULT_ARCHIVE,
 } from '@/utils/archiveStorage'
@@ -121,10 +121,12 @@ export default function Index() {
 
     const today = getToday()
     const cachedDaily = await getDailyResult(activeArchive.id, today)
-    if (cachedDaily) {
+    if (cachedDaily && cachedDaily.date === today) {
       setDailyResult(cachedDaily)
       setHasArchiveChanged(activeArchive.updatedAt > cachedDaily.generatedAt)
     } else {
+      // 日期变化或缓存异常：清除该档案所有旧日期缓存，重新进入 loading 请求
+      clearDailyResultsByArchive(activeArchive.id)
       setHasArchiveChanged(false)
       Taro.navigateTo({
         url: `/pages/loading/index?mode=daily&archiveId=${activeArchive.id}`,
@@ -154,6 +156,15 @@ export default function Index() {
     Taro.navigateTo({ url: `/pages/result/index?archiveId=${currentArchive.id}` })
   }, [currentArchive, handleAddArchive])
 
+  const handleViewResultWithAnchor = useCallback((anchor: string) => () => {
+    if (!currentArchive) return
+    if (currentArchive.isDefault) {
+      handleAddArchive()
+      return
+    }
+    Taro.navigateTo({ url: `/pages/result/index?archiveId=${currentArchive.id}&anchor=${anchor}` })
+  }, [currentArchive, handleAddArchive])
+
   const handleViewNative = useCallback(() => {
     if (!currentArchive) return
     if (currentArchive.isDefault) {
@@ -165,7 +176,7 @@ export default function Index() {
 
   const handleUpdateArchive = useCallback(() => {
     if (!currentArchive || currentArchive.isDefault) return
-    clearDailyResult(currentArchive.id, todayStr)
+    clearDailyResultsByArchive(currentArchive.id)
     Taro.navigateTo({
       url: `/pages/loading/index?mode=daily&archiveId=${currentArchive.id}`,
     })
@@ -216,8 +227,16 @@ export default function Index() {
               )}
             </View>
           </View>
-          <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleSwitchArchive}>
-            <Text className="block text-sm text-gray-600">切换档案</Text>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-1 focus:outline-none focus-visible:outline-none active:outline-none"
+            hoverClass=""
+            onClick={handleSwitchArchive}
+          >
+            <Text className="block text-sm text-gray-600">
+              {currentArchive?.isDefault ? '添加档案' : '切换档案'}
+            </Text>
             <ChevronRight size={16} color="#6B7280" />
           </Button>
         </View>
@@ -323,7 +342,7 @@ export default function Index() {
 
       {/* 穿搭指南 */}
       <View className="px-4 mt-4">
-        <Card className="active:opacity-80" onClick={handleViewResult}>
+        <Card className="active:opacity-80" onClick={handleViewResultWithAnchor('outfit')}>
           <CardContent className="p-4">
             <View className="mb-3 flex flex-row items-center justify-between">
               <Text className="block text-base font-semibold text-gray-900">穿搭指南</Text>
@@ -390,10 +409,21 @@ export default function Index() {
 
       {/* 空档案提示 */}
       {currentArchive.isDefault && (
-        <View className="px-4 mt-4">
+        <View
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '16px',
+            backgroundColor: '#ffffff',
+            borderTop: '1px solid #f3f4f6',
+            zIndex: 50,
+          }}
+        >
           <Button className="w-full bg-slate-900 hover:bg-slate-800" onClick={handleAddArchive}>
             <Plus size={18} color="#FFFFFF" />
-            <Text className="block text-white ml-2">添加我的档案</Text>
+            <Text className="block text-white ml-2">添加档案，查看今日穿搭</Text>
           </Button>
         </View>
       )}

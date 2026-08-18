@@ -1,201 +1,101 @@
-import { useState, useEffect } from 'react'
+import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { View, Text, Image } from '@tarojs/components'
+import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Trash2, Clock, Shirt, User } from 'lucide-react-taro'
-import type { HistoryRecord } from '@/types/bazi'
-
-const HISTORY_KEY = 'outfit_history'
-const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000
+import { Button } from '@/components/ui/button'
+import { ChevronRight, FolderOpen, Clock } from 'lucide-react-taro'
+import { getCurrentArchive, getArchives, type Archive } from '@/utils/archiveStorage'
 
 export default function ProfilePage() {
-  const [history, setHistory] = useState<HistoryRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    loadHistory()
-  }, [])
+  const [currentArchive, setCurrentArchive] = useState<Archive | null>(null)
+  const [userArchiveCount, setUserArchiveCount] = useState(0)
 
   useDidShow(() => {
-    loadHistory()
+    const archive = getCurrentArchive()
+    setCurrentArchive(archive)
+    const archives = getArchives()
+    setUserArchiveCount(archives.filter(a => !a.isDefault).length)
   })
 
-  const loadHistory = () => {
-    try {
-      const raw = Taro.getStorageSync(HISTORY_KEY)
-      const data = Array.isArray(raw) ? raw : []
-      const now = Date.now()
-      const validRecords = data.filter((item: HistoryRecord) => now - item.createdAt < THIRTY_DAYS)
-      if (validRecords.length !== data.length) {
-        Taro.setStorageSync(HISTORY_KEY, validRecords)
-      }
-      const sorted = validRecords.sort((a: HistoryRecord, b: HistoryRecord) => b.createdAt - a.createdAt)
-      setHistory(sorted)
-      // 预加载封面图，命中小程序图片缓存，减少列表滑动时的闪烁
-      sorted.forEach((record: HistoryRecord) => {
-        if (record.imageUrl) {
-          Taro.getImageInfo({ src: record.imageUrl }).catch(() => {})
-        }
-      })
-    } catch (e) {
-      console.error('Load history failed:', e)
-    } finally {
-      setLoading(false)
-    }
+  const handleManageArchives = () => {
+    Taro.navigateTo({ url: '/pages/archive/list/index' })
   }
 
-  const handleDelete = (id: string) => {
-    const updated = history.filter(item => item.id !== id)
-    setHistory(updated)
-    Taro.setStorageSync(HISTORY_KEY, updated)
-    Taro.showToast({ title: '已删除', icon: 'success' })
-  }
-
-  const handleViewDetail = (record: HistoryRecord) => {
-    Taro.setStorageSync('baziResult', record)
-    Taro.navigateTo({ url: '/pages/result/index' })
-  }
-
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp)
-    return `${date.getMonth() + 1}月${date.getDate()}日`
+  const handleViewHistory = () => {
+    Taro.navigateTo({ url: '/pages/history/index' })
   }
 
   return (
     <View className="min-h-screen bg-gray-50">
-      <View className="px-4 pt-6 pb-4 bg-white">
-        <Text className="block text-xl font-bold text-gray-900">我的</Text>
-        <Text className="block text-sm text-gray-500 mt-1">历史记录保留近 30 天</Text>
-        <View
-          className="mt-4 flex items-center gap-3 p-4 bg-gray-50 rounded-xl active:bg-gray-100"
-          onClick={() => Taro.navigateTo({ url: '/pages/archive/list/index' })}
-        >
-          <View className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
-            <User size={22} color="#6b7280" />
-          </View>
-          <View className="flex-1">
-            <Text className="block text-base font-medium text-gray-900">档案管理</Text>
-            <Text className="block text-sm text-gray-500">添加、编辑、切换个人档案</Text>
-          </View>
-          <Text className="block text-sm text-gray-400">›</Text>
-        </View>
+      <View className="px-4 pt-6 pb-6">
+        <Text className="block text-2xl font-bold text-slate-900 mb-1">我的</Text>
+        <Text className="block text-sm text-slate-500">管理档案与历史穿搭记录</Text>
       </View>
 
-      <ScrollArea className="h-[calc(100vh-188px)]">
-        <View className="p-4">
-          {loading ? (
-            <View className="flex items-center justify-center py-20">
-              <Text className="block text-sm text-gray-400">加载中...</Text>
-            </View>
-          ) : history.length === 0 ? (
-            <View className="flex flex-col items-center justify-center py-20">
-              <View className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                <Shirt size={28} color="#9ca3af" />
+      <View className="px-4 space-y-4 pb-8">
+        {/* 当前档案卡片 */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <Text className="block text-sm text-slate-500 mb-2">当前档案</Text>
+            <View className="flex items-center justify-between">
+              <View>
+                <Text className="block text-lg font-semibold text-slate-900">
+                  {currentArchive?.nickname || '示例档案'}
+                </Text>
+                <Text className="block text-sm text-slate-500 mt-1">
+                  {currentArchive?.isDefault
+                    ? '每日运势示例展示'
+                    : `${currentArchive?.birthDate || ''} · ${currentArchive?.birthTime || ''}`}
+                </Text>
               </View>
-              <Text className="block text-base font-medium text-gray-900">暂无历史记录</Text>
-              <Text className="block text-sm text-gray-500 mt-2">完成穿搭生成后将在这里展示</Text>
+              {currentArchive?.isDefault && (
+                <Text className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-500">示例</Text>
+              )}
             </View>
-          ) : (
-            <View className="flex flex-col gap-4">
-              {history.map(record => (
-                <Card key={record.id} className="overflow-hidden">
-                  <CardContent className="p-0">
-                    <View onClick={() => handleViewDetail(record)}>
-                      <View className="relative w-full h-64 bg-gray-100">
-                        {!loadedImages.has(record.imageUrl) && (
-                          <View className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100">
-                            <Skeleton className="w-full h-full" />
-                          </View>
-                        )}
-                        <Image
-                          src={record.imageUrl}
-                          mode="aspectFill"
-                          className="w-full h-64"
-                          lazyLoad
-                          onLoad={() => {
-                            setLoadedImages(prev => {
-                              const next = new Set(prev)
-                              next.add(record.imageUrl)
-                              return next
-                            })
-                          }}
-                          onError={() => {
-                            setLoadedImages(prev => {
-                              const next = new Set(prev)
-                              next.add(record.imageUrl)
-                              return next
-                            })
-                          }}
-                        />
-                      </View>
-                      <View className="p-4">
-                        <View className="flex items-center justify-between mb-2">
-                          <Text className="block text-base font-semibold text-gray-900">
-                            {record.nickname} · {record.gender === 'female' ? '女' : '男'}
-                          </Text>
-                          <View className="flex items-center text-gray-400">
-                            <Clock size={14} color="#9ca3af" />
-                            <Text className="block text-xs text-gray-400 ml-1">
-                              {formatDate(record.createdAt)}
-                            </Text>
-                          </View>
-                        </View>
-                        <Text className="block text-sm text-gray-600" numberOfLines={2}>
-                          {record.llmPlan?.styleTheme || record.outfit?.style || '今日穿搭推荐'}
-                        </Text>
-                        <Text className="block text-xs text-gray-400">
-                          {record.ganZhiDate?.month || ''} {record.ganZhiDate?.day || ''}
-                        </Text>
-                      </View>
-                    </View>
+          </CardContent>
+        </Card>
 
-                    <View className="px-4 pb-4">
-                      <AlertDialog>
-                        <AlertDialogTrigger
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-red-500 border-red-200 hover:bg-red-50 flex items-center justify-center"
-                        >
-                          <Trash2 size={16} color="#ef4444" />
-                          <Text className="block ml-1">删除记录</Text>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              <Text className="block text-lg font-semibold">确认删除？</Text>
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              <Text className="block text-sm text-gray-500">
-                                删除后将无法恢复，该记录将从历史记录中移除。
-                              </Text>
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel variant="outline" size="sm">
-                              <Text className="block">取消</Text>
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDelete(record.id)}
-                            >
-                              <Text className="block">删除</Text>
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </View>
-                  </CardContent>
-                </Card>
-              ))}
-            </View>
-          )}
-        </View>
-      </ScrollArea>
+        {/* 入口列表 */}
+        <Card className="border-0 shadow-sm overflow-hidden">
+          <CardContent className="p-0">
+            <Button
+              variant="ghost"
+              className="w-full h-auto px-4 py-4 justify-between rounded-none border-b border-slate-100 active:bg-slate-50"
+              onClick={handleManageArchives}
+            >
+              <View className="flex items-center gap-3">
+                <View className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
+                  <FolderOpen size={20} color="#7c3aed" />
+                </View>
+                <View className="text-left">
+                  <Text className="block text-base font-medium text-slate-900">档案管理</Text>
+                  <Text className="block text-xs text-slate-500 mt-1">
+                    {userArchiveCount > 0 ? `已保存 ${userArchiveCount} 个档案` : '添加和管理个人档案'}
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full h-auto px-4 py-4 justify-between rounded-none active:bg-slate-50"
+              onClick={handleViewHistory}
+            >
+              <View className="flex items-center gap-3">
+                <View className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Clock size={20} color="#3b82f6" />
+                </View>
+                <View className="text-left">
+                  <Text className="block text-base font-medium text-slate-900">历史记录</Text>
+                  <Text className="block text-xs text-slate-500 mt-1">查看过往穿搭与运势</Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Button>
+          </CardContent>
+        </Card>
+      </View>
     </View>
   )
 }

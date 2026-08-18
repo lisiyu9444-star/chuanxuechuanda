@@ -18,7 +18,7 @@ const LoadingPage = () => {
   const [currentStep, setCurrentStep] = useState(0)
   const [progressValue, setProgressValue] = useState(0)
   const startTimeRef = useRef(Date.now())
-  const [archive, setArchive] = useState<{ nickname: string; gender: string; birthDate: string; birthTime: string; location: string } | null>(null)
+  const [archive, setArchive] = useState<{ nickname: string; gender: string; birthDate: string; birthTime: string; location: string; stylePreference?: string } | null>(null)
   const [trustCount] = useState(128456 + Math.floor(Math.random() * 1000))
   const [isAccelerated, setIsAccelerated] = useState(false)
   const requestedRef = useRef(false)
@@ -179,6 +179,12 @@ const LoadingPage = () => {
                   <Text className="text-xs text-gray-500">所在城市</Text>
                   <Text className="text-sm text-gray-900">
                     {archive.location}
+                  </Text>
+                </View>
+                <View className="flex justify-between">
+                  <Text className="text-xs text-gray-500">穿搭风格</Text>
+                  <Text className="text-sm text-gray-900">
+                    {archive.stylePreference || '-'}
                   </Text>
                 </View>
               </View>

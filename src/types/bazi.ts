@@ -75,6 +75,8 @@ export interface BaZiResult {
 
 export interface HistoryRecord extends BaZiResult {
   id: string
+  archiveId: string
+  date: string
   birthDate: string
   birthTime: string
   city: string

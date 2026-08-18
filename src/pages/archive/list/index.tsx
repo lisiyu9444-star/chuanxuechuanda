@@ -16,19 +16,25 @@ import './index.css'
 const ArchiveListPage = () => {
   const [archives, setArchives] = useState<Archive[]>([])
   const [currentId, setCurrentId] = useState<string>('')
+  const [animating, setAnimating] = useState(false)
 
   useDidShow(() => {
     setArchives(getArchives())
     setCurrentId(getCurrentArchiveId())
+    setAnimating(false)
   })
 
   const handleSwitch = (archive: Archive) => {
+    if (archive.id === currentId) {
+      Taro.showToast({ title: '当前已是该档案', icon: 'none' })
+      return
+    }
+    setAnimating(true)
     setCurrentArchiveId(archive.id)
     setCurrentId(archive.id)
-    Taro.showToast({ title: `已切换为${archive.nickname}`, icon: 'none' })
     setTimeout(() => {
       Taro.switchTab({ url: '/pages/index/index' })
-    }, 600)
+    }, 550)
   }
 
   const handleEdit = (archive: Archive) => {
@@ -132,6 +138,12 @@ const ArchiveListPage = () => {
           <Button className="w-full bg-gray-900 text-white py-3 rounded-xl" onClick={handleAdd}>
             添加档案
           </Button>
+        </View>
+      )}
+
+      {animating && (
+        <View className="page-flip-overlay">
+          <Text className="block text-xl font-semibold text-gray-900">切换中...</Text>
         </View>
       )}
     </View>
