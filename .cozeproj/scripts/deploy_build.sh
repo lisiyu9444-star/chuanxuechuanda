@@ -14,6 +14,10 @@ echo "Installing dependencies..."
 pnpm install
 
 echo "Building the Taro project..."
-pnpm build
+# 串行构建部署所需产物，避免并行构建内存峰值过高导致部署容器 OOM 被杀
+# - server: 运行时服务（deploy_run.sh 启动 server/dist/main.js）
+# - weapp: 微信小程序包（dist/）
+pnpm build:server
+pnpm build:weapp
 
 echo "Build completed successfully! Assets are in /dist"
