@@ -26,6 +26,7 @@ export function buildHistoryRecord(
     city: archive?.location || '',
     imageUrl: (result as DailyResult).imageUrl || bazi.imageUrl,
     tryOnUrl: (result as DailyResult).tryOnUrl,
+    llmPlan: (result as DailyResult).llmPlan || bazi.llmPlan,
     createdAt: Date.now(),
   }
 }

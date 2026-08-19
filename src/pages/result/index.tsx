@@ -579,7 +579,15 @@ const ResultPage = () => {
         r => r.archiveId === archiveId && r.mode === recordMode && (recordMode === 'native' || r.date === historyDate)
       )
       if (record) {
-        setResult({ ...record, llmPlan: record.llmPlan })
+        // 兼容旧历史记录：llmPlan 未保存时，从本地穿搭缓存补齐，保证新版布局渲染
+        let llmPlan = record.llmPlan
+        if (!llmPlan) {
+          const cached = recordMode === 'native'
+            ? getNativeResult(archiveId)
+            : getDailyResult(archiveId, historyDate || getToday())
+          llmPlan = cached?.llmPlan
+        }
+        setResult({ ...record, llmPlan })
         setFlatImageUrl(record.imageUrl || '')
         setTryOnUrl(record.tryOnUrl || '')
         setPageMode(recordMode)

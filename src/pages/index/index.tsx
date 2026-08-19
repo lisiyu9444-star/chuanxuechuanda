@@ -292,7 +292,7 @@ export default function Index() {
 
       {/* 今日穿搭 */}
       <View className="px-4 mt-4">
-        <Card>
+        <Card className="active:opacity-80" onClick={handleViewResult}>
           <CardContent className="p-4">
             <View className="mb-3 flex flex-row items-center justify-between">
               <Text className="block text-base font-semibold text-gray-900">今日穿搭</Text>
@@ -300,7 +300,7 @@ export default function Index() {
             </View>
 
             <View className="flex flex-row gap-3">
-              <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative" onClick={handleViewResult}>
+              <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative">
                 {dailyResult.imageUrl ? (
                   <Image src={dailyResult.imageUrl} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] flat image load failed')} />
                 ) : (
@@ -321,7 +321,7 @@ export default function Index() {
                   </View>
                 )}
               </View>
-              <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative" onClick={handleViewResult}>
+              <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative">
                 {dailyResult.tryOnUrl ? (
                   <Image src={dailyResult.tryOnUrl} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] tryOn image load failed')} />
                 ) : (
