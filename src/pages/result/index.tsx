@@ -881,9 +881,6 @@ const ResultPage = () => {
                     <View className="w-16 h-16 rounded-full bg-white backdrop-blur flex items-center justify-center mb-4 shadow-sm" style={{ opacity: 0.9 }}>
                       <Lock size={28} color="#6b7280" />
                     </View>
-                    <Text className="block text-gray-800 text-base font-semibold mb-2">
-                      今日穿搭平铺图未解锁
-                    </Text>
                     <Text className="block text-gray-500 text-sm text-center mb-6 px-4">
                       解锁后生成专属穿搭平铺图，约需等待30秒
                     </Text>
@@ -928,9 +925,6 @@ const ResultPage = () => {
                   <View className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm" style={{ opacity: 0.9 }}>
                     <Lock size={28} color="#6b7280" />
                   </View>
-                  <Text className="block text-gray-800 text-base font-semibold mb-2">
-                    上身试穿图未生成
-                  </Text>
                   <Text className="block text-gray-500 text-sm text-center mb-6 px-4">
                     基于平铺图生成模特上身效果，约需等待30秒
                   </Text>
