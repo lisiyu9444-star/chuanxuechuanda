@@ -182,6 +182,10 @@ const LoadingPage = () => {
           llmPlan,
           imageUrl: '',
           tryOnUrl: '',
+          baziResult: {
+            ...(cached as NativeResult).baziResult,
+            imageUrl: '',
+          },
           generatedAt: Date.now(),
         }
         saveNativeResult(newNative)
@@ -192,6 +196,10 @@ const LoadingPage = () => {
           llmPlan,
           imageUrl: '',
           tryOnUrl: '',
+          baziResult: {
+            ...(cached as DailyResult).baziResult,
+            imageUrl: '',
+          },
           generatedAt: Date.now(),
         }
         saveDailyResult(newDaily)
