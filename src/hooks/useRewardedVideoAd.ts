@@ -63,8 +63,19 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
 
   const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
 
+  // 微信开发者工具中广告 SDK 内部对象 adProxy 不存在，调用 load/show 会导致 SDK 内部崩溃，
+  // 且会产生 removeVideoPlayer / predownload 等无法捕获的全局异常，因此直接跳过初始化
+  const isDevtools = (() => {
+    if (!isWeapp) return false
+    try {
+      return Taro.getSystemInfoSync().platform === 'devtools'
+    } catch {
+      return false
+    }
+  })()
+
   useEffect(() => {
-    if (!isWeapp) return
+    if (!isWeapp || isDevtools) return
     if (typeof Taro.createRewardedVideoAd !== 'function') {
       console.warn('[useRewardedVideoAd] createRewardedVideoAd not available')
       return
@@ -95,10 +106,14 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
       ad.onError(handleError)
       ad.onClose(handleClose)
 
-      // 预加载广告，提升展示成功率
-      ad.load().catch((err: any) => {
-        console.error('[useRewardedVideoAd] preload failed', err)
-      })
+      // 预加载广告，提升展示成功率（同步 try-catch 防御 SDK 内部异常逃逸）
+      try {
+        ad.load().catch((err: any) => {
+          console.error('[useRewardedVideoAd] preload failed', err)
+        })
+      } catch (e) {
+        console.error('[useRewardedVideoAd] preload sync error', e)
+      }
 
       return () => {
         ad.offLoad(handleLoad)
@@ -111,10 +126,15 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
       console.error('[useRewardedVideoAd] init failed', e)
       setError(e)
     }
-  }, [adUnitId, isWeapp, onError])
+  }, [adUnitId, isWeapp, isDevtools, onError])
 
   const showAd = useCallback((): Promise<boolean> => {
     return new Promise((resolve) => {
+      // 开发者工具中广告 SDK 不可用，直接视为已完整观看，方便开发调试
+      if (isDevtools) {
+        resolve(true)
+        return
+      }
       if (!isWeapp || !adRef.current) {
         resolve(false)
         return
@@ -136,18 +156,24 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
 
       ad.onClose(closeHandler)
 
-      ad.show().catch((err: any) => {
-        console.error('[useRewardedVideoAd] show failed, retrying', err)
-        ad.load()
-          .then(() => ad.show())
-          .catch((retryErr: any) => {
-            console.error('[useRewardedVideoAd] show retry failed', retryErr)
-            cleanup()
-            resolve(false)
-          })
-      })
+      try {
+        ad.show().catch((err: any) => {
+          console.error('[useRewardedVideoAd] show failed, retrying', err)
+          ad.load()
+            .then(() => ad.show())
+            .catch((retryErr: any) => {
+              console.error('[useRewardedVideoAd] show retry failed', retryErr)
+              cleanup()
+              resolve(false)
+            })
+        })
+      } catch (e) {
+        console.error('[useRewardedVideoAd] show sync error', e)
+        cleanup()
+        resolve(false)
+      }
     })
-  }, [isWeapp])
+  }, [isWeapp, isDevtools])
 
   return { showAd, isReady, error }
 }
