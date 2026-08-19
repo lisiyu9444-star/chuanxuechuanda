@@ -3,10 +3,10 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
 import { getArchiveById, saveDailyResult, saveNativeResult, getToday, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import { saveHistoryFromNativeResult } from '@/utils/historyStorage'
-import './index.css'
 
 const getLoadingSteps = (mode: 'daily' | 'native') => [
   '正在排列四柱...',
@@ -142,16 +142,7 @@ const LoadingPage = () => {
       {/* Animation Area */}
       <View className="flex flex-col items-center pt-8 pb-6">
         {/* 五行流动动画 */}
-        <View className={`wuxing-orbit-container mb-6 ${isAccelerated ? 'wuxing-speedup' : ''}`}>
-          <View className="wuxing-orbit-ring" />
-          <View className="wuxing-core-ring" />
-          <View className="wuxing-core" />
-          <View className="wuxing-dot wuxing-dot-wood" />
-          <View className="wuxing-dot wuxing-dot-fire" />
-          <View className="wuxing-dot wuxing-dot-earth" />
-          <View className="wuxing-dot wuxing-dot-metal" />
-          <View className="wuxing-dot wuxing-dot-water" />
-        </View>
+        <WuxingLoader isAccelerated={isAccelerated} className="mb-6" />
 
         {/* Current Step Text */}
         <Text className="block text-base font-medium text-gray-900 mb-1">

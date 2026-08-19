@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Share2, RefreshCw, Lock, Loader, Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
+import { WuxingLoader } from '@/components/wuxing-loader'
+import { Share2, RefreshCw, Lock, Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
@@ -797,8 +798,8 @@ const ResultPage = () => {
     return (
       <View className="min-h-full bg-white flex items-center justify-center px-6">
         <View className="flex flex-col items-center">
-          <Loader className="animate-spin mb-3" size={32} color="#6366f1" />
-          <Text className="block text-gray-500">正在准备穿搭方案...</Text>
+          <WuxingLoader scale={0.8} />
+          <Text className="block mt-2 text-gray-500">正在准备穿搭方案...</Text>
         </View>
       </View>
     )
@@ -852,8 +853,8 @@ const ResultPage = () => {
             {activeTab === 'flat' ? (
               flatImageLoading ? (
                 <View className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
-                  <Loader size={40} color={themeColor} className="animate-spin" />
-                  <Text className="block mt-4 text-base font-medium" style={{ color: themeColor }}>
+                  <WuxingLoader scale={0.7} />
+                  <Text className="block mt-2 text-base font-medium text-gray-900">
                     正在生成平铺图...
                   </Text>
                   <Text className="block mt-2 text-sm text-gray-400">
@@ -903,8 +904,8 @@ const ResultPage = () => {
               />
             ) : tryOnLoading ? (
               <View className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
-                <Loader size={40} color={themeColor} className="animate-spin" />
-                <Text className="block mt-4 text-base font-medium" style={{ color: themeColor }}>
+                <WuxingLoader scale={0.7} />
+                <Text className="block mt-2 text-base font-medium text-gray-900">
                   正在生成上身图...
                 </Text>
                 <Text className="block mt-2 text-sm text-gray-400">
