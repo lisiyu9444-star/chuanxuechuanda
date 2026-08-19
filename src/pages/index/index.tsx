@@ -363,6 +363,7 @@ export default function Index() {
               yongShen={dailyResult.dailyYongShen}
               xiShen={dailyResult.dailyXiShen}
               themeColor={themeColor}
+              occasionColor="#111827"
               showTitle={false}
               showBaziOverview={false}
             />
@@ -393,11 +394,11 @@ export default function Index() {
                   </View>
                   <View className="flex items-center gap-2">
                     <Text className="block text-sm text-gray-500">核心用神</Text>
-                    <Text className="block text-sm font-medium" style={{ color: themeColor }}>{baziResult.favorableAnalysis.coreYongShen}</Text>
+                    <Text className="block text-sm font-medium text-gray-900">{baziResult.favorableAnalysis.coreYongShen}</Text>
                   </View>
                   <View className="flex items-center gap-2">
                     <Text className="block text-sm text-gray-500">喜神</Text>
-                    <Text className="block text-sm font-medium" style={{ color: themeColor }}>{baziResult.favorableAnalysis.assistantXiShen}</Text>
+                    <Text className="block text-sm font-medium text-gray-900">{baziResult.favorableAnalysis.assistantXiShen}</Text>
                   </View>
                   <View className="flex items-start gap-2">
                     <Text className="block text-sm text-gray-500 shrink-0">逻辑</Text>

@@ -49,6 +49,7 @@ interface OutfitGuideContentProps {
   yongShen?: string
   xiShen?: string
   themeColor: string
+  occasionColor?: string
   pageMode?: 'daily' | 'native'
   showTitle?: boolean
   showBaziOverview?: boolean
@@ -60,10 +61,12 @@ export function OutfitGuideContent({
   yongShen: yongShenProp,
   xiShen: xiShenProp,
   themeColor,
+  occasionColor,
   pageMode = 'daily',
   showTitle = true,
   showBaziOverview = true,
 }: OutfitGuideContentProps) {
+  const tagColor = occasionColor || themeColor
   const llmPlan = llmPlanProp || result.llmPlan
   const yongShen = yongShenProp || result.dailyYongShen
   const xiShen = xiShenProp || result.dailyXiShen
@@ -342,11 +345,11 @@ export function OutfitGuideContent({
                           style={{
                             borderWidth: '1px',
                             borderStyle: 'solid',
-                            borderColor: `${themeColor}66`,
-                            backgroundColor: `${themeColor}1a`,
+                            borderColor: `${tagColor}66`,
+                            backgroundColor: `${tagColor}1a`,
                           }}
                         >
-                          <Text className="block text-sm font-medium" style={{ color: themeColor }}>
+                          <Text className="block text-sm font-medium" style={{ color: tagColor }}>
                             {tag}
                           </Text>
                         </View>
