@@ -48,11 +48,15 @@ const Button = React.forwardRef<React.ElementRef<typeof View>, ButtonProps>(
     
     // 当 openType 存在时，使用原生 Button 组件（用于微信小程序分享等功能）
     if (openType) {
+      // 仅在调用方未显式传入 border 相关类时才去除原生边框，避免覆盖自定义边框样式
+      const hasCustomBorder = /\bborder(-|\s|$)/.test(className || "")
       return (
         <NativeButton
           className={cn(
             buttonVariants({ variant, size, className }),
-            "border-none after:border-none outline-none",
+            // after:border-none 用于去除小程序原生 button 的伪元素 hairline，不影响用户传入的 border
+            "after:border-none outline-none",
+            !hasCustomBorder && "border-none",
             disabled && "opacity-50 pointer-events-none"
           )}
           ref={ref}
