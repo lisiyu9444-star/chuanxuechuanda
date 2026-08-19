@@ -212,9 +212,6 @@ importers:
       '@supabase/supabase-js':
         specifier: 2.95.3
         version: 2.95.3
-      better-sqlite3:
-        specifier: ^13.0.3
-        version: 13.0.3
       coze-coding-dev-sdk:
         specifier: ^0.7.24
         version: 0.7.24(openai@6.16.0(ws@8.19.0)(zod@4.3.5))(ws@8.19.0)
@@ -252,9 +249,6 @@ importers:
       '@nestjs/schematics':
         specifier: ^10.2.3
         version: 10.2.3(chokidar@3.6.0)(typescript@5.9.3)
-      '@types/better-sqlite3':
-        specifier: ^9.6.0
-        version: 9.6.0
       '@types/express':
         specifier: 5.0.6
         version: 5.0.6
@@ -15530,6 +15524,7 @@ snapshots:
   '@types/better-sqlite3@9.6.0':
     dependencies:
       '@types/node': 24.12.4
+    optional: true
 
   '@types/body-parser@1.19.6':
     dependencies:
@@ -16881,6 +16876,7 @@ snapshots:
   better-sqlite3@13.0.3:
     dependencies:
       node-addon-api: 8.9.1
+    optional: true
 
   big-integer@1.6.52: {}
 
@@ -20442,7 +20438,8 @@ snapshots:
   node-addon-api@7.1.1:
     optional: true
 
-  node-addon-api@8.9.1: {}
+  node-addon-api@8.9.1:
+    optional: true
 
   node-bitmap@0.0.1: {}
 
