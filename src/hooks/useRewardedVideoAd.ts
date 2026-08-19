@@ -30,11 +30,48 @@ interface UseRewardedVideoAdReturn {
 }
 
 /**
+ * 广告实例全局单例缓存（微信官方推荐做法）。
+ * 反复 createRewardedVideoAd + destroy 会导致 SDK 内部原生组件清理竞态，
+ * 产生 removeVideoPlayer:fail / removeTextView:fail no root 等无法捕获的红色报错。
+ * 单例复用后实例生命周期与小程序一致，可显著降低这类噪音错误。
+ */
+const adInstanceCache = new Map<string, RewardedVideoAdInstance>()
+const adPreloadedSet = new Set<string>()
+
+function getOrCreateAd(adUnitId: string): RewardedVideoAdInstance | null {
+  const cached = adInstanceCache.get(adUnitId)
+  if (cached) return cached
+  if (typeof Taro.createRewardedVideoAd !== 'function') return null
+  try {
+    const ad = Taro.createRewardedVideoAd({ adUnitId }) as RewardedVideoAdInstance
+    adInstanceCache.set(adUnitId, ad)
+    return ad
+  } catch (e) {
+    console.warn('[useRewardedVideoAd] create failed', e)
+    return null
+  }
+}
+
+/** 预加载仅在实例创建后执行一次，失败日志降为 warn（SDK 内部会自行重试） */
+function preloadOnce(adUnitId: string, ad: RewardedVideoAdInstance) {
+  if (adPreloadedSet.has(adUnitId)) return
+  adPreloadedSet.add(adUnitId)
+  try {
+    ad.load().catch((err: any) => {
+      // SDK 内部竞态（如 e.adProxy 未就绪）导致的预加载失败，SDK 会自动恢复，仅提示
+      console.warn('[useRewardedVideoAd] preload failed (SDK will retry)', err)
+    })
+  } catch (e) {
+    console.warn('[useRewardedVideoAd] preload sync error', e)
+  }
+}
+
+/**
  * 微信小程序激励视频广告 Hook
  *
  * 功能：
  * - 仅在微信小程序环境初始化
- * - 页面加载时预加载广告
+ * - 广告实例全局单例复用，页面加载时预加载
  * - 提供 showAd 方法，返回 Promise<boolean> 表示用户是否完整观看
  * - H5 / 抖音小程序等非微信环境直接返回 false，由业务方决定是否放行
  *
@@ -76,55 +113,44 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
 
   useEffect(() => {
     if (!isWeapp || isDevtools) return
-    if (typeof Taro.createRewardedVideoAd !== 'function') {
+
+    const ad = getOrCreateAd(adUnitId)
+    if (!ad) {
       console.warn('[useRewardedVideoAd] createRewardedVideoAd not available')
       return
     }
+    adRef.current = ad
 
-    try {
-      const ad = Taro.createRewardedVideoAd({ adUnitId }) as RewardedVideoAdInstance
-      adRef.current = ad
+    const handleLoad = () => {
+      console.log('[useRewardedVideoAd] loaded')
+      setIsReady(true)
+      setError(null)
+    }
 
-      const handleLoad = () => {
-        console.log('[useRewardedVideoAd] loaded')
-        setIsReady(true)
-        setError(null)
-      }
+    const handleError = (err: any) => {
+      console.error('[useRewardedVideoAd] error', err)
+      setIsReady(false)
+      setError(err)
+      onError?.(err)
+    }
 
-      const handleError = (err: any) => {
-        console.error('[useRewardedVideoAd] error', err)
-        setIsReady(false)
-        setError(err)
-        onError?.(err)
-      }
+    const handleClose = (res: { isEnded: boolean }) => {
+      console.log('[useRewardedVideoAd] close', res)
+    }
 
-      const handleClose = (res: { isEnded: boolean }) => {
-        console.log('[useRewardedVideoAd] close', res)
-      }
+    ad.onLoad(handleLoad)
+    ad.onError(handleError)
+    ad.onClose(handleClose)
 
-      ad.onLoad(handleLoad)
-      ad.onError(handleError)
-      ad.onClose(handleClose)
+    // 预加载广告，提升展示成功率（每个实例仅执行一次）
+    preloadOnce(adUnitId, ad)
 
-      // 预加载广告，提升展示成功率（同步 try-catch 防御 SDK 内部异常逃逸）
-      try {
-        ad.load().catch((err: any) => {
-          console.error('[useRewardedVideoAd] preload failed', err)
-        })
-      } catch (e) {
-        console.error('[useRewardedVideoAd] preload sync error', e)
-      }
-
-      return () => {
-        ad.offLoad(handleLoad)
-        ad.offError(handleError)
-        ad.offClose(handleClose)
-        ad.destroy?.()
-        adRef.current = null
-      }
-    } catch (e) {
-      console.error('[useRewardedVideoAd] init failed', e)
-      setError(e)
+    return () => {
+      // 仅摘除本组件的事件监听，不 destroy 实例（单例复用，避免 SDK 原生组件清理竞态）
+      ad.offLoad(handleLoad)
+      ad.offError(handleError)
+      ad.offClose(handleClose)
+      adRef.current = null
     }
   }, [adUnitId, isWeapp, isDevtools, onError])
 
@@ -158,7 +184,7 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
 
       try {
         ad.show().catch((err: any) => {
-          console.error('[useRewardedVideoAd] show failed, retrying', err)
+          console.warn('[useRewardedVideoAd] show failed, retrying', err)
           ad.load()
             .then(() => ad.show())
             .catch((retryErr: any) => {
