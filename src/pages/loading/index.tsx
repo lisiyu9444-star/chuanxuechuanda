@@ -1,12 +1,12 @@
 import { View, Text } from '@tarojs/components'
-import Taro, { useDidShow, useDidHide } from '@tarojs/taro'
+import Taro, { useDidShow, useUnload } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
-import { getArchiveById, saveDailyResult, saveNativeResult, getToday, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
-import { saveHistoryFromNativeResult } from '@/utils/historyStorage'
+import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
+import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 
 const getLoadingSteps = (mode: 'daily' | 'native') => [
   '正在排列四柱...',
@@ -120,15 +120,115 @@ const LoadingPage = () => {
     }
   }
 
+  // 再测一次：仅重新生成穿搭方案，喜用神/幸运指数沿用缓存，已生成图片作废清空
+  const redesignData = async (archiveId: string, pageMode: 'daily' | 'native') => {
+    if (requestedRef.current) return
+    requestedRef.current = true
+
+    try {
+      const currentArchive = getArchiveById(archiveId)
+      if (!currentArchive) {
+        Taro.showToast({ title: '档案不存在', icon: 'none' })
+        setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
+        return
+      }
+      setArchive(currentArchive)
+
+      const cached = pageMode === 'native' ? getNativeResult(archiveId) : getDailyResult(archiveId, getToday())
+      if (!cached || !cached.baziResult) {
+        // 无缓存可沿用，回退到完整生成流程
+        requestedRef.current = false
+        return loadData(archiveId, pageMode)
+      }
+
+      const bazi = cached.baziResult
+      const yongShen = pageMode === 'native'
+        ? bazi.favorableElement
+        : ((cached as DailyResult).dailyYongShen || bazi.dailyYongShen || bazi.favorableElement || '')
+      const xiShen = pageMode === 'native'
+        ? (bazi.favorableAnalysis?.assistantXiShen || '')
+        : ((cached as DailyResult).dailyXiShen || bazi.dailyXiShen || bazi.favorableAnalysis?.assistantXiShen || '')
+
+      console.log(`[Loading] redesign ${pageMode}:`, { archiveId, yongShen, xiShen })
+      const task = Network.request({
+        url: '/api/bazi/redesign',
+        method: 'POST',
+        data: {
+          mode: pageMode,
+          gender: currentArchive.gender,
+          age: currentArchive.age,
+          stylePreference: currentArchive.stylePreference,
+          season: bazi.outfit?.season || '',
+          yongShen,
+          xiShen,
+          dayMaster: bazi.dayMaster,
+        },
+        timeout: 120000,
+      })
+      requestTaskRef.current = task as unknown as { abort?: () => void }
+      const res = await task
+      requestTaskRef.current = null
+      if (cancelledRef.current) return
+      console.log('[Loading] redesign response:', res.data)
+
+      const llmPlan = res.data?.data?.llmPlan
+      if (!llmPlan) {
+        throw new Error('返回数据为空')
+      }
+
+      if (pageMode === 'native') {
+        const newNative: NativeResult = {
+          ...(cached as NativeResult),
+          llmPlan,
+          imageUrl: '',
+          tryOnUrl: '',
+          generatedAt: Date.now(),
+        }
+        saveNativeResult(newNative)
+        saveHistoryFromNativeResult(newNative, currentArchive)
+      } else {
+        const newDaily: DailyResult = {
+          ...(cached as DailyResult),
+          llmPlan,
+          imageUrl: '',
+          tryOnUrl: '',
+          generatedAt: Date.now(),
+        }
+        saveDailyResult(newDaily)
+        saveHistoryFromDailyResult(newDaily, currentArchive)
+      }
+
+      setProgressValue(100)
+      if (cancelledRef.current) return
+      if (fromRef.current === 'result') {
+        Taro.navigateBack()
+      } else if (pageMode === 'native') {
+        Taro.redirectTo({ url: `/pages/result/index?mode=native&archiveId=${archiveId}` })
+      } else {
+        Taro.switchTab({ url: '/pages/index/index' })
+      }
+    } catch (error) {
+      if (cancelledRef.current) return
+      console.error(`[Loading] redesign ${pageMode} failed:`, error)
+      Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
+      setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
+    }
+  }
+
   useDidShow(() => {
     const params = Taro.getCurrentInstance().router?.params
     const archiveId = params?.archiveId
     const pageMode = (params?.mode as 'daily' | 'native') || 'daily'
+    const action = (params?.action as string) || ''
     fromRef.current = (params?.from as string) || ''
     cancelledRef.current = false
     setMode(pageMode)
     if (archiveId) {
-      loadData(archiveId as string, pageMode)
+      if (action === 'redesign') {
+        redesignData(archiveId as string, pageMode)
+      } else {
+        loadData(archiveId as string, pageMode)
+      }
     } else {
       Taro.showToast({ title: '缺少档案信息', icon: 'none' })
       setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
@@ -140,8 +240,10 @@ const LoadingPage = () => {
     return () => clearTimeout(timer)
   })
 
-  // 退出 loading 页时中断进行中的请求，阻止结果保存与页面跳转（通用能力）
-  useDidHide(() => {
+  // 页面销毁（返回/关闭）时中断进行中的请求，阻止结果保存与页面跳转（通用能力）。
+  // 注意：必须放在 useUnload 而非 useDidHide——navigateBack 销毁页面时只触发 onUnload，
+  // onHide 不会触发，放 useDidHide 会导致取消逻辑失效。
+  useUnload(() => {
     cancelledRef.current = true
     requestTaskRef.current?.abort?.()
     requestTaskRef.current = null

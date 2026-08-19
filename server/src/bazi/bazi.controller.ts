@@ -312,6 +312,44 @@ export class BaziController {
     }
   }
 
+  /**
+   * 仅重新生成穿搭方案（再测一次）。
+   * 喜用神、幸运指数等八字推理结果沿用前端缓存传入的值，不重新调用 LLM 推理。
+   */
+  @Post('redesign')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async redesign(
+    @Body()
+    body: {
+      mode: 'daily' | 'native'
+      gender: string
+      age?: number
+      stylePreference?: string
+      season: string
+      yongShen: string
+      xiShen: string
+      dayMaster?: string
+    },
+    @Req() req,
+  ): Promise<{ data: { llmPlan: StylistResult } }> {
+    const forwardHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>)
+    const llmPlan = await this.stylistService.generatePlan(
+      {
+        gender: body.gender === 'female' ? '女' : '男',
+        age: body.age,
+        season: body.season,
+        stylePreference: body.stylePreference || '简约通勤风',
+        yongShen: body.yongShen,
+        xiShen: body.xiShen,
+        dayMaster: body.dayMaster,
+        mode: body.mode === 'native' ? 'native' : 'daily',
+      },
+      forwardHeaders,
+    )
+    return { data: { llmPlan } }
+  }
+
   @Post('generate-image')
   @HttpCode(200)
   @Throttle({ default: { limit: 10, ttl: 60000 } })

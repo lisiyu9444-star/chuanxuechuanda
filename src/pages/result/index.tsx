@@ -755,9 +755,10 @@ const ResultPage = () => {
       return
     }
     const mode = pageModeRef.current === 'native' ? 'native' : 'daily'
-    // from=result 标记从结果页进入，生成完成后返回结果页而不是首页
+    // action=redesign：仅重新生成穿搭方案，喜用神/幸运指数沿用不变；
+    // from=result：生成完成后返回结果页而不是首页
     Taro.navigateTo({
-      url: `/pages/loading/index?mode=${mode}&archiveId=${archiveId}&from=result`
+      url: `/pages/loading/index?mode=${mode}&archiveId=${archiveId}&from=result&action=redesign`
     })
   }
 

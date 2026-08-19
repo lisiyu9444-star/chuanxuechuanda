@@ -53,6 +53,7 @@ export interface OutfitInfo {
   description: string
   prompt: string
   backgroundColor?: string
+  season?: string
 }
 
 export interface BaZiResult {
