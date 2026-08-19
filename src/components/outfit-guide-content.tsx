@@ -1,15 +1,8 @@
 import { View, Text } from '@tarojs/components'
 import { Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
 import { Card, CardContent } from '@/components/ui/card'
+import { ELEMENT_COLORS } from '@/constants/element-colors'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
-
-const ELEMENT_COLORS: Record<string, string> = {
-  金: '#f59e0b',
-  木: '#22c55e',
-  水: '#3b82f6',
-  火: '#ef4444',
-  土: '#a855f7',
-}
 
 const COLOR_HEX_MAP: Record<string, string> = {
   黑: '#1a1a1a', 黑色: '#1a1a1a', 深黑: '#000000',

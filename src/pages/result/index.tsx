@@ -21,6 +21,7 @@ import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday } from '@/utils/archiveStorage'
 import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
+import { ELEMENT_COLORS } from '@/constants/element-colors'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
 import type { NativeResult } from '@/types/archive'
 import './index.css'
@@ -167,14 +168,6 @@ function getColorHex(name: string): string {
 
 
 const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/placeholder_compressed_fc42a6fb.jpg?sign=1789570488-e3736db199-0-8a30a66f5bbc9632daba064367ba177cac6a1067704b5b2cd1114e4d0896686d'
-
-const ELEMENT_COLORS: Record<string, string> = {
-  '木': '#22c55e',
-  '火': '#ef4444',
-  '土': '#6b4c7a',
-  '金': '#fbbf24',
-  '水': '#3b82f6',
-}
 
 interface LuckyScore {
   total: number
