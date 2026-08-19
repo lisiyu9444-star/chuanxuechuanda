@@ -272,11 +272,11 @@ export default function Index() {
 
             <View className="grid grid-cols-5 gap-2">
               {[
-                { label: '爱情', value: luckyScore.love },
+                { label: '气场', value: luckyScore.love },
                 { label: '事业', value: luckyScore.career },
-                { label: '家庭', value: luckyScore.family },
-                { label: '生活', value: luckyScore.life },
-                { label: '学习', value: luckyScore.study },
+                { label: '桃花', value: luckyScore.family },
+                { label: '放松', value: luckyScore.life },
+                { label: '灵感', value: luckyScore.study },
               ].map((item) => (
                 <View key={item.label} className="flex flex-col items-center gap-1">
                   <Text className="block text-xs text-gray-500">{item.label}</Text>
@@ -310,13 +310,13 @@ export default function Index() {
                   <View className="absolute bottom-2 left-2 right-2">
                     <Button
                       size="sm"
-                      className="w-full bg-slate-900 hover:bg-slate-800"
+                      className="w-full bg-white bg-opacity-95 backdrop-blur-sm border border-gray-200 hover:bg-white"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleViewResult()
                       }}
                     >
-                      <Text className="block text-white text-xs">解锁平铺图</Text>
+                      <Text className="block text-gray-900 text-xs">解锁平铺图</Text>
                     </Button>
                   </View>
                 )}
@@ -331,13 +331,13 @@ export default function Index() {
                   <View className="absolute bottom-2 left-2 right-2">
                     <Button
                       size="sm"
-                      className="w-full bg-slate-900 hover:bg-slate-800"
+                      className="w-full bg-white bg-opacity-95 backdrop-blur-sm border border-gray-200 hover:bg-white"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleViewResult()
                       }}
                     >
-                      <Text className="block text-white text-xs">解锁上身图</Text>
+                      <Text className="block text-gray-900 text-xs">解锁上身图</Text>
                     </Button>
                   </View>
                 )}
