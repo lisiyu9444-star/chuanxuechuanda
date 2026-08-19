@@ -226,6 +226,7 @@ const ResultPage = () => {
   const [shareReady, setShareReady] = useState(false)
   // 再测一次二次确认弹窗
   const [showRetestConfirm, setShowRetestConfirm] = useState(false)
+  const [archiveStyle, setArchiveStyle] = useState<string>('')
   // 从分享链接打开时携带的 shareId
   const [urlShareId, setUrlShareId] = useState('')
   // 防止分享保存重复触发
@@ -425,6 +426,8 @@ const ResultPage = () => {
     const recordMode = (router?.params?.recordMode as 'daily' | 'native') || 'daily'
     const historyDate = router?.params?.date
     currentArchiveIdRef.current = archiveId
+    // 读取档案中的穿搭风格，用于结果页标签展示
+    setArchiveStyle(getArchiveById(archiveId)?.stylePreference || '')
     setPageMode(mode)
     pageModeRef.current = mode
     setUrlShareId(shareIdFromUrl || '')
@@ -752,8 +755,9 @@ const ResultPage = () => {
       return
     }
     const mode = pageModeRef.current === 'native' ? 'native' : 'daily'
+    // from=result 标记从结果页进入，生成完成后返回结果页而不是首页
     Taro.navigateTo({
-      url: `/pages/loading/index?mode=${mode}&archiveId=${archiveId}`
+      url: `/pages/loading/index?mode=${mode}&archiveId=${archiveId}&from=result`
     })
   }
 
@@ -968,30 +972,30 @@ const ResultPage = () => {
           </View>
         </View>
 
-        {/* 风格 / 主色 / 辅色标签 */}
-        {result.llmPlan && (
+        {/* 风格 / 主色 / 辅色标签（风格取档案中的风格偏好） */}
+        {(archiveStyle || result.llmPlan?.luckyColors) && (
           <View className="flex flex-row flex-wrap gap-2 mt-3">
-            {result.llmPlan.styleTheme && (
+            {archiveStyle && (
               <View className="px-3 py-1 rounded-full bg-slate-100 flex flex-row items-center">
-                <Text className="text-xs text-gray-700">风格 · {result.llmPlan.styleTheme}</Text>
+                <Text className="text-xs text-gray-700">{archiveStyle}</Text>
               </View>
             )}
-            {result.llmPlan.luckyColors?.primary && (
+            {result.llmPlan?.luckyColors?.primary && (
               <View className="px-3 py-1 rounded-full bg-slate-100 flex flex-row items-center gap-1">
                 <View
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: result.llmPlan.luckyColors.primaryHex || '#9ca3af' }}
                 />
-                <Text className="text-xs text-gray-700">主色 · {result.llmPlan.luckyColors.primary}</Text>
+                <Text className="text-xs text-gray-700">主色</Text>
               </View>
             )}
-            {result.llmPlan.luckyColors?.secondary && (
+            {result.llmPlan?.luckyColors?.secondary && (
               <View className="px-3 py-1 rounded-full bg-slate-100 flex flex-row items-center gap-1">
                 <View
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: result.llmPlan.luckyColors.secondaryHex || '#9ca3af' }}
                 />
-                <Text className="text-xs text-gray-700">辅色 · {result.llmPlan.luckyColors.secondary}</Text>
+                <Text className="text-xs text-gray-700">辅色</Text>
               </View>
             )}
           </View>

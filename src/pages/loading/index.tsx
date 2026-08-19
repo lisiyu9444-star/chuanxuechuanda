@@ -1,5 +1,5 @@
 import { View, Text } from '@tarojs/components'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, useDidHide } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -24,6 +24,10 @@ const LoadingPage = () => {
   const [isAccelerated, setIsAccelerated] = useState(false)
   const [mode, setMode] = useState<'daily' | 'native'>('daily')
   const requestedRef = useRef(false)
+  // 请求任务与取消标记：退出页面时中断请求，阻止后续保存与跳转
+  const requestTaskRef = useRef<{ abort?: () => void } | null>(null)
+  const cancelledRef = useRef(false)
+  const fromRef = useRef<string>('')
   const loadingSteps = getLoadingSteps(mode)
 
   const loadData = async (archiveId: string, pageMode: 'daily' | 'native' = 'daily') => {
@@ -43,7 +47,7 @@ const LoadingPage = () => {
       const dateStr = getToday()
       const endpoint = pageMode === 'native' ? '/api/bazi/native' : '/api/bazi/daily'
       console.log(`[Loading] request ${pageMode}:`, { archiveId, date: dateStr, endpoint })
-      const res = await Network.request({
+      const task = Network.request({
         url: endpoint,
         method: 'POST',
         data: {
@@ -58,6 +62,11 @@ const LoadingPage = () => {
         },
         timeout: 120000,
       })
+      requestTaskRef.current = task as unknown as { abort?: () => void }
+      const res = await task
+      requestTaskRef.current = null
+      // 页面已退出，忽略请求结果
+      if (cancelledRef.current) return
       console.log(`[Loading] ${pageMode} response:`, res.data)
 
       const apiData = res.data?.data
@@ -76,7 +85,12 @@ const LoadingPage = () => {
         // 本命穿搭也生成历史记录，与今日穿搭独立存储
         saveHistoryFromNativeResult(nativeResult, currentArchive)
         setProgressValue(100)
-        Taro.redirectTo({ url: `/pages/result/index?mode=native&archiveId=${archiveId}` })
+        if (fromRef.current === 'result') {
+          // 从结果页“再测一次”进入，返回原结果页展示新数据
+          Taro.navigateBack()
+        } else {
+          Taro.redirectTo({ url: `/pages/result/index?mode=native&archiveId=${archiveId}` })
+        }
         return
       }
 
@@ -91,8 +105,15 @@ const LoadingPage = () => {
       }
       saveDailyResult(dailyResult)
       setProgressValue(100)
-      Taro.switchTab({ url: '/pages/index/index' })
+      if (fromRef.current === 'result') {
+        // 从结果页“再测一次”进入，返回原结果页展示新数据
+        Taro.navigateBack()
+      } else {
+        Taro.switchTab({ url: '/pages/index/index' })
+      }
     } catch (error) {
+      // 页面已退出或被主动取消，静默处理
+      if (cancelledRef.current) return
       console.error(`[Loading] ${pageMode} request failed:`, error)
       Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
       setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
@@ -103,6 +124,8 @@ const LoadingPage = () => {
     const params = Taro.getCurrentInstance().router?.params
     const archiveId = params?.archiveId
     const pageMode = (params?.mode as 'daily' | 'native') || 'daily'
+    fromRef.current = (params?.from as string) || ''
+    cancelledRef.current = false
     setMode(pageMode)
     if (archiveId) {
       loadData(archiveId as string, pageMode)
@@ -115,6 +138,13 @@ const LoadingPage = () => {
       setIsAccelerated(true)
     }, 25000)
     return () => clearTimeout(timer)
+  })
+
+  // 退出 loading 页时中断进行中的请求，阻止结果保存与页面跳转（通用能力）
+  useDidHide(() => {
+    cancelledRef.current = true
+    requestTaskRef.current?.abort?.()
+    requestTaskRef.current = null
   })
 
   useEffect(() => {
