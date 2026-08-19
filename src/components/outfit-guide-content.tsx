@@ -50,6 +50,7 @@ interface OutfitGuideContentProps {
   xiShen?: string
   themeColor: string
   occasionColor?: string
+  occasionBgTransparent?: boolean
   pageMode?: 'daily' | 'native'
   showTitle?: boolean
   showBaziOverview?: boolean
@@ -62,11 +63,13 @@ export function OutfitGuideContent({
   xiShen: xiShenProp,
   themeColor,
   occasionColor,
+  occasionBgTransparent,
   pageMode = 'daily',
   showTitle = true,
   showBaziOverview = true,
 }: OutfitGuideContentProps) {
   const tagColor = occasionColor || themeColor
+  const tagBg = occasionBgTransparent ? 'transparent' : `${tagColor}1a`
   const llmPlan = llmPlanProp || result.llmPlan
   const yongShen = yongShenProp || result.dailyYongShen
   const xiShen = xiShenProp || result.dailyXiShen
@@ -346,7 +349,7 @@ export function OutfitGuideContent({
                             borderWidth: '1px',
                             borderStyle: 'solid',
                             borderColor: `${tagColor}66`,
-                            backgroundColor: `${tagColor}1a`,
+                            backgroundColor: tagBg,
                           }}
                         >
                           <Text className="block text-sm font-medium" style={{ color: tagColor }}>

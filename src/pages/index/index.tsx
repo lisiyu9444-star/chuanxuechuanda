@@ -364,6 +364,7 @@ export default function Index() {
               xiShen={dailyResult.dailyXiShen}
               themeColor={themeColor}
               occasionColor="#111827"
+              occasionBgTransparent
               showTitle={false}
               showBaziOverview={false}
             />
