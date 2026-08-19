@@ -5,6 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { WuxingLoader } from '@/components/wuxing-loader'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Share2, RefreshCw, Lock, Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
@@ -214,6 +224,8 @@ const ResultPage = () => {
   const [pageLoading, setPageLoading] = useState(false)
   // 分享数据是否准备就绪（shareId 已生成）
   const [shareReady, setShareReady] = useState(false)
+  // 再测一次二次确认弹窗
+  const [showRetestConfirm, setShowRetestConfirm] = useState(false)
   // 从分享链接打开时携带的 shareId
   const [urlShareId, setUrlShareId] = useState('')
   // 防止分享保存重复触发
@@ -732,6 +744,19 @@ const ResultPage = () => {
     setActiveTab(tab)
   }
 
+  // 再测一次确认：进入 loading 页重新请求数据，覆盖之前生成的记录
+  const handleRetestConfirm = () => {
+    const archiveId = currentArchiveIdRef.current
+    if (!archiveId) {
+      Taro.showToast({ title: '未找到档案信息', icon: 'none' })
+      return
+    }
+    const mode = pageModeRef.current === 'native' ? 'native' : 'daily'
+    Taro.navigateTo({
+      url: `/pages/loading/index?mode=${mode}&archiveId=${archiveId}`
+    })
+  }
+
   // 小程序分享配置
   Taro.useShareAppMessage(() => {
     const title = pageMode === 'native'
@@ -942,6 +967,35 @@ const ResultPage = () => {
             )}
           </View>
         </View>
+
+        {/* 风格 / 主色 / 辅色标签 */}
+        {result.llmPlan && (
+          <View className="flex flex-row flex-wrap gap-2 mt-3">
+            {result.llmPlan.styleTheme && (
+              <View className="px-3 py-1 rounded-full bg-slate-100 flex flex-row items-center">
+                <Text className="text-xs text-gray-700">风格 · {result.llmPlan.styleTheme}</Text>
+              </View>
+            )}
+            {result.llmPlan.luckyColors?.primary && (
+              <View className="px-3 py-1 rounded-full bg-slate-100 flex flex-row items-center gap-1">
+                <View
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: result.llmPlan.luckyColors.primaryHex || '#9ca3af' }}
+                />
+                <Text className="text-xs text-gray-700">主色 · {result.llmPlan.luckyColors.primary}</Text>
+              </View>
+            )}
+            {result.llmPlan.luckyColors?.secondary && (
+              <View className="px-3 py-1 rounded-full bg-slate-100 flex flex-row items-center gap-1">
+                <View
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: result.llmPlan.luckyColors.secondaryHex || '#9ca3af' }}
+                />
+                <Text className="text-xs text-gray-700">辅色 · {result.llmPlan.luckyColors.secondary}</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Unlocked Content */}
@@ -1277,7 +1331,7 @@ const ResultPage = () => {
           )}
           <Button
             className="flex-1 bg-white border border-slate-200 py-3 rounded-xl"
-            onClick={() => Taro.reLaunch({ url: '/pages/index/index' })}
+            onClick={() => setShowRetestConfirm(true)}
           >
             <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <RefreshCw size={18} color="#1f2937" />
@@ -1286,6 +1340,27 @@ const ResultPage = () => {
           </Button>
         </View>
       )}
+
+      {/* 再测一次二次确认弹窗 */}
+      <AlertDialog open={showRetestConfirm} onOpenChange={setShowRetestConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认重新生成？</AlertDialogTitle>
+            <AlertDialogDescription>
+              重新生成后，穿搭单品与图片将会变更，之前生成的记录将被覆盖。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">取消</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xl bg-slate-900 text-white"
+              onClick={handleRetestConfirm}
+            >
+              确认修改
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </View>
   )
 }
