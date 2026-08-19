@@ -155,7 +155,7 @@ const LoadingPage = () => {
 
         {/* Current Step Text */}
         <Text className="block text-base font-medium text-gray-900 mb-1">
-          信息已变更，正在重新生成
+          正在生成中
         </Text>
 
         {/* Progress Bar */}
