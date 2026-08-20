@@ -32,10 +32,10 @@ export class ConfigController {
           enableVideoUnlock: process.env.ENABLE_VIDEO_UNLOCK !== 'false',
           enableShareUnlock: process.env.ENABLE_SHARE_UNLOCK !== 'false',
 
-          // 激励视频广告失败兜底：
-          // true  = 广告加载/展示失败时直接放行解锁（广告位审核中 / 无填充时的降级方案）
-          // false = 广告失败不放行，提示用户稍后重试（广告位正常后建议设为 false）
-          adFailOpen: process.env.AD_FAIL_OPEN !== 'false',
+          // 激励视频广告失败兜底（默认 false 严格模式，广告位已审核通过）：
+          // true  = 广告加载/展示失败时直接放行解锁（广告位异常时的临时降级方案）
+          // false = 广告失败不放行，提示用户稍后重试（默认，正式环境）
+          adFailOpen: process.env.AD_FAIL_OPEN === 'true',
         },
       },
     }

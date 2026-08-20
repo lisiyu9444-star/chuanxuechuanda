@@ -209,8 +209,8 @@ const ResultPage = () => {
   // 功能开关：分享功能是否开启
   // 功能开关：是否显示玄学相关内容（八字概览、喜用神分析），穿搭模块始终展示
   const [showBaZiContent, setShowBaZiContent] = useState(true)
-  // 广告失败兜底放行开关（服务端 features 下发，默认 true：广告位审核中/无填充时直接解锁）
-  const [adFailOpen, setAdFailOpen] = useState(true)
+  // 广告失败兜底放行开关（服务端 features 下发，默认 false 严格模式：广告位已审核通过，须完整观看）
+  const [adFailOpen, setAdFailOpen] = useState(false)
   // 分享 ID（用于朋友圈分享）
   const [shareId, setShareId] = useState('')
   // 从分享链接进入时的加载态
