@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Taro from '@tarojs/taro'
+import { Network } from '@/network'
 
 interface RewardedVideoAdInstance {
   load: () => Promise<any>
@@ -13,6 +14,21 @@ interface RewardedVideoAdInstance {
   destroy: () => void
 }
 
+export interface AdErrorInfo {
+  errCode?: number | string
+  errMsg?: string
+}
+
+export interface ShowAdResult {
+  /** 用户是否完整观看 */
+  watched: boolean
+  /**
+   * 广告加载/展示失败时的错误信息。
+   * undefined 表示广告曾正常展示、但用户提前关闭（未完整观看）。
+   */
+  error?: AdErrorInfo
+}
+
 interface UseRewardedVideoAdOptions {
   /** 广告单元 ID */
   adUnitId: string
@@ -21,8 +37,8 @@ interface UseRewardedVideoAdOptions {
 }
 
 interface UseRewardedVideoAdReturn {
-  /** 展示广告，返回用户是否完整观看 */
-  showAd: () => Promise<boolean>
+  /** 展示广告，返回观看结果（含失败原因，便于区分"广告不可用"与"未完整观看"） */
+  showAd: () => Promise<ShowAdResult>
   /** 广告是否已加载就绪 */
   isReady: boolean
   /** 最后一次错误信息 */
@@ -34,9 +50,62 @@ interface UseRewardedVideoAdReturn {
  * 反复 createRewardedVideoAd + destroy 会导致 SDK 内部原生组件清理竞态，
  * 产生 removeVideoPlayer:fail / removeTextView:fail no root 等无法捕获的红色报错。
  * 单例复用后实例生命周期与小程序一致，可显著降低这类噪音错误。
+ * 仅当确认实例损坏（load/show 最终失败）时才销毁重建，实现自愈。
  */
 const adInstanceCache = new Map<string, RewardedVideoAdInstance>()
 const adPreloadedSet = new Set<string>()
+
+/** 归一化广告 SDK 错误对象，提取 errCode / errMsg */
+function normalizeAdError(err: any): AdErrorInfo {
+  if (!err) return {}
+  if (typeof err === 'string') return { errMsg: err }
+  const info: AdErrorInfo = {
+    errCode: err.errCode ?? err.code ?? err.err_no ?? err.errNo,
+    errMsg: err.errMsg ?? err.message,
+  }
+  if (!info.errCode && !info.errMsg) {
+    try {
+      info.errMsg = JSON.stringify(err)
+    } catch {
+      info.errMsg = String(err)
+    }
+  }
+  return info
+}
+
+/**
+ * 广告问题双通道上报（fire-and-forget，绝不阻塞业务流程）：
+ * 1. 微信实时日志：小程序后台「管理 → 运维中心 → 实时日志」可查，正式版可用
+ * 2. 自建服务端日志：写入线上运行日志，便于远程诊断
+ */
+function reportAdIssue(event: string, adUnitId: string, err: any) {
+  const errInfo = normalizeAdError(err)
+  try {
+    const getManager = (Taro as any).getRealtimeLogManager
+    if (typeof getManager === 'function') {
+      const logger = getManager.call(Taro)
+      logger?.error?.(`[rewarded-ad] ${event}`, { adUnitId, ...errInfo })
+    }
+  } catch {
+    // 实时日志不可用时忽略
+  }
+  try {
+    Network.request({
+      url: '/api/log/client',
+      method: 'POST',
+      data: {
+        tag: 'rewarded-ad',
+        level: 'error',
+        message: event,
+        extra: { adUnitId, ...errInfo, env: Taro.getEnv() },
+      },
+    }).catch(() => {
+      // 上报失败忽略
+    })
+  } catch {
+    // 上报不可用忽略
+  }
+}
 
 function getOrCreateAd(adUnitId: string): RewardedVideoAdInstance | null {
   const cached = adInstanceCache.get(adUnitId)
@@ -52,16 +121,32 @@ function getOrCreateAd(adUnitId: string): RewardedVideoAdInstance | null {
   }
 }
 
-/** 预加载仅在实例创建后执行一次，失败日志降为 warn（SDK 内部会自行重试） */
+/** 销毁损坏实例并移出缓存，下次使用时自动重建（自愈） */
+function destroyAd(adUnitId: string) {
+  const ad = adInstanceCache.get(adUnitId)
+  adInstanceCache.delete(adUnitId)
+  adPreloadedSet.delete(adUnitId)
+  if (ad) {
+    try {
+      ad.destroy()
+    } catch {
+      // destroy 异常忽略
+    }
+  }
+}
+
+/** 预加载仅在实例创建后执行一次；失败时移除标记，允许后续重试 */
 function preloadOnce(adUnitId: string, ad: RewardedVideoAdInstance) {
   if (adPreloadedSet.has(adUnitId)) return
   adPreloadedSet.add(adUnitId)
   try {
     ad.load().catch((err: any) => {
-      // SDK 内部竞态（如 e.adProxy 未就绪）导致的预加载失败，SDK 会自动恢复，仅提示
-      console.warn('[useRewardedVideoAd] preload failed (SDK will retry)', err)
+      // 预加载失败：移除标记允许重试；SDK 内部竞态（如 e.adProxy 未就绪）会自动恢复，仅提示
+      adPreloadedSet.delete(adUnitId)
+      console.warn('[useRewardedVideoAd] preload failed (will retry later)', err)
     })
   } catch (e) {
+    adPreloadedSet.delete(adUnitId)
     console.warn('[useRewardedVideoAd] preload sync error', e)
   }
 }
@@ -72,19 +157,22 @@ function preloadOnce(adUnitId: string, ad: RewardedVideoAdInstance) {
  * 功能：
  * - 仅在微信小程序环境初始化
  * - 广告实例全局单例复用，页面加载时预加载
- * - 提供 showAd 方法，返回 Promise<boolean> 表示用户是否完整观看
- * - H5 / 抖音小程序等非微信环境直接返回 false，由业务方决定是否放行
+ * - showAd 返回 ShowAdResult，可区分"广告加载/展示失败"与"用户未完整观看"
+ * - 失败自动双通道上报（微信实时日志 + 服务端日志），并销毁坏实例实现自愈
+ * - H5 / 抖音小程序等非微信环境直接返回 watched: false，由业务方决定是否放行
  *
  * @example
  * ```tsx
- * const { showAd, isReady } = useRewardedVideoAd({ adUnitId: 'adunit-xxx' })
+ * const { showAd } = useRewardedVideoAd({ adUnitId: 'adunit-xxx' })
  *
  * const handleUnlock = async () => {
- *   const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
- *   if (isWeapp) {
- *     const watched = await showAd()
+ *   if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
+ *     const { watched, error } = await showAd()
  *     if (!watched) {
- *       Taro.showToast({ title: '请完整观看视频以解锁', icon: 'none' })
+ *       Taro.showToast({
+ *         title: error ? '广告加载失败，请稍后重试' : '请完整观看视频以解锁',
+ *         icon: 'none',
+ *       })
  *       return
  *     }
  *   }
@@ -131,6 +219,7 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
       console.error('[useRewardedVideoAd] error', err)
       setIsReady(false)
       setError(err)
+      reportAdIssue('load-error', adUnitId, err)
       onError?.(err)
     }
 
@@ -142,7 +231,7 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
     ad.onError(handleError)
     ad.onClose(handleClose)
 
-    // 预加载广告，提升展示成功率（每个实例仅执行一次）
+    // 预加载广告，提升展示成功率（每个实例仅执行一次，失败可重试）
     preloadOnce(adUnitId, ad)
 
     return () => {
@@ -154,20 +243,34 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
     }
   }, [adUnitId, isWeapp, isDevtools, onError])
 
-  const showAd = useCallback((): Promise<boolean> => {
+  const showAd = useCallback((): Promise<ShowAdResult> => {
     return new Promise((resolve) => {
       // 开发者工具中广告 SDK 不可用，直接视为已完整观看，方便开发调试
       if (isDevtools) {
-        resolve(true)
+        resolve({ watched: true })
         return
       }
-      if (!isWeapp || !adRef.current) {
-        resolve(false)
+      if (!isWeapp) {
+        resolve({ watched: false })
         return
       }
 
+      // 实例可能因上次失败被销毁，此处现场重建（自愈）
+      if (!adRef.current) {
+        adRef.current = getOrCreateAd(adUnitId)
+        if (adRef.current) {
+          preloadOnce(adUnitId, adRef.current)
+        }
+      }
       const ad = adRef.current
+      if (!ad) {
+        reportAdIssue('instance-unavailable', adUnitId, null)
+        resolve({ watched: false, error: { errMsg: 'ad instance unavailable' } })
+        return
+      }
+
       let closeHandler: ((res: { isEnded: boolean }) => void) | null = null
+      let settled = false
 
       const cleanup = () => {
         if (closeHandler) {
@@ -175,9 +278,22 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
         }
       }
 
-      closeHandler = (res: { isEnded: boolean }) => {
+      const settleFail = (err: any, stage: string) => {
+        if (settled) return
+        settled = true
         cleanup()
-        resolve(res.isEnded)
+        reportAdIssue(`show-failed:${stage}`, adUnitId, err)
+        // 自愈：销毁可能已损坏的实例，下次点击时重建
+        destroyAd(adUnitId)
+        adRef.current = null
+        resolve({ watched: false, error: normalizeAdError(err) })
+      }
+
+      closeHandler = (res: { isEnded: boolean }) => {
+        if (settled) return
+        settled = true
+        cleanup()
+        resolve({ watched: res?.isEnded === true })
       }
 
       ad.onClose(closeHandler)
@@ -188,18 +304,14 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
           ad.load()
             .then(() => ad.show())
             .catch((retryErr: any) => {
-              console.error('[useRewardedVideoAd] show retry failed', retryErr)
-              cleanup()
-              resolve(false)
+              settleFail(retryErr, 'retry')
             })
         })
       } catch (e) {
-        console.error('[useRewardedVideoAd] show sync error', e)
-        cleanup()
-        resolve(false)
+        settleFail(e, 'sync')
       }
     })
-  }, [isWeapp, isDevtools])
+  }, [adUnitId, isWeapp, isDevtools])
 
   return { showAd, isReady, error }
 }

@@ -336,9 +336,12 @@ const ResultPage = () => {
     }
     const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
     if (isWeapp) {
-      const watched = await showAd()
+      const { watched, error: adError } = await showAd()
       if (!watched) {
-        Taro.showToast({ title: '请完整观看视频以解锁', icon: 'none' })
+        Taro.showToast({
+          title: adError ? '广告加载失败，请稍后重试' : '请完整观看视频以解锁',
+          icon: 'none',
+        })
         return
       }
     }
@@ -389,9 +392,12 @@ const ResultPage = () => {
     }
     const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
     if (isWeapp) {
-      const watched = await showAd()
+      const { watched, error: adError } = await showAd()
       if (!watched) {
-        Taro.showToast({ title: '请完整观看视频以解锁上身图', icon: 'none' })
+        Taro.showToast({
+          title: adError ? '广告加载失败，请稍后重试' : '请完整观看视频以解锁上身图',
+          icon: 'none',
+        })
         return
       }
     }
