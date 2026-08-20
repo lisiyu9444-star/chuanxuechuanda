@@ -415,7 +415,7 @@ export class BaziService {
     }
     const chart = calculateBaziChart({
       year, month, day, hour, minute: 0,
-      gender: 'male' as const,
+      gender: gender === 'female' ? 'female' : 'male',
       longitude,
       timezone: 8,
     })

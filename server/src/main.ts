@@ -18,8 +18,19 @@ function parsePort(): number {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+    : ['https://your-miniprogram-domain.com']; // 替换为小程序实际域名
   app.enableCors({
-    origin: true,
+    origin: (origin, callback) => {
+      // 允许无 origin 的请求（如小程序、服务端调用）
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
   app.setGlobalPrefix('api');
