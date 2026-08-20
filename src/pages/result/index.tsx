@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Share2, RefreshCw, Lock, Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
+import { Share2, RefreshCw, Lock, Shirt, Square, Footprints, ShoppingBag, Gem, Play } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
@@ -927,14 +927,17 @@ const ResultPage = () => {
                       <Lock size={28} color="#6b7280" />
                     </View>
                     <Text className="block text-gray-500 text-sm text-center mb-6 px-4">
-                      解锁后生成专属穿搭平铺图，约需等待30秒
+                      观看一段广告视频，即可免费解锁生成专属穿搭平铺图（生成约需30秒）
                     </Text>
                     <Button
                       variant="outline"
                       className="rounded-full px-8 py-2 h-auto border-gray-300 text-gray-700 bg-white"
                       onClick={handleUnlockFlatImage}
                     >
-                      <Text className="block text-sm font-medium">解锁平铺图</Text>
+                      <View className="flex flex-row items-center">
+                        <Play size={16} color="#374151" className="mr-1" />
+                        <Text className="block text-sm font-medium">看视频免费解锁</Text>
+                      </View>
                     </Button>
                   </View>
                 </View>
@@ -971,7 +974,7 @@ const ResultPage = () => {
                     <Lock size={28} color="#6b7280" />
                   </View>
                   <Text className="block text-gray-500 text-sm text-center mb-6 px-4">
-                    基于平铺图生成模特上身效果，约需等待30秒
+                    观看一段广告视频，即可免费解锁生成模特上身效果图（生成约需30秒）
                   </Text>
                   <Button
                     variant="outline"
@@ -979,7 +982,10 @@ const ResultPage = () => {
                     style={{ opacity: 0.8 }}
                     onClick={handleUnlockTryOn}
                   >
-                    <Text className="block text-sm font-medium">解锁上身图</Text>
+                    <View className="flex flex-row items-center">
+                      <Play size={16} color="#374151" className="mr-1" />
+                      <Text className="block text-sm font-medium">看视频免费解锁</Text>
+                    </View>
                   </Button>
                 </View>
               </View>
