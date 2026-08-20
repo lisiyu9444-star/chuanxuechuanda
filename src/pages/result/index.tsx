@@ -209,6 +209,8 @@ const ResultPage = () => {
   // 功能开关：分享功能是否开启
   // 功能开关：是否显示玄学相关内容（八字概览、喜用神分析），穿搭模块始终展示
   const [showBaZiContent, setShowBaZiContent] = useState(true)
+  // 广告失败兜底放行开关（服务端 features 下发，默认 true：广告位审核中/无填充时直接解锁）
+  const [adFailOpen, setAdFailOpen] = useState(true)
   // 分享 ID（用于朋友圈分享）
   const [shareId, setShareId] = useState('')
   // 从分享链接进入时的加载态
@@ -328,6 +330,22 @@ const ResultPage = () => {
     }
   }
 
+  // 激励视频解锁流程：返回 true 表示可继续（完整观看，或广告失败时按兜底策略放行）
+  const ensureAdWatched = async (incompleteTip: string): Promise<boolean> => {
+    const { watched, error: adError } = await showAd()
+    if (watched) return true
+    // 广告加载/展示失败（如广告位审核中、无填充）且兜底开启：直接放行
+    if (adError && adFailOpen) {
+      Taro.showToast({ title: '广告暂不可用，已为你直接解锁', icon: 'none' })
+      return true
+    }
+    Taro.showToast({
+      title: adError ? '广告加载失败，请稍后重试' : incompleteTip,
+      icon: 'none',
+    })
+    return false
+  }
+
   // 解锁平铺图
   const handleUnlockFlatImage = async () => {
     if (!result?.llmPlan?.imagePrompt) {
@@ -336,14 +354,8 @@ const ResultPage = () => {
     }
     const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
     if (isWeapp) {
-      const { watched, error: adError } = await showAd()
-      if (!watched) {
-        Taro.showToast({
-          title: adError ? '广告加载失败，请稍后重试' : '请完整观看视频以解锁',
-          icon: 'none',
-        })
-        return
-      }
+      const canProceed = await ensureAdWatched('请完整观看视频以解锁')
+      if (!canProceed) return
     }
     setFlatImageLoading(true)
     try {
@@ -392,14 +404,8 @@ const ResultPage = () => {
     }
     const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
     if (isWeapp) {
-      const { watched, error: adError } = await showAd()
-      if (!watched) {
-        Taro.showToast({
-          title: adError ? '广告加载失败，请稍后重试' : '请完整观看视频以解锁上身图',
-          icon: 'none',
-        })
-        return
-      }
+      const canProceed = await ensureAdWatched('请完整观看视频以解锁上身图')
+      if (!canProceed) return
     }
     generateTryOn({
       imageUrl: flatImageUrl || result.imageUrl,
@@ -800,6 +806,7 @@ const ResultPage = () => {
         if (res.data?.data?.features) {
           const features = res.data.data.features
           setShowBaZiContent(features.showResultDetails !== false)
+          setAdFailOpen(features.adFailOpen !== false)
         }
       })
       .catch((err) => {
