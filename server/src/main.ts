@@ -18,14 +18,36 @@ function parsePort(): number {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
-    : ['https://your-miniprogram-domain.com']; // 替换为小程序实际域名
+  // CORS 白名单（无需手动配置）：
+  // 1. 平台部署/预览域名由环境变量自动注入（COZE_PROJECT_DOMAIN_ALL / COZE_PROJECT_DOMAIN_DEFAULT）
+  // 2. 开发环境放行本地预览端口（localhost:5000）
+  // 3. 额外域名可通过 ALLOWED_ORIGINS 追加（逗号分隔），一般不设置也没有问题
+  // 4. 无 origin 的请求（微信/抖音小程序、服务端调用、curl）直接放行，不受白名单限制
+  const allowedOrigins = new Set<string>();
+  const defaultDomain = process.env.COZE_PROJECT_DOMAIN_DEFAULT;
+  if (defaultDomain) allowedOrigins.add(defaultDomain.trim());
+  try {
+    const allDomains = JSON.parse(process.env.COZE_PROJECT_DOMAIN_ALL || '[]');
+    if (Array.isArray(allDomains)) {
+      allDomains.forEach((d) => typeof d === 'string' && d.trim() && allowedOrigins.add(d.trim()));
+    }
+  } catch {
+    // COZE_PROJECT_DOMAIN_ALL 非合法 JSON 时忽略
+  }
+  (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .forEach((d) => allowedOrigins.add(d));
+  if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.add('http://localhost:5000');
+    allowedOrigins.add('http://127.0.0.1:5000');
+  }
   app.enableCors({
     origin: (origin, callback) => {
       // 允许无 origin 的请求（如小程序、服务端调用）
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.has(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
