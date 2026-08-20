@@ -49,6 +49,45 @@ export interface LuckyScore {
 
 @Injectable()
 export class StylistService {
+  /**
+   * 调用 LLM 并支持 AbortSignal 取消。
+   * SDK 的 invoke() 不暴露 signal 参数，但其底层是 LangChain ChatOpenAI，
+   * stream(messages, { signal }) 支持取消——这里在需要取消时直连底层，否则走 SDK 原路径。
+   */
+  private async invokeLlm(
+    client: LLMClient,
+    messages: { role: 'user'; content: string }[],
+    signal?: AbortSignal,
+  ): Promise<string> {
+    if (!signal) {
+      const response = await client.invoke(messages, {
+        model: STYLIST_MODEL,
+        thinking: 'disabled',
+      })
+      return response.content
+    }
+    const inner = client as unknown as {
+      createLLM: (
+        cfg: Record<string, unknown>,
+        previousResponseId?: string,
+        extraHeaders?: Record<string, string>,
+      ) => {
+        stream: (
+          msgs: unknown,
+          options?: { signal?: AbortSignal },
+        ) => Promise<AsyncIterable<{ content?: unknown }>>
+      }
+      convertMessages: (msgs: unknown) => unknown
+    }
+    const llm = inner.createLLM({ model: STYLIST_MODEL, thinking: 'disabled' }, undefined, undefined)
+    const converted = inner.convertMessages(messages)
+    let content = ''
+    for await (const chunk of await llm.stream(converted, { signal })) {
+      if (chunk.content) content += chunk.content.toString()
+    }
+    return content
+  }
+
   async generatePlan(
     params: {
       gender: string
@@ -61,6 +100,7 @@ export class StylistService {
       mode?: 'daily' | 'native'
     },
     headers?: Record<string, string>,
+    signal?: AbortSignal,
   ): Promise<StylistResult> {
     const {
       gender,
@@ -144,12 +184,9 @@ export class StylistService {
     const client = new LLMClient(config, forwardHeaders)
 
     const messages = [{ role: 'user' as const, content: prompt }]
-    const response = await client.invoke(messages, {
-      model: STYLIST_MODEL,
-      thinking: 'disabled',
-    })
+    const content = await this.invokeLlm(client, messages, signal)
 
-    return this.parseResult(response.content)
+    return this.parseResult(content)
   }
 
   async generateLuckyScore(
@@ -161,6 +198,7 @@ export class StylistService {
       xiShen: string
     },
     headers?: Record<string, string>,
+    signal?: AbortSignal,
   ): Promise<LuckyScore> {
     const { gender, age = 25, dayMaster, yongShen, xiShen } = params
     const genderText = gender === 'female' || gender === '女' ? '女性' : '男性'
@@ -197,12 +235,9 @@ export class StylistService {
     const client = new LLMClient(config, forwardHeaders)
 
     const messages = [{ role: 'user' as const, content: prompt }]
-    const response = await client.invoke(messages, {
-      model: STYLIST_MODEL,
-      thinking: 'disabled',
-    })
+    const content = await this.invokeLlm(client, messages, signal)
 
-    return this.parseLuckyScore(response.content)
+    return this.parseLuckyScore(content)
   }
 
   private parseLuckyScore(content: string): LuckyScore {

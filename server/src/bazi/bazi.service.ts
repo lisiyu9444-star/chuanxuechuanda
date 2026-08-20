@@ -3,8 +3,13 @@ import {
   ImageGenerationClient,
   Config,
   HeaderUtils,
+  ImageConfig,
+  buildImageGenerationApiRequest,
+  validateUrl,
 } from 'coze-coding-dev-sdk'
 import { calculateBaziChart } from '@openfate/bazi-engine'
+import { findLongitude } from './city-coords'
+import { extractTosKey, signKey } from '../assets/tos-utils'
 
 // ========== Types ==========
 
@@ -368,12 +373,28 @@ export class BaziService {
   // 存储进行中的任务，用于取消
   private activeTasks = new Map<string, AbortController>()
 
+  /** 注册任务并返回 signal；同 taskId 重复注册时先中止旧任务 */
+  registerTask(taskId: string): AbortSignal {
+    const existing = this.activeTasks.get(taskId)
+    if (existing) existing.abort()
+    const controller = new AbortController()
+    this.activeTasks.set(taskId, controller)
+    console.log('[Task] registered:', taskId, 'active:', this.activeTasks.size)
+    return controller.signal
+  }
+
+  /** 任务结束（成功或失败）后注销 */
+  unregisterTask(taskId: string): void {
+    this.activeTasks.delete(taskId)
+  }
+
   // ========== Main Calculation ==========
 
   calculateBaZi(
     birthDate: string,
     birthTime: string,
     gender: string = 'male',
+    location?: string,
   ): Omit<BaZiResult, 'nickname' | 'gender'> {
     const [year, month, day] = birthDate.split('-').map(Number)
 
@@ -385,9 +406,18 @@ export class BaziService {
       }
     }
 
+    // 真太阳时校正：根据出生城市解析经度（未匹配到则不校正，沿用东八区钟表时间）
+    const longitude = findLongitude(location)
+    if (longitude !== undefined) {
+      console.log(`[BaZi] 真太阳时校正: location=${location}, longitude=${longitude}`)
+    } else if (location) {
+      console.log(`[BaZi] 城市未匹配到经度，跳过真太阳时校正: location=${location}`)
+    }
     const chart = calculateBaziChart({
       year, month, day, hour, minute: 0,
       gender: 'male' as const,
+      longitude,
+      timezone: 8,
     })
 
     const pillarKeys = ['year', 'month', 'day', 'hour'] as const
@@ -1093,7 +1123,8 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     gender: string,
     age: number,
     headers: Record<string, string>,
-  ): Promise<string> {
+    signal?: AbortSignal,
+  ): Promise<{ url: string; key: string }> {
     const config = new Config()
     const filteredHeaders = { ...headers }
     delete filteredHeaders['x-faas-instance-name']
@@ -1144,26 +1175,73 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
 【反向提示词】
 不要裁切面部、不要裁切脚部或鞋子、不要配饰变形、不要配饰悬浮、不要手镯变成椭圆形、不要配饰脱离人体、不要夸张姿势、不要复杂背景、不要过度修图、不要改变服装颜色或款式、不要多人、不要文字水印、不要真空穿着、不要缺少内搭、不要低胸、不要透视、不要过度裸露肌肤、不要西装内无衬衫、不要服装变形或穿模。`
 
-    const response = await client.generate({
-      prompt: tryOnPrompt,
-      size: '1728x2304',
-      image: referenceImageUrl,
-    })
+    const response = await this.callImageApi(
+      client,
+      { prompt: tryOnPrompt, size: '1728x2304', image: referenceImageUrl },
+      signal,
+    )
 
-    const helper = client.getResponseHelper(response)
+    const helper = client.getResponseHelper(response as never)
 
     if (helper.success && helper.imageUrls.length > 0) {
-      return helper.imageUrls[0]
+      return await this.resolveGeneratedImage(helper.imageUrls[0])
     }
 
     throw new Error(`Try-on image generation failed: ${helper.errorMessages.join(', ')}`)
+  }
+
+  /**
+   * 调用生图 API 并注入 AbortSignal，使用户退出时后端请求可被真实中断。
+   * SDK 的 generate() 不暴露 signal 参数，这里复刻其请求构建逻辑，
+   * 通过 BaseClient.request 的 AxiosRequestConfig 传入 signal（axios 原生支持 AbortSignal）。
+   */
+  private async callImageApi(
+    client: ImageGenerationClient,
+    request: { prompt: string; size: string; image?: string },
+    signal?: AbortSignal,
+  ) {
+    let image = request.image
+    if (image) {
+      image = await validateUrl(image)
+    }
+    const apiRequest = buildImageGenerationApiRequest(
+      { ...request, image },
+      ImageConfig.DEFAULT_MODEL,
+    )
+    const inner = client as unknown as {
+      config: { baseUrl: string }
+      request: <T = unknown>(
+        method: string,
+        url: string,
+        data?: unknown,
+        config?: { signal?: AbortSignal },
+      ) => Promise<T>
+    }
+    return inner.request(
+      'POST',
+      `${inner.config.baseUrl}/api/v3/images/generations`,
+      apiRequest,
+      { signal },
+    )
+  }
+
+  /**
+   * 生图结果换签：从临时签名 URL 提取对象 key，重新签发 30 天有效 URL。
+   * key 随结果一并返回，供前端持久化（历史记录/分享），过期后可凭 key 换签。
+   */
+  private async resolveGeneratedImage(tempUrl: string): Promise<{ url: string; key: string }> {
+    const key = extractTosKey(tempUrl)
+    if (!key) return { url: tempUrl, key: '' }
+    const signed = await signKey(key)
+    return { url: signed || tempUrl, key }
   }
 
   async generateOutfitImage(
     prompt: string,
     headers: Record<string, string>,
     taskId?: string,
-  ): Promise<string> {
+    signal?: AbortSignal,
+  ): Promise<{ url: string; key: string }> {
     const config = new Config()
     // 过滤掉实例相关的 header，使用当前环境的实例 ID
     const filteredHeaders = { ...headers }
@@ -1172,14 +1250,6 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     delete filteredHeaders['x-coze-instance-id']
     delete filteredHeaders['X-Coze-Instance-Id']
     const client = new ImageGenerationClient(config, filteredHeaders)
-
-    // 如果提供了 taskId，创建 AbortController 并存储
-    let abortController: AbortController | undefined
-    if (taskId) {
-      abortController = new AbortController()
-      this.activeTasks.set(taskId, abortController)
-      console.log('[GenerateImage] Task registered:', taskId, 'Active tasks:', Array.from(this.activeTasks.keys()))
-    }
 
     const startedAt = Date.now()
     try {
@@ -1191,18 +1261,15 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
       })
 
       const response = await Promise.race([
-        client.generate({
-          prompt,
-          size: '1728x2304',
-        }),
+        this.callImageApi(client, { prompt, size: '1728x2304' }, signal),
         timeoutPromise,
       ])
 
-      const helper = client.getResponseHelper(response)
+      const helper = client.getResponseHelper(response as never)
 
       if (helper.success && helper.imageUrls.length > 0) {
         console.log(`[GenerateImage] Task ${taskId} succeeded in ${Date.now() - startedAt}ms`)
-        return helper.imageUrls[0]
+        return await this.resolveGeneratedImage(helper.imageUrls[0])
       }
 
       throw new Error(
@@ -1211,11 +1278,6 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
     } catch (e) {
       console.error(`[GenerateImage] Task ${taskId} failed after ${Date.now() - startedAt}ms:`, e)
       throw e
-    } finally {
-      // 任务完成后清理
-      if (taskId) {
-        this.activeTasks.delete(taskId)
-      }
     }
   }
 

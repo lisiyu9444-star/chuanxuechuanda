@@ -67,6 +67,8 @@ export interface BaZiResult {
   favorableAnalysis: FavorableAnalysis
   outfit?: OutfitInfo
   imageUrl: string
+  /** 平铺图对象 key（永久有效，URL 过期后可凭 key 换签） */
+  imageKey?: string
   age?: number
   ganZhiDate?: { month: string; day: string }
   dailyYongShen?: string
@@ -83,5 +85,9 @@ export interface HistoryRecord extends BaZiResult {
   birthTime: string
   city: string
   tryOnUrl?: string
+  /** 平铺图对象 key（永久有效，URL 过期后可凭 key 换签） */
+  imageKey?: string
+  /** 试穿图对象 key */
+  tryOnKey?: string
   createdAt: number
 }

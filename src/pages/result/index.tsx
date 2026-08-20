@@ -1,5 +1,5 @@
 import { View, Text, Image } from '@tarojs/components'
-import Taro, { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, useUnload } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -22,6 +22,7 @@ import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday } from '@/utils/archiveStorage'
 import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import { ELEMENT_COLORS } from '@/constants/element-colors'
+import { ensureRemoteAssets, refreshImageUrls, extractTosKeyFromUrl, type RemoteAssets } from '@/constants/remote-assets'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
 import type { NativeResult } from '@/types/archive'
 import './index.css'
@@ -167,7 +168,7 @@ function getColorHex(name: string): string {
 }
 
 
-const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/placeholder_compressed_fc42a6fb.jpg?sign=1789570488-e3736db199-0-8a30a66f5bbc9632daba064367ba177cac6a1067704b5b2cd1114e4d0896686d'
+// 兜底图 URL 由 remote-assets 动态签发，禁止硬编码签名 URL（会过期）
 
 interface LuckyScore {
   total: number
@@ -190,6 +191,8 @@ interface DailyResult {
   dailyXiShen: string
   imageUrl?: string
   tryOnUrl?: string
+  imageKey?: string
+  tryOnKey?: string
   generatedAt: number
 }
 
@@ -197,6 +200,11 @@ interface DailyResult {
 
 const ResultPage = () => {
   const [result, setResult] = useState<BaZiResult | null>(null)
+  // 静态资源（兜底图等）动态签发的 URL
+  const [assets, setAssets] = useState<RemoteAssets | null>(null)
+  // 进行中的生图任务 ID（平铺图/上身图），退出页面时通知后端真实中断
+  const flatTaskIdRef = useRef('')
+  const tryOnTaskIdRef = useRef('')
   // 图片 Tab 切换：'flat' = 平铺图, 'tryon' = 上身图
   const [activeTab, setActiveTab] = useState<'flat' | 'tryon'>('flat')
   // 上身图 URL（生成后缓存）
@@ -238,7 +246,7 @@ const ResultPage = () => {
   const nativeResultRef = useRef<NativeResult | null>(null)
 
   // 同步当前结果到历史记录
-  const syncHistoryRecord = (dailyResult: DailyResult, patch?: { imageUrl?: string; tryOnUrl?: string }) => {
+  const syncHistoryRecord = (dailyResult: DailyResult, patch?: { imageUrl?: string; tryOnUrl?: string; imageKey?: string; tryOnKey?: string }) => {
     try {
       const archive = getArchiveById(dailyResult.archiveId)
       saveHistoryFromDailyResult(dailyResult, archive, patch)
@@ -265,21 +273,24 @@ const ResultPage = () => {
     autoExecute: false,
     onSuccess: (data: any) => {
       console.log('Try-on success:', data)
+      tryOnTaskIdRef.current = ''
       if (data?.tryOnUrl) {
         setTryOnUrl(data.tryOnUrl)
+        // tryOnKey 随 URL 一并持久化，URL 过期后可凭 key 换签
+        const tryOnPatch = { tryOnUrl: data.tryOnUrl as string, tryOnKey: (data.tryOnKey as string) || '' }
         if (pageModeRef.current === 'native') {
           // 本命穿搭上身图独立存储，不混入今日穿搭
-          updateNativeCache({ tryOnUrl: data.tryOnUrl })
+          updateNativeCache(tryOnPatch)
           if (nativeResultRef.current) {
             const archive = getArchiveById(nativeResultRef.current.archiveId)
-            saveHistoryFromNativeResult(nativeResultRef.current, archive, { tryOnUrl: data.tryOnUrl })
+            saveHistoryFromNativeResult(nativeResultRef.current, archive, tryOnPatch)
           }
         } else {
           if (dailyResultRef.current) {
-            syncHistoryRecord(dailyResultRef.current, { tryOnUrl: data.tryOnUrl })
+            syncHistoryRecord(dailyResultRef.current, tryOnPatch)
           }
           // 更新 dailyResult 缓存中的上身图
-          updateDailyCache({ tryOnUrl: data.tryOnUrl })
+          updateDailyCache(tryOnPatch)
         }
       } else {
         Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
@@ -287,6 +298,7 @@ const ResultPage = () => {
     },
     onError: (err) => {
       console.error('Try-on failed:', err)
+      tryOnTaskIdRef.current = ''
       Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
     },
   })
@@ -295,7 +307,7 @@ const ResultPage = () => {
   const [flatImageLoading, setFlatImageLoading] = useState(false)
 
   // 更新 dailyResult 本地缓存
-  const updateDailyCache = (updates: { imageUrl?: string; tryOnUrl?: string }) => {
+  const updateDailyCache = (updates: { imageUrl?: string; tryOnUrl?: string; imageKey?: string; tryOnKey?: string }) => {
     try {
       const archiveId = currentArchiveIdRef.current
       const today = getToday()
@@ -315,7 +327,7 @@ const ResultPage = () => {
   }
 
   // 更新 nativeResult 本地缓存（本命穿搭图片独立存储）
-  const updateNativeCache = (updates: { imageUrl?: string; tryOnUrl?: string }) => {
+  const updateNativeCache = (updates: { imageUrl?: string; tryOnUrl?: string; imageKey?: string; tryOnKey?: string }) => {
     try {
       const archiveId = currentArchiveIdRef.current
       const nativeResult = getNativeResult(archiveId)
@@ -366,6 +378,9 @@ const ResultPage = () => {
       if (!canProceed) return
     }
     setFlatImageLoading(true)
+    // clientTaskId 用于用户退出页面时取消后端 AI 请求
+    const taskId = `flat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    flatTaskIdRef.current = taskId
     try {
       const res: any = await Network.request({
         url: '/api/bazi/generate-image',
@@ -374,23 +389,27 @@ const ResultPage = () => {
         timeout: 120000,
         data: {
           imagePrompt: result.llmPlan.imagePrompt,
-          taskId: `flat-${Date.now()}`,
+          taskId,
+          clientTaskId: taskId,
         },
       })
       console.log('Generate flat image response:', res.data)
       const imageUrl = res.data?.data?.imageUrl
       if (imageUrl) {
+        // imageKey 随 URL 一并持久化，URL 过期后可凭 key 换签
+        const imageKey = (res.data?.data?.imageKey as string) || ''
+        const imagePatch = { imageUrl, imageKey }
         setFlatImageUrl(imageUrl)
         if (pageModeRef.current === 'native') {
-          updateNativeCache({ imageUrl })
+          updateNativeCache(imagePatch)
           if (nativeResultRef.current) {
             const archive = getArchiveById(nativeResultRef.current.archiveId)
-            saveHistoryFromNativeResult(nativeResultRef.current, archive, { imageUrl })
+            saveHistoryFromNativeResult(nativeResultRef.current, archive, imagePatch)
           }
         } else {
-          updateDailyCache({ imageUrl })
+          updateDailyCache(imagePatch)
           if (dailyResultRef.current) {
-            syncHistoryRecord(dailyResultRef.current, { imageUrl })
+            syncHistoryRecord(dailyResultRef.current, imagePatch)
           }
         }
       } else {
@@ -400,6 +419,7 @@ const ResultPage = () => {
       console.error('Generate flat image failed:', err)
       Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
     } finally {
+      flatTaskIdRef.current = ''
       setFlatImageLoading(false)
     }
   }
@@ -417,11 +437,15 @@ const ResultPage = () => {
       const canProceed = await ensureAdWatched('请完整观看视频以解锁上身图')
       if (!canProceed) return
     }
+    // clientTaskId 用于用户退出页面时取消后端 AI 请求
+    const taskId = `tryon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    tryOnTaskIdRef.current = taskId
     generateTryOn({
       imageUrl: flatImageUrl || result.imageUrl,
       outfit: result.outfit,
       gender: result.gender,
       age: result.age,
+      clientTaskId: taskId,
     })
   }
 
@@ -432,7 +456,43 @@ const ResultPage = () => {
       : '#9333ea')
     : ELEMENT_COLORS[result?.favorableElement || ''] || '#9333ea'
 
+  // 签名 URL 过期导致图片加载失败时，凭 URL 中的对象 key 换签重试（每 URL 只重试一次）
+  const refreshedUrlsRef = useRef<Set<string>>(new Set())
+  const handleImageLoadError = (url: string, apply: (newUrl: string) => void) => {
+    if (!url || refreshedUrlsRef.current.has(url)) return
+    refreshedUrlsRef.current.add(url)
+    const key = extractTosKeyFromUrl(url)
+    if (!key) return
+    refreshImageUrls([key])
+      .then((map) => {
+        const newUrl = map?.[key]
+        if (newUrl) apply(newUrl)
+      })
+      .catch(() => {})
+  }
+
+  // 页面卸载时取消进行中的后端 AI 请求（平铺图/上身图）
+  useUnload(() => {
+    const cancelTask = (taskId: string) => {
+      if (!taskId) return
+      Network.request({
+        url: '/api/bazi/cancel',
+        method: 'POST',
+        timeout: 5000,
+        data: { taskId },
+      }).catch(() => {
+        // 取消失败静默处理，页面即将卸载
+      })
+    }
+    cancelTask(flatTaskIdRef.current)
+    cancelTask(tryOnTaskIdRef.current)
+  })
+
   useDidShow(() => {
+    // 拉取动态签发的远程静态资源（兜底图等）
+    ensureRemoteAssets().then((a) => {
+      if (a) setAssets(a)
+    })
     // 检查页面模式与分享参数
     const router = Taro.getCurrentInstance().router
     const shareIdFromUrl = router?.params?.shareId
@@ -564,6 +624,7 @@ const ResultPage = () => {
           dailyYongShen: bazi.dailyYongShen || bazi.favorableElement,
           dailyXiShen: bazi.dailyXiShen || bazi.favorableAnalysis?.assistantXiShen,
           imageUrl: bazi.imageUrl || undefined,
+          imageKey: bazi.imageKey || undefined,
           tryOnUrl: undefined,
           generatedAt: Date.now(),
         }
@@ -924,16 +985,19 @@ const ResultPage = () => {
                   className="w-full h-full"
                   mode="aspectFill"
                   lazyLoad
+                  onError={() => handleImageLoadError(flatImageUrl || result.imageUrl, (url) => setFlatImageUrl(url))}
                 />
               ) : (
                 <View className="w-full h-full flex flex-col items-center justify-center px-6">
-                  <Image
-                    src={FALLBACK_IMAGE_URL}
-                    className="absolute inset-0 w-full h-full"
-                    mode="aspectFill"
-                    lazyLoad
-                    onError={() => console.warn('Fallback image load failed')}
-                  />
+                  {assets?.fallback && (
+                    <Image
+                      src={assets.fallback}
+                      className="absolute inset-0 w-full h-full"
+                      mode="aspectFill"
+                      lazyLoad
+                      onError={() => console.warn('Fallback image load failed')}
+                    />
+                  )}
                   <View className="absolute inset-0 bg-white" style={{ opacity: 0.6 }} />
                   <View className="relative z-10 flex flex-col items-center justify-center">
                     <View className="w-16 h-16 rounded-full bg-white backdrop-blur flex items-center justify-center mb-4 shadow-sm" style={{ opacity: 0.9 }}>
@@ -961,6 +1025,7 @@ const ResultPage = () => {
                 className="w-full h-full"
                 mode="aspectFill"
                 lazyLoad
+                onError={() => handleImageLoadError(tryOnUrl, (url) => setTryOnUrl(url))}
               />
             ) : tryOnLoading ? (
               <View className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
@@ -974,13 +1039,15 @@ const ResultPage = () => {
               </View>
             ) : (
               <View className="w-full h-full flex flex-col items-center justify-center px-6">
-                <Image
-                  src={FALLBACK_IMAGE_URL}
-                  className="absolute inset-0 w-full h-full"
-                  mode="aspectFill"
-                  lazyLoad
-                  onError={() => console.warn('Fallback image load failed')}
-                />
+                {assets?.fallback && (
+                  <Image
+                    src={assets.fallback}
+                    className="absolute inset-0 w-full h-full"
+                    mode="aspectFill"
+                    lazyLoad
+                    onError={() => console.warn('Fallback image load failed')}
+                  />
+                )}
                 <View className="absolute inset-0 bg-white" style={{ opacity: 0.6 }} />
                 <View className="relative z-10 flex flex-col items-center justify-center">
                   <View className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm" style={{ opacity: 0.9 }}>

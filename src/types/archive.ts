@@ -38,6 +38,10 @@ export interface DailyResult {
   dailyXiShen: string
   imageUrl?: string
   tryOnUrl?: string
+  /** 平铺图对象 key（永久有效，URL 过期后可凭 key 换签） */
+  imageKey?: string
+  /** 试穿图对象 key */
+  tryOnKey?: string
   generatedAt: number
 }
 
@@ -47,6 +51,10 @@ export interface NativeResult {
   llmPlan: StylistResult
   imageUrl?: string
   tryOnUrl?: string
+  /** 平铺图对象 key（永久有效，URL 过期后可凭 key 换签） */
+  imageKey?: string
+  /** 试穿图对象 key */
+  tryOnKey?: string
   generatedAt: number
 }
 

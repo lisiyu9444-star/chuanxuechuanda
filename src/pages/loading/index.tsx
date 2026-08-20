@@ -27,6 +27,20 @@ const LoadingPage = () => {
   // 请求任务与取消标记：退出页面时中断请求，阻止后续保存与跳转
   const requestTaskRef = useRef<{ abort?: () => void } | null>(null)
   const cancelledRef = useRef(false)
+  // 当前请求的客户端任务 ID，退出页面时通知后端真实中断 LLM/生图请求
+  const clientTaskIdRef = useRef('')
+
+  const notifyBackendCancel = () => {
+    const taskId = clientTaskIdRef.current
+    if (!taskId) return
+    clientTaskIdRef.current = ''
+    Network.request({
+      url: '/api/bazi/cancel',
+      method: 'POST',
+      data: { taskId },
+      timeout: 5000,
+    }).catch((e) => console.warn('[Loading] cancel notify failed:', e))
+  }
   const fromRef = useRef<string>('')
   const loadingSteps = getLoadingSteps(mode)
 
@@ -46,7 +60,8 @@ const LoadingPage = () => {
 
       const dateStr = getToday()
       const endpoint = pageMode === 'native' ? '/api/bazi/native' : '/api/bazi/daily'
-      console.log(`[Loading] request ${pageMode}:`, { archiveId, date: dateStr, endpoint })
+      clientTaskIdRef.current = `${pageMode}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      console.log(`[Loading] request ${pageMode}:`, { archiveId, date: dateStr, endpoint, taskId: clientTaskIdRef.current })
       const task = Network.request({
         url: endpoint,
         method: 'POST',
@@ -59,12 +74,14 @@ const LoadingPage = () => {
           calendarType: currentArchive.calendarType,
           age: currentArchive.age,
           stylePreference: currentArchive.stylePreference,
+          clientTaskId: clientTaskIdRef.current,
         },
         timeout: 120000,
       })
       requestTaskRef.current = task as unknown as { abort?: () => void }
       const res = await task
       requestTaskRef.current = null
+      clientTaskIdRef.current = ''
       // 页面已退出，忽略请求结果
       if (cancelledRef.current) return
       console.log(`[Loading] ${pageMode} response:`, res.data)
@@ -101,6 +118,9 @@ const LoadingPage = () => {
         dailyYongShen: apiData.baziResult?.dailyYongShen || apiData.baziResult?.favorableElement || '',
         dailyXiShen: apiData.baziResult?.dailyXiShen || apiData.baziResult?.favorableAnalysis?.assistantXiShen || '',
         ganZhiDate: apiData.baziResult?.ganZhiDate,
+        // 顶层冗余一份平铺图 URL 与 key，便于结果页/历史记录直接读取与换签
+        imageUrl: apiData.baziResult?.imageUrl || undefined,
+        imageKey: apiData.baziResult?.imageKey || undefined,
         generatedAt: Date.now(),
       }
       saveDailyResult(dailyResult)
@@ -149,7 +169,8 @@ const LoadingPage = () => {
         ? (bazi.favorableAnalysis?.assistantXiShen || '')
         : ((cached as DailyResult).dailyXiShen || bazi.dailyXiShen || bazi.favorableAnalysis?.assistantXiShen || '')
 
-      console.log(`[Loading] redesign ${pageMode}:`, { archiveId, yongShen, xiShen })
+      clientTaskIdRef.current = `redesign-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      console.log(`[Loading] redesign ${pageMode}:`, { archiveId, yongShen, xiShen, taskId: clientTaskIdRef.current })
       const task = Network.request({
         url: '/api/bazi/redesign',
         method: 'POST',
@@ -162,12 +183,14 @@ const LoadingPage = () => {
           yongShen,
           xiShen,
           dayMaster: bazi.dayMaster,
+          clientTaskId: clientTaskIdRef.current,
         },
         timeout: 120000,
       })
       requestTaskRef.current = task as unknown as { abort?: () => void }
       const res = await task
       requestTaskRef.current = null
+      clientTaskIdRef.current = ''
       if (cancelledRef.current) return
       console.log('[Loading] redesign response:', res.data)
 
@@ -182,9 +205,12 @@ const LoadingPage = () => {
           llmPlan,
           imageUrl: '',
           tryOnUrl: '',
+          imageKey: '',
+          tryOnKey: '',
           baziResult: {
             ...(cached as NativeResult).baziResult,
             imageUrl: '',
+            imageKey: '',
           },
           generatedAt: Date.now(),
         }
@@ -196,9 +222,12 @@ const LoadingPage = () => {
           llmPlan,
           imageUrl: '',
           tryOnUrl: '',
+          imageKey: '',
+          tryOnKey: '',
           baziResult: {
             ...(cached as DailyResult).baziResult,
             imageUrl: '',
+            imageKey: '',
           },
           generatedAt: Date.now(),
         }
@@ -255,6 +284,8 @@ const LoadingPage = () => {
     cancelledRef.current = true
     requestTaskRef.current?.abort?.()
     requestTaskRef.current = null
+    // 前端 abort 只断开本地等待，后端 AI 请求仍在执行；通知后端真实中断，避免空跑消耗
+    notifyBackendCancel()
   })
 
   useEffect(() => {

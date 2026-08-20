@@ -19,15 +19,14 @@ import {
   DEFAULT_ARCHIVE,
   getNativeResult,
 } from '@/utils/archiveStorage'
+import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
 
-const LUCKY_STAR_HAPPY_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/Xing_Yun_Xing_Kai_Xin_06859ac3.png?sign=1789581330-df152f5439-0-702422be9367ca1f93714edfbd23fe10a4cc2e3cfeba0f7460db309261585b47'
-const FALLBACK_IMAGE_URL = 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/placeholder_compressed_fc42a6fb.jpg?sign=1789570488-e3736db199-0-8a30a66f5bbc9632daba064367ba177cac6a1067704b5b2cd1114e4d0896686d'
-
+// 静态图（幸运星/示例图/兜底图）URL 由 remote-assets 动态签发，禁止硬编码签名 URL（会过期）
 const EXAMPLE_DAILY_RESULT: DailyResult = {
   date: getToday(),
   archiveId: DEFAULT_ARCHIVE.id,
-  imageUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/example_flat_compressed_fcb0c028.jpg?sign=1789580235-48c8362e20-0-039add2bf90ca3078948e464fff0ad253513740f2a4b217f882689de5c03d485',
-  tryOnUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/example_tryon_compressed_2655e65c.jpg?sign=1789580235-a42be68c89-0-7bf09693ea868ced5274e4b0859a3d57c3feba8e455666990526a190c1f9cdd8',
+  imageUrl: '',
+  tryOnUrl: '',
   baziResult: {
     nickname: '小幸运',
     gender: 'female',
@@ -62,7 +61,7 @@ const EXAMPLE_DAILY_RESULT: DailyResult = {
       prompt: 'Sage green bomber jacket, white cropped tank top, light grey cargo pants, silver crossbody bag, olive baseball cap, silver hoop earrings, layered necklaces, white and silver chunky sneakers, cream marble background, fashion flat lay, 3:4 vertical, high-end photography',
       backgroundColor: '#F0F2EF',
     },
-    imageUrl: 'https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example/example_flat_compressed_fcb0c028.jpg?sign=1789580235-48c8362e20-0-039add2bf90ca3078948e464fff0ad253513740f2a4b217f882689de5c03d485',
+    imageUrl: '',
   },
   llmPlan: {
     luckyColors: {
@@ -107,15 +106,24 @@ export default function Index() {
   const [currentArchive, setCurrentArchive] = useState<Archive | null>(null)
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
   const [hasArchiveChanged, setHasArchiveChanged] = useState(false)
+  const [assets, setAssets] = useState<RemoteAssets | null>(null)
 
   const loadData = useCallback(async () => {
+    // 静态图 URL 动态签发（本地缓存 7 天），失败时以背景色占位
+    ensureRemoteAssets().then((a) => a && setAssets(a))
+
     const archives = await getArchives()
     const currentId = await getCurrentArchiveId()
     const activeArchive = archives.find((a) => a.id === currentId) || archives[0]
     setCurrentArchive(activeArchive)
 
     if (activeArchive.isDefault) {
-      setDailyResult(EXAMPLE_DAILY_RESULT)
+      const remote = await ensureRemoteAssets()
+      setDailyResult({
+        ...EXAMPLE_DAILY_RESULT,
+        imageUrl: remote?.exampleFlat || '',
+        tryOnUrl: remote?.exampleTryOn || '',
+      })
       setHasArchiveChanged(false)
       return
     }
@@ -259,12 +267,16 @@ export default function Index() {
             </View>
 
             <View className="flex items-center gap-4 mb-4">
-              <Image
-                className="w-20 h-20"
-                src={LUCKY_STAR_HAPPY_URL}
-                mode="aspectFit"
-                lazyLoad
-              />
+              {assets?.exampleLuckyStar ? (
+                <Image
+                  className="w-20 h-20"
+                  src={assets.exampleLuckyStar}
+                  mode="aspectFit"
+                  lazyLoad
+                />
+              ) : (
+                <View className="w-20 h-20 rounded-full bg-amber-100" />
+              )}
               <View className="flex-1">
                 <Text className="block text-sm text-gray-600 leading-relaxed">{luckyScore.description}</Text>
               </View>
@@ -303,9 +315,9 @@ export default function Index() {
               <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative">
                 {dailyResult.imageUrl ? (
                   <Image src={dailyResult.imageUrl} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] flat image load failed')} />
-                ) : (
-                  <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback flat image load failed')} />
-                )}
+                ) : assets?.fallback ? (
+                  <Image src={assets.fallback} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback flat image load failed')} />
+                ) : null}
                 {!dailyResult.imageUrl && (
                   <View className="absolute bottom-2 left-2 right-2">
                     <Button
@@ -324,9 +336,9 @@ export default function Index() {
               <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative">
                 {dailyResult.tryOnUrl ? (
                   <Image src={dailyResult.tryOnUrl} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] tryOn image load failed')} />
-                ) : (
-                  <Image src={FALLBACK_IMAGE_URL} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback tryOn image load failed')} />
-                )}
+                ) : assets?.fallback ? (
+                  <Image src={assets.fallback} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback tryOn image load failed')} />
+                ) : null}
                 {!dailyResult.tryOnUrl && (
                   <View className="absolute bottom-2 left-2 right-2">
                     <Button

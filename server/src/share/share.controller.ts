@@ -13,6 +13,7 @@ import {
 import { eq } from 'drizzle-orm'
 import { db } from '../storage/database/db'
 import { shares } from '../storage/database/schema'
+import { signUrl } from '../assets/tos-utils'
 
 interface SharedResult {
   nickname: string
@@ -114,12 +115,21 @@ export class ShareController {
         result = {}
       }
 
+      // 签名 URL 有有效期，读取时对本 bucket 的图片重新换签，避免 180 天分享期内图片过期
+      const [imageUrl, tryOnUrl, resultImageUrl] = await Promise.all([
+        signUrl(share.imageUrl || undefined),
+        signUrl(share.tryOnUrl || undefined),
+        signUrl(result.imageUrl || undefined),
+      ])
+
       return {
         result: {
           ...result,
           outfit: result.outfit || result.outfitResult,
+          imageUrl: resultImageUrl || result.imageUrl,
         },
-        tryOnUrl: share.tryOnUrl,
+        imageUrl: imageUrl || share.imageUrl,
+        tryOnUrl: tryOnUrl || share.tryOnUrl,
       }
     } catch (error) {
       this.logger.error('Failed to get share', error)

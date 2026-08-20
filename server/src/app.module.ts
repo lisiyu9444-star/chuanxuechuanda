@@ -9,6 +9,7 @@ import { StylistService } from '@/bazi/stylist.service'
 import { ConfigController } from '@/config/config.controller'
 import { ShareController } from '@/share/share.controller'
 import { LogController } from '@/log/log.controller'
+import { AssetsController } from '@/assets/assets.controller'
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { LogController } from '@/log/log.controller'
       },
     ]),
   ],
-  controllers: [AppController, BaziController, ConfigController, ShareController, LogController],
+  controllers: [AppController, BaziController, ConfigController, ShareController, LogController, AssetsController],
   providers: [
     AppService,
     BaziService,

@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronRight, Trash2 } from 'lucide-react-taro'
-import { getHistoryRecords, deleteHistoryRecord, clearHistoryRecords, type HistoryRecordItem } from '@/utils/historyStorage'
+import { getHistoryRecords, deleteHistoryRecord, clearHistoryRecords, refreshHistoryImageUrls, type HistoryRecordItem } from '@/utils/historyStorage'
+import { refreshImageUrls, extractTosKeyFromUrl } from '@/constants/remote-assets'
 
 export default function HistoryPage() {
   const [records, setRecords] = useState<HistoryRecordItem[]>([])
@@ -13,11 +14,39 @@ export default function HistoryPage() {
   const loadRecords = () => {
     const list = getHistoryRecords()
     setRecords(list)
+    return list
+  }
+
+  // 签名 URL 会过期，凭持久化的 key 批量换签（旧记录无 key 时从 URL 中兜底提取）
+  const refreshRecordImages = async (list: HistoryRecordItem[]) => {
+    try {
+      const keys = new Set<string>()
+      for (const record of list) {
+        if (record.imageKey) keys.add(record.imageKey)
+        if (record.tryOnKey) keys.add(record.tryOnKey)
+        if (!record.imageKey && record.imageUrl) {
+          const key = extractTosKeyFromUrl(record.imageUrl)
+          if (key) keys.add(key)
+        }
+        if (!record.tryOnKey && record.tryOnUrl) {
+          const key = extractTosKeyFromUrl(record.tryOnUrl)
+          if (key) keys.add(key)
+        }
+      }
+      if (keys.size === 0) return
+      const urlMap = await refreshImageUrls(Array.from(keys))
+      if (!urlMap || Object.keys(urlMap).length === 0) return
+      const refreshed = refreshHistoryImageUrls(urlMap)
+      setRecords(refreshed)
+    } catch (e) {
+      console.warn('[History] refresh image urls failed:', e)
+    }
   }
 
   useDidShow(() => {
-    loadRecords()
+    const list = loadRecords()
     setActiveId(null)
+    refreshRecordImages(list)
   })
 
   const handleDelete = (id: string) => {
