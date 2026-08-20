@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Taro from '@tarojs/taro'
 import { Network } from '@/network'
 
@@ -135,18 +135,19 @@ function destroyAd(adUnitId: string) {
   }
 }
 
-/** 预加载仅在实例创建后执行一次；失败时移除标记，允许后续重试 */
+/**
+ * 预加载每个实例仅执行一次。
+ * 失败不再自动重试（重试由用户点击 showAd 时的 load 链路承担），
+ * 避免「preload 失败 → setState → 重渲染 → 再次 preload」的无限循环刷日志。
+ */
 function preloadOnce(adUnitId: string, ad: RewardedVideoAdInstance) {
   if (adPreloadedSet.has(adUnitId)) return
   adPreloadedSet.add(adUnitId)
   try {
     ad.load().catch((err: any) => {
-      // 预加载失败：移除标记允许重试；SDK 内部竞态（如 e.adProxy 未就绪）会自动恢复，仅提示
-      adPreloadedSet.delete(adUnitId)
-      console.warn('[useRewardedVideoAd] preload failed (will retry later)', err)
+      console.warn('[useRewardedVideoAd] preload failed (will retry on next show)', err)
     })
   } catch (e) {
-    adPreloadedSet.delete(adUnitId)
     console.warn('[useRewardedVideoAd] preload sync error', e)
   }
 }
@@ -186,18 +187,24 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<any>(null)
 
+  // onError 用 ref 保存最新引用：调用方通常传内联函数（每次渲染新引用），
+  // 若放入 useEffect 依赖会导致 effect 反复重跑，配合 preload 形成无限循环
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
+
   const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
 
   // 微信开发者工具中广告 SDK 内部对象 adProxy 不存在，调用 load/show 会导致 SDK 内部崩溃，
-  // 且会产生 removeVideoPlayer / predownload 等无法捕获的全局异常，因此直接跳过初始化
-  const isDevtools = (() => {
+  // 且会产生 removeVideoPlayer / predownload 等无法捕获的全局异常，因此直接跳过初始化。
+  // 用 getDeviceInfo 替代 getSystemInfoSync（deprecated），useMemo 缓存避免每次渲染重复调用
+  const isDevtools = useMemo(() => {
     if (!isWeapp) return false
     try {
-      return Taro.getSystemInfoSync().platform === 'devtools'
+      return Taro.getDeviceInfo().platform === 'devtools'
     } catch {
       return false
     }
-  })()
+  }, [isWeapp])
 
   useEffect(() => {
     if (!isWeapp || isDevtools) return
@@ -220,7 +227,7 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
       setIsReady(false)
       setError(err)
       reportAdIssue('load-error', adUnitId, err)
-      onError?.(err)
+      onErrorRef.current?.(err)
     }
 
     const handleClose = (res: { isEnded: boolean }) => {
@@ -241,7 +248,8 @@ export function useRewardedVideoAd(options: UseRewardedVideoAdOptions): UseRewar
       ad.offClose(handleClose)
       adRef.current = null
     }
-  }, [adUnitId, isWeapp, isDevtools, onError])
+    // 注意：依赖不包含 onError（已 ref 化），避免因调用方内联函数导致 effect 反复重跑
+  }, [adUnitId, isWeapp, isDevtools])
 
   const showAd = useCallback((): Promise<ShowAdResult> => {
     return new Promise((resolve) => {

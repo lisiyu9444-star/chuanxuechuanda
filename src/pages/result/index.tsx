@@ -362,6 +362,8 @@ const ResultPage = () => {
       const res: any = await Network.request({
         url: '/api/bazi/generate-image',
         method: 'POST',
+        // 生图耗时长（后端兜底 120s），显式设置超时，避免默认 60s 提前失败
+        timeout: 120000,
         data: {
           imagePrompt: result.llmPlan.imagePrompt,
           taskId: `flat-${Date.now()}`,

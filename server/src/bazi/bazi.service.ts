@@ -1181,6 +1181,7 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
       console.log('[GenerateImage] Task registered:', taskId, 'Active tasks:', Array.from(this.activeTasks.keys()))
     }
 
+    const startedAt = Date.now()
     try {
       // 添加 120 秒超时兜底，防止 AI 服务挂起导致请求无限等待
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -1200,12 +1201,16 @@ ${isFemale ? '首饰' : '配饰'}搭配包含${items.accessories}，采用${acce
       const helper = client.getResponseHelper(response)
 
       if (helper.success && helper.imageUrls.length > 0) {
+        console.log(`[GenerateImage] Task ${taskId} succeeded in ${Date.now() - startedAt}ms`)
         return helper.imageUrls[0]
       }
 
       throw new Error(
         `Image generation failed: ${helper.errorMessages.join(', ')}`,
       )
+    } catch (e) {
+      console.error(`[GenerateImage] Task ${taskId} failed after ${Date.now() - startedAt}ms:`, e)
+      throw e
     } finally {
       // 任务完成后清理
       if (taskId) {
