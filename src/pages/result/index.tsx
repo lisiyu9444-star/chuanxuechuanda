@@ -211,6 +211,8 @@ const ResultPage = () => {
   const [showBaZiContent, setShowBaZiContent] = useState(true)
   // 广告失败兜底放行开关（服务端 features 下发，默认 false 严格模式：广告位已审核通过，须完整观看）
   const [adFailOpen, setAdFailOpen] = useState(false)
+  // 广告失败自动放行错误码白名单（服务端 features 下发：审核中/单元无效/已关闭等确定性不可用场景）
+  const [adAutoSkipErrCodes, setAdAutoSkipErrCodes] = useState<number[]>([1002, 1005, 1008])
   // 分享 ID（用于朋友圈分享）
   const [shareId, setShareId] = useState('')
   // 从分享链接进入时的加载态
@@ -330,19 +332,25 @@ const ResultPage = () => {
     }
   }
 
-  // 激励视频解锁流程：返回 true 表示可继续（完整观看，或广告失败时按兜底策略放行）
+  // 激励视频解锁流程：返回 true 表示可继续（完整观看，或广告失败时按策略自动放行）
   const ensureAdWatched = async (incompleteTip: string): Promise<boolean> => {
     const { watched, error: adError } = await showAd()
     if (watched) return true
-    // 广告加载/展示失败（如广告位审核中、无填充）且兜底开启：直接放行
-    if (adError && adFailOpen) {
-      Taro.showToast({ title: '广告暂不可用，已为你直接解锁', icon: 'none' })
-      return true
+    if (adError) {
+      // 广告加载/展示失败：总开关开启，或错误码命中「广告位确定性不可用」白名单
+      // （1002 单元无效 / 1005 审核中或被拒 / 1008 已关闭）时自动放行，无需人工切开关；
+      // 暂时性失败（如 1004 无填充、网络抖动）不放行，提示重试
+      const errCode = Number(adError.errCode)
+      const autoSkip = adFailOpen || (Number.isFinite(errCode) && adAutoSkipErrCodes.includes(errCode))
+      if (autoSkip) {
+        Taro.showToast({ title: '广告暂不可用，已为你直接解锁', icon: 'none' })
+        return true
+      }
+      Taro.showToast({ title: '广告加载失败，请稍后重试', icon: 'none' })
+      return false
     }
-    Taro.showToast({
-      title: adError ? '广告加载失败，请稍后重试' : incompleteTip,
-      icon: 'none',
-    })
+    // 广告正常展示但用户中途关闭
+    Taro.showToast({ title: incompleteTip, icon: 'none' })
     return false
   }
 
@@ -809,6 +817,9 @@ const ResultPage = () => {
           const features = res.data.data.features
           setShowBaZiContent(features.showResultDetails !== false)
           setAdFailOpen(features.adFailOpen !== false)
+          if (Array.isArray(features.adAutoSkipErrCodes)) {
+            setAdAutoSkipErrCodes(features.adAutoSkipErrCodes)
+          }
         }
       })
       .catch((err) => {
