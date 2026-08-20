@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk'
 
+/**
+ * 穿搭生成使用的 LLM 模型
+ * 注意：kimi-k2-5-260127 已被平台停运（错误码 190000000），统一使用 doubao-seed-2-0-pro，
+ * 所有 LLM 调用点必须引用此常量，禁止单独硬编码模型名
+ */
+const STYLIST_MODEL = 'doubao-seed-2-0-pro-260215'
+
 export interface OutfitPlan {
   top: string
   bottom: string
@@ -138,7 +145,7 @@ export class StylistService {
 
     const messages = [{ role: 'user' as const, content: prompt }]
     const response = await client.invoke(messages, {
-      model: 'kimi-k2-5-260127',
+      model: STYLIST_MODEL,
       thinking: 'disabled',
     })
 
@@ -191,7 +198,7 @@ export class StylistService {
 
     const messages = [{ role: 'user' as const, content: prompt }]
     const response = await client.invoke(messages, {
-      model: 'kimi-k2-5-260127',
+      model: STYLIST_MODEL,
       thinking: 'disabled',
     })
 
