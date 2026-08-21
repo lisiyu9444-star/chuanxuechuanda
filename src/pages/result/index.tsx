@@ -21,6 +21,7 @@ import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday } from '@/utils/archiveStorage'
 import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
+import { SHOW_METAPHYSICS } from '@/utils/channel'
 import { ELEMENT_COLORS } from '@/constants/element-colors'
 import { ensureRemoteAssets, refreshImageUrls, extractTosKeyFromUrl, type RemoteAssets } from '@/constants/remote-assets'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
@@ -1062,7 +1063,8 @@ const ResultPage = () => {
         )}
       </View>
 
-      {/* Unlocked Content */}
+      {/* Unlocked Content（玄学内容区，抖音渠道只保留顶部图片区） */}
+      {SHOW_METAPHYSICS && (
       <View className="flex flex-col gap-4">
 
           {/* BaZi Summary - Controlled by backend */}
@@ -1364,10 +1366,11 @@ const ResultPage = () => {
             </CardContent>
           </Card>
         </View>
+      )}
       </View>
 
-      {/* Fixed Bottom Buttons - 从分享链接进入时隐藏 */}
-      {!urlShareId && (
+      {/* Fixed Bottom Buttons - 从分享链接进入时隐藏（抖音渠道隐藏，可改用右上角胶囊分享） */}
+      {!urlShareId && SHOW_METAPHYSICS && (
         <View
           className="fixed left-0 right-0 bg-white border-t border-gray-100 px-6 py-3"
           style={{ bottom: 0, zIndex: 100, display: 'flex', gap: '12px' }}

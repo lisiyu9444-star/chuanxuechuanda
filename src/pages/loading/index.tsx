@@ -7,6 +7,7 @@ import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
+import { SHOW_METAPHYSICS } from '@/utils/channel'
 
 const getLoadingSteps = (mode: 'daily' | 'native') => [
   '正在排列四柱...',
@@ -375,7 +376,8 @@ const LoadingPage = () => {
         </View>
       )}
 
-      {/* Progress Steps */}
+      {/* Progress Steps（玄学文案，抖音渠道隐藏整个底部展示区） */}
+      {SHOW_METAPHYSICS && (
       <View className="flex-1 flex flex-col justify-end pb-8">
         <View className="flex flex-col gap-3 mb-6">
           {loadingSteps.map((step, index) => (
@@ -407,6 +409,7 @@ const LoadingPage = () => {
           </Text>
         </View>
       </View>
+      )}
     </View>
   )
 }

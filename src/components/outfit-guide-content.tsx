@@ -2,6 +2,7 @@ import { View, Text } from '@tarojs/components'
 import { Shirt, Square, Footprints, ShoppingBag, Gem } from 'lucide-react-taro'
 import { Card, CardContent } from '@/components/ui/card'
 import { ELEMENT_COLORS } from '@/constants/element-colors'
+import { SHOW_METAPHYSICS } from '@/utils/channel'
 import type { BaZiResult, StylistResult } from '@/types/bazi'
 
 const COLOR_HEX_MAP: Record<string, string> = {
@@ -106,7 +107,8 @@ export function OutfitGuideContent({
         </Card>
       )}
 
-      {/* 喜用神分析 */}
+      {/* 喜用神分析（玄学内容，抖音渠道隐藏） */}
+      {SHOW_METAPHYSICS && (
       <Card className="bg-white border-gray-100 shadow-sm">
         <CardContent className="p-4">
           <Text className="block text-sm font-medium text-gray-900 mb-3">喜用神分析</Text>
@@ -174,6 +176,7 @@ export function OutfitGuideContent({
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* 穿搭方案 */}
       <Card className="bg-white border-gray-100 shadow-sm">

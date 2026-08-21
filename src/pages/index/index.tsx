@@ -20,6 +20,7 @@ import {
   getNativeResult,
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
+import { SHOW_METAPHYSICS } from '@/utils/channel'
 
 // 静态图（幸运星/示例图/兜底图）URL 由 remote-assets 动态签发，禁止硬编码签名 URL（会过期）
 const EXAMPLE_DAILY_RESULT: DailyResult = {
@@ -257,7 +258,8 @@ export default function Index() {
         </View>
       </View>
 
-      {/* 幸运指数 */}
+      {/* 幸运指数（玄学内容，抖音渠道隐藏） */}
+      {SHOW_METAPHYSICS && (
       <View className="px-4 pt-4">
         <Card>
           <CardContent className="p-4">
@@ -301,6 +303,7 @@ export default function Index() {
           </CardContent>
         </Card>
       </View>
+      )}
 
       {/* 今日穿搭 */}
       <View className="px-4 mt-4">
@@ -384,7 +387,8 @@ export default function Index() {
         </Card>
       </View>
 
-      {/* 本命穿搭 */}
+      {/* 本命穿搭（玄学内容，抖音渠道隐藏） */}
+      {SHOW_METAPHYSICS && (
       <View className="px-4 mt-4">
         <Card className="active:opacity-80" onClick={handleViewNative}>
           <CardContent className="p-4">
@@ -427,6 +431,7 @@ export default function Index() {
           </CardContent>
         </Card>
       </View>
+      )}
 
       {/* 空档案提示 */}
       {currentArchive.isDefault && (
