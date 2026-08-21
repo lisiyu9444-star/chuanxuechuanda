@@ -15,16 +15,6 @@ import { db } from '../storage/database/db'
 import { shares } from '../storage/database/schema'
 import { signUrl } from '../assets/tos-utils'
 
-interface SharedResult {
-  nickname: string
-  gender: string
-  result: any
-  imageUrl?: string
-  tryOnUrl?: string
-  createdAt: number
-  expiresAt: number
-}
-
 @Controller('share')
 export class ShareController {
   private readonly logger = new Logger(ShareController.name)
