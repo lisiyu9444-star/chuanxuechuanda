@@ -43,13 +43,25 @@ async function bootstrap() {
     allowedOrigins.add('http://localhost:5000');
     allowedOrigins.add('http://127.0.0.1:5000');
   }
+  // 平台域名（*.coze.site）后缀放行：预览/部署子域会随平台与部署变化，后缀匹配避免手动维护
+  const isAllowedOrigin = (origin: string): boolean => {
+    if (allowedOrigins.has(origin)) return true;
+    try {
+      const host = new URL(origin).hostname;
+      return host === 'coze.site' || host.endsWith('.coze.site');
+    } catch {
+      return false;
+    }
+  };
   app.enableCors({
     origin: (origin, callback) => {
       // 允许无 origin 的请求（如小程序、服务端调用）
       if (!origin) return callback(null, true);
-      if (allowedOrigins.has(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
+        // 打印被拒绝的 origin，便于排查新出现的访问来源
+        console.warn(`[CORS] rejected origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
