@@ -785,47 +785,6 @@ const ResultPage = () => {
     }
   }, [tryOnUrl])
 
-  // 视频解锁相关逻辑（暂时注释）
-  // const handleUnlock = () => {
-  //   Taro.showModal({
-  //     title: '解锁今日穿搭',
-  //     content: '观看短视频即可解锁你的专属穿搭推荐',
-  //     confirmText: '观看解锁',
-  //     confirmColor: '#6366f1',
-  //     success: (res) => {
-  //       if (res.confirm) {
-  //         Taro.setStorageSync('outfitUnlocked', true)
-  //         setUnlocked(true)
-  //       }
-  //     },
-  //   })
-  // }
-
-  // 分享解锁相关逻辑（暂时注释）
-  // const [sharedToday, setSharedToday] = useState(false)
-
-  // useEffect(() => {
-  //   // 检查今日是否已分享过
-  //   const lastShareDate = Taro.getStorageSync('lastShareDate')
-  //   const today = new Date().toDateString()
-  //   if (lastShareDate === today) {
-  //     setSharedToday(true)
-  //   }
-  // }, [])
-
-  // const handleShareClick = () => {
-  //   if (sharedToday) {
-  //     Taro.showToast({
-  //       title: '今日已分享过，明日再来～',
-  //       icon: 'none',
-  //       duration: 2000,
-  //     })
-  //     return false
-  //   }
-  //   Taro.setStorageSync('justShared', true)
-  //   return true
-  // }
-
   // Tab 切换处理
   const handleTabChange = (tab: 'flat' | 'tryon') => {
     setActiveTab(tab)
