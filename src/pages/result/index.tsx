@@ -239,6 +239,8 @@ const ResultPage = () => {
   const isSavingRef = useRef(false)
   // 标记是否从分享链接打开
   const fromShareRef = useRef(false)
+  // 标记当前是否从历史记录进入（历史查看模式下解锁图片只回写历史记录，不污染今日缓存）
+  const viewingHistoryRef = useRef(false)
   // 当前档案 ID
   const currentArchiveIdRef = useRef('')
   // 当前完整的 DailyResult 缓存（用于历史记录同步）
@@ -281,7 +283,8 @@ const ResultPage = () => {
         const tryOnPatch = { tryOnUrl: data.tryOnUrl as string, tryOnKey: (data.tryOnKey as string) || '' }
         if (pageModeRef.current === 'native') {
           // 本命穿搭上身图独立存储，不混入今日穿搭
-          updateNativeCache(tryOnPatch)
+          // 历史查看模式只回写历史记录，避免把历史图片写入今日缓存
+          if (!viewingHistoryRef.current) updateNativeCache(tryOnPatch)
           if (nativeResultRef.current) {
             const archive = getArchiveById(nativeResultRef.current.archiveId)
             saveHistoryFromNativeResult(nativeResultRef.current, archive, tryOnPatch)
@@ -291,7 +294,7 @@ const ResultPage = () => {
             syncHistoryRecord(dailyResultRef.current, tryOnPatch)
           }
           // 更新 dailyResult 缓存中的上身图
-          updateDailyCache(tryOnPatch)
+          if (!viewingHistoryRef.current) updateDailyCache(tryOnPatch)
         }
       } else {
         Taro.showToast({ title: '生成失败，请重试', icon: 'none' })
@@ -321,6 +324,8 @@ const ResultPage = () => {
           generatedAt: Date.now(),
         }
         saveDailyResult(updated)
+        // 同步内存快照，避免后续 syncHistoryRecord 用陈旧 ref 重建记录时丢图
+        dailyResultRef.current = updated
       }
     } catch (e) {
       console.error('Update daily cache failed:', e)
@@ -339,6 +344,8 @@ const ResultPage = () => {
           generatedAt: Date.now(),
         }
         saveNativeResult(updated)
+        // 同步内存快照，避免后续用陈旧 ref 重建历史记录时丢图
+        nativeResultRef.current = updated
       }
     } catch (e) {
       console.error('Update native cache failed:', e)
@@ -402,13 +409,14 @@ const ResultPage = () => {
         const imagePatch = { imageUrl, imageKey }
         setFlatImageUrl(imageUrl)
         if (pageModeRef.current === 'native') {
-          updateNativeCache(imagePatch)
+          // 历史查看模式只回写历史记录，避免把历史图片写入今日缓存
+          if (!viewingHistoryRef.current) updateNativeCache(imagePatch)
           if (nativeResultRef.current) {
             const archive = getArchiveById(nativeResultRef.current.archiveId)
             saveHistoryFromNativeResult(nativeResultRef.current, archive, imagePatch)
           }
         } else {
-          updateDailyCache(imagePatch)
+          if (!viewingHistoryRef.current) updateDailyCache(imagePatch)
           if (dailyResultRef.current) {
             syncHistoryRecord(dailyResultRef.current, imagePatch)
           }
@@ -611,6 +619,7 @@ const ResultPage = () => {
         }
         saveNativeResult(nativeResult)
         nativeResultRef.current = nativeResult
+        viewingHistoryRef.current = false
         setResult({ ...payload.baziResult, llmPlan: payload.llmPlan })
       } else {
         const today = getToday()
@@ -633,6 +642,7 @@ const ResultPage = () => {
         setResult({ ...bazi, llmPlan: payload.llmPlan })
         setFlatImageUrl(bazi.imageUrl || '')
         dailyResultRef.current = dailyResult
+        viewingHistoryRef.current = false
         syncHistoryRecord(dailyResult)
       }
     } catch (err) {
@@ -669,6 +679,32 @@ const ResultPage = () => {
         setTryOnUrl(record.tryOnUrl || '')
         setPageMode(recordMode)
         pageModeRef.current = recordMode
+        viewingHistoryRef.current = true
+        // 同步内存快照，使本页内解锁图片后能正确回写历史记录
+        if (recordMode === 'native') {
+          nativeResultRef.current = {
+            archiveId: record.archiveId,
+            baziResult: { ...record, llmPlan },
+            llmPlan,
+            imageUrl: record.imageUrl,
+            imageKey: record.imageKey,
+            tryOnUrl: record.tryOnUrl,
+            tryOnKey: record.tryOnKey,
+            generatedAt: record.createdAt || Date.now(),
+          } as unknown as NativeResult
+        } else {
+          dailyResultRef.current = {
+            archiveId: record.archiveId,
+            date: record.date || historyDate || getToday(),
+            baziResult: { ...record, llmPlan },
+            llmPlan,
+            imageUrl: record.imageUrl,
+            imageKey: record.imageKey,
+            tryOnUrl: record.tryOnUrl,
+            tryOnKey: record.tryOnKey,
+            generatedAt: record.createdAt || Date.now(),
+          } as unknown as DailyResult
+        }
         return
       }
       // 未找到历史记录时降级为实时请求
@@ -684,6 +720,7 @@ const ResultPage = () => {
         setFlatImageUrl(nativeResult.imageUrl || '')
         setTryOnUrl(nativeResult.tryOnUrl || '')
         nativeResultRef.current = nativeResult
+        viewingHistoryRef.current = false
         return
       }
     } else {
@@ -694,6 +731,7 @@ const ResultPage = () => {
         setFlatImageUrl(dailyResult.imageUrl || '')
         setTryOnUrl(dailyResult.tryOnUrl || '')
         dailyResultRef.current = dailyResult
+        viewingHistoryRef.current = false
         syncHistoryRecord(dailyResult)
         return
       }

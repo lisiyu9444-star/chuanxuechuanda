@@ -89,7 +89,13 @@ export function saveHistoryRecord(record: HistoryRecord) {
   const records = getHistoryRecords()
   const index = records.findIndex(r => r.id === record.id)
   if (index >= 0) {
-    records[index] = { ...records[index], ...record }
+    // 合并时忽略 undefined 字段，防止由陈旧快照重建的 record 把已保存的
+    // 图片字段（imageUrl/tryOnUrl/imageKey/tryOnKey）覆盖为 undefined
+    const merged: Record<string, unknown> = { ...records[index] }
+    for (const [key, value] of Object.entries(record)) {
+      if (value !== undefined) merged[key] = value
+    }
+    records[index] = merged as unknown as HistoryRecord
   } else {
     records.unshift(record)
   }
