@@ -48,3 +48,6 @@ pnpm-debug.log*
 .codegraph
 node-compile-cache/
 .codegraph/
+
+# 聊天上传素材目录（平台自动暂存，禁止入库）
+/assets/
