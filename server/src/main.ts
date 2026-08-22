@@ -81,6 +81,12 @@ async function bootstrap() {
   try {
     await app.listen(port);
     console.log(`Server running on http://localhost:${port}`);
+    // 打印平台注入的项目域名，便于在运行日志中定位当前环境的访问地址
+    console.log(
+      `[Deploy] domain env: COZE_PROJECT_DOMAIN_DEFAULT=${process.env.COZE_PROJECT_DOMAIN_DEFAULT || '(unset)'} ` +
+        `COZE_PROJECT_DOMAIN_ALL=${process.env.COZE_PROJECT_DOMAIN_ALL || '(unset)'} ` +
+        `PROJECT_DOMAIN=${process.env.PROJECT_DOMAIN || '(unset)'}`,
+    );
   } catch (err) {
     if (err.code === 'EADDRINUSE') {
       console.error(`❌ 端口 ${port} 被占用! 请运行 'npx kill-port ${port}' 然后重试。`);
