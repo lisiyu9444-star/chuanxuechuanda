@@ -20,24 +20,46 @@ export interface RemoteAssets {
   fallback: string
 }
 
-const STORAGE_KEY = 'remote_assets_v1'
+/**
+ * 缓存版本 v2：v1 仅校验 fallback 是否存在，可能把含空字段的半成品
+ * 缓存 7 天导致首页长期空白；v2 强制旧缓存失效并启用全字段校验。
+ */
+const STORAGE_KEY = 'remote_assets_v2'
 /** 本地缓存 7 天（URL 本身 30 天有效，提前换签留足余量） */
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000
+
+/** 必需字段：首页核心视觉依赖，任一为空即视为整表无效 */
+const REQUIRED_KEYS: (keyof RemoteAssets)[] = ['exampleLuckyStar', 'exampleFlat', 'exampleTryOn', 'fallback']
+
+function isValidAssets(assets: Partial<RemoteAssets> | null | undefined): assets is RemoteAssets {
+  return !!assets && REQUIRED_KEYS.every((k) => typeof assets[k] === 'string' && assets[k]!.length > 0)
+}
 
 let memoryCache: RemoteAssets | null = null
 let pendingPromise: Promise<RemoteAssets | null> | null = null
 
+async function fetchRemoteAssets(): Promise<RemoteAssets | null> {
+  const res = await Network.request({ url: '/api/assets/static', method: 'GET' })
+  const assets = (res as any)?.data?.data?.assets as RemoteAssets | undefined
+  if (!isValidAssets(assets)) {
+    console.warn('[RemoteAssets] invalid assets response:', (res as any)?.data)
+    return null
+  }
+  return assets
+}
+
 /**
  * 获取远程资源 URL 表（内存 -> 本地缓存 -> 网络，三级）。
- * 失败返回 null，调用方需做空值兜底（如占位背景）。
+ * 网络拉取最多尝试 2 次（间隔 1s），降低瞬时失败导致的长时间空白。
+ * 全部失败返回 null，调用方需做空值兜底（如占位背景）。
  */
 export async function ensureRemoteAssets(): Promise<RemoteAssets | null> {
   if (memoryCache) return memoryCache
 
   try {
     const cached = Taro.getStorageSync(STORAGE_KEY)
-    if (cached?.assets?.fallback && Date.now() - cached.savedAt < CACHE_TTL) {
-      memoryCache = cached.assets as RemoteAssets
+    if (isValidAssets(cached?.assets) && Date.now() - cached.savedAt < CACHE_TTL) {
+      memoryCache = cached.assets
       return memoryCache
     }
   } catch {
@@ -47,21 +69,22 @@ export async function ensureRemoteAssets(): Promise<RemoteAssets | null> {
   if (pendingPromise) return pendingPromise
 
   pendingPromise = (async () => {
-    try {
-      const res = await Network.request({ url: '/api/assets/static', method: 'GET' })
-      const assets = (res as any)?.data?.data?.assets as RemoteAssets | undefined
-      if (assets?.fallback) {
-        memoryCache = assets
-        try {
-          Taro.setStorageSync(STORAGE_KEY, { assets, savedAt: Date.now() })
-        } catch {
-          // 存储失败不影响使用
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      if (attempt > 1) await new Promise((resolve) => setTimeout(resolve, 1000))
+      try {
+        const assets = await fetchRemoteAssets()
+        if (assets) {
+          memoryCache = assets
+          try {
+            Taro.setStorageSync(STORAGE_KEY, { assets, savedAt: Date.now() })
+          } catch {
+            // 存储失败不影响使用
+          }
+          return assets
         }
-        return assets
+      } catch (e) {
+        console.warn(`[RemoteAssets] fetch failed (attempt ${attempt}):`, e)
       }
-      console.warn('[RemoteAssets] unexpected response:', (res as any)?.data)
-    } catch (e) {
-      console.warn('[RemoteAssets] fetch failed:', e)
     }
     return null
   })()

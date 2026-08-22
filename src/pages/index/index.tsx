@@ -275,6 +275,10 @@ export default function Index() {
                   src={assets.exampleLuckyStar}
                   mode="aspectFit"
                   lazyLoad
+                  onError={() => {
+                    console.warn('[Index] lucky star image load failed')
+                    setAssets((prev) => (prev ? { ...prev, exampleLuckyStar: '' } : prev))
+                  }}
                 />
               ) : (
                 <View className="w-20 h-20 rounded-full bg-amber-100" />
@@ -317,7 +321,11 @@ export default function Index() {
             <View className="flex flex-row gap-3">
               <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative">
                 {dailyResult.imageUrl ? (
-                  <Image src={dailyResult.imageUrl} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] flat image load failed')} />
+                  <Image src={dailyResult.imageUrl} className="w-full h-full" mode="aspectFill" onError={() => {
+                    console.warn('[Index] flat image load failed')
+                    setDailyResult((prev) => (prev ? { ...prev, imageUrl: '' } : prev))
+                  }}
+                  />
                 ) : assets?.fallback ? (
                   <Image src={assets.fallback} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback flat image load failed')} />
                 ) : null}
@@ -338,7 +346,11 @@ export default function Index() {
               </View>
               <View className="flex-1 aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 relative">
                 {dailyResult.tryOnUrl ? (
-                  <Image src={dailyResult.tryOnUrl} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] tryOn image load failed')} />
+                  <Image src={dailyResult.tryOnUrl} className="w-full h-full" mode="aspectFill" onError={() => {
+                    console.warn('[Index] tryOn image load failed')
+                    setDailyResult((prev) => (prev ? { ...prev, tryOnUrl: '' } : prev))
+                  }}
+                  />
                 ) : assets?.fallback ? (
                   <Image src={assets.fallback} className="w-full h-full" mode="aspectFill" onError={() => console.warn('[Index] fallback tryOn image load failed')} />
                 ) : null}
