@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
-import { ChevronRight, Plus } from 'lucide-react-taro'
+import { ChevronRight, CloudOff, Plus, RefreshCw } from 'lucide-react-taro'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -18,6 +18,8 @@ import {
   getToday,
   DEFAULT_ARCHIVE,
   getNativeResult,
+  isDailyGenerateCoolingDown,
+  clearDailyGenerateFailed,
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
@@ -108,6 +110,8 @@ export default function Index() {
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
   const [hasArchiveChanged, setHasArchiveChanged] = useState(false)
   const [assets, setAssets] = useState<RemoteAssets | null>(null)
+  // 生成失败冷却态：loading 页失败/被中断后回首页不再自动重进，展示失败卡片由用户手动重试
+  const [generateFailed, setGenerateFailed] = useState(false)
 
   const loadData = useCallback(async () => {
     // 静态图 URL 动态签发（本地缓存 7 天），失败时以背景色占位
@@ -126,6 +130,7 @@ export default function Index() {
         tryOnUrl: remote?.exampleTryOn || '',
       })
       setHasArchiveChanged(false)
+      setGenerateFailed(false)
       return
     }
 
@@ -134,10 +139,17 @@ export default function Index() {
     if (cachedDaily && cachedDaily.date === today) {
       setDailyResult(cachedDaily)
       setHasArchiveChanged(activeArchive.updatedAt > cachedDaily.generatedAt)
+      setGenerateFailed(false)
+    } else if (isDailyGenerateCoolingDown(activeArchive.id, today)) {
+      // 冷却期内（最近生成失败或被用户中断）：不自动跳 loading，展示失败态交还用户主动权，
+      // 打破「失败 → 回首页 → onShow 自动再进 → 再失败」的死循环
+      setDailyResult(null)
+      setGenerateFailed(true)
     } else {
       // 日期变化或缓存异常：清除该档案所有旧日期缓存，重新进入 loading 请求
       clearDailyResultsByArchive(activeArchive.id)
       setHasArchiveChanged(false)
+      setGenerateFailed(false)
       Taro.navigateTo({
         url: `/pages/loading/index?mode=daily&archiveId=${activeArchive.id}`,
       })
@@ -165,6 +177,16 @@ export default function Index() {
     }
     Taro.navigateTo({ url: `/pages/result/index?archiveId=${currentArchive.id}` })
   }, [currentArchive, handleAddArchive])
+
+  // 失败冷却态的手动重试入口：清除冷却标记并进入 loading 重新生成
+  const handleRetryGenerate = useCallback(() => {
+    if (!currentArchive) return
+    clearDailyGenerateFailed(currentArchive.id, todayStr)
+    setGenerateFailed(false)
+    Taro.navigateTo({
+      url: `/pages/loading/index?mode=daily&archiveId=${currentArchive.id}`,
+    })
+  }, [currentArchive, todayStr])
 
   const handleViewResultWithAnchor = useCallback((anchor: string) => () => {
     if (!currentArchive) return
@@ -204,13 +226,37 @@ export default function Index() {
     return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`
   }, [])
 
-  if (!currentArchive || !dailyResult) {
+  if (!currentArchive || (!dailyResult && !generateFailed)) {
     return (
       <View className="min-h-screen bg-gray-50 p-4">
         <Skeleton className="h-8 w-40 mb-4" />
         <Skeleton className="h-48 w-full mb-4" />
         <Skeleton className="h-64 w-full mb-4" />
         <Skeleton className="h-40 w-full" />
+      </View>
+    )
+  }
+
+  // 生成失败冷却态：无结果数据可渲染（内容区依赖 dailyResult），仅展示失败卡片与重试入口。
+  // 上一分支已排除 (!dailyResult && !generateFailed)，到达这里且 dailyResult 为空时必为冷却态
+  if (!dailyResult) {
+    return (
+      <View className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
+        <Card className="w-full">
+          <CardContent className="p-6 flex flex-col items-center">
+            <CloudOff size={56} color="#9ca3af" />
+            <Text className="block text-lg font-semibold text-gray-900 mt-5">今日穿搭尚未生成</Text>
+            <Text className="block text-sm text-gray-500 mt-2 text-center leading-relaxed">
+              网络繁忙或生成已取消，点击按钮重试
+            </Text>
+            <Button className="w-full mt-6" onClick={handleRetryGenerate}>
+              <View className="flex flex-row items-center justify-center gap-1">
+                <RefreshCw size={16} color="#ffffff" />
+                <Text className="text-sm">重新生成</Text>
+              </View>
+            </Button>
+          </CardContent>
+        </Card>
       </View>
     )
   }

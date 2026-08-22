@@ -169,6 +169,37 @@ export function setImageUnlock(archiveId: string, date: string = getToday(), sta
   safeSet(IMAGE_UNLOCKS_KEY, map)
 }
 
+// 今日穿搭生成失败冷却标记：loading 页失败/中断回首页后，首页 onShow 会再次自动跳转 loading，
+// 无标记会形成「失败 → 回首页 → 自动再进 → 再失败」死循环。冷却期内首页改为展示失败态，由用户手动重试。
+const DAILY_FAIL_KEY = 'daily_generate_failures'
+const DAILY_FAIL_COOLDOWN_MS = 30 * 60 * 1000 // 30 分钟
+
+type DailyFailMap = Record<string, number>
+
+const getDailyFailKey = (archiveId: string, date: string) => `${archiveId}_${date}`
+
+export function markDailyGenerateFailed(archiveId: string, date: string = getToday()): void {
+  const map = safeGet<DailyFailMap>(DAILY_FAIL_KEY, {})
+  map[getDailyFailKey(archiveId, date)] = Date.now()
+  safeSet(DAILY_FAIL_KEY, map)
+}
+
+export function clearDailyGenerateFailed(archiveId: string, date: string = getToday()): void {
+  const map = safeGet<DailyFailMap>(DAILY_FAIL_KEY, {})
+  const key = getDailyFailKey(archiveId, date)
+  if (key in map) {
+    delete map[key]
+    safeSet(DAILY_FAIL_KEY, map)
+  }
+}
+
+export function isDailyGenerateCoolingDown(archiveId: string, date: string = getToday()): boolean {
+  const map = safeGet<DailyFailMap>(DAILY_FAIL_KEY, {})
+  const ts = map[getDailyFailKey(archiveId, date)]
+  if (!ts) return false
+  return Date.now() - ts <= DAILY_FAIL_COOLDOWN_MS
+}
+
 export function clearAllStorage(): void {
   try {
     Taro.removeStorageSync(ARCHIVES_KEY)
@@ -176,6 +207,7 @@ export function clearAllStorage(): void {
     Taro.removeStorageSync(DAILY_RESULTS_KEY)
     Taro.removeStorageSync(NATIVE_RESULTS_KEY)
     Taro.removeStorageSync(IMAGE_UNLOCKS_KEY)
+    Taro.removeStorageSync(DAILY_FAIL_KEY)
   } catch (e) {
     console.error('[archiveStorage] clear failed', e)
   }

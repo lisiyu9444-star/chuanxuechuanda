@@ -2,10 +2,12 @@ import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow, useUnload } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { CloudOff, RefreshCw } from 'lucide-react-taro'
 import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
-import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
+import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, clearDailyGenerateFailed, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 
@@ -30,6 +32,14 @@ const LoadingPage = () => {
   const cancelledRef = useRef(false)
   // 当前请求的客户端任务 ID，退出页面时通知后端真实中断 LLM/生图请求
   const clientTaskIdRef = useRef('')
+  // 请求序号：useDidShow 重复触发时 abort 旧请求，旧请求的响应/失败回调据此识别自身已过期，静默丢弃
+  const requestSeqRef = useRef(0)
+  // 最近一次请求参数：失败界面「重新生成」按钮据此重发
+  const lastRequestRef = useRef<{ archiveId: string; pageMode: 'daily' | 'native'; action: string } | null>(null)
+  // 25 秒加速动画计时器（Taro 的 useDidShow 回调返回值不会被当作 cleanup 调用，必须用 ref 手动管理）
+  const accelerateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 请求失败标记：true 时本页展示失败界面（重试/返回），不再自动跳回首页（避免与首页自动跳转形成死循环）
+  const [requestFailed, setRequestFailed] = useState(false)
 
   const notifyBackendCancel = () => {
     const taskId = clientTaskIdRef.current
@@ -48,6 +58,7 @@ const LoadingPage = () => {
   const loadData = async (archiveId: string, pageMode: 'daily' | 'native' = 'daily') => {
     if (requestedRef.current) return
     requestedRef.current = true
+    const seq = ++requestSeqRef.current
 
     try {
       const currentArchive = getArchiveById(archiveId)
@@ -83,8 +94,8 @@ const LoadingPage = () => {
       const res = await task
       requestTaskRef.current = null
       clientTaskIdRef.current = ''
-      // 页面已退出，忽略请求结果
-      if (cancelledRef.current) return
+      // 页面已退出，或请求已被新一轮 useDidShow 取代，忽略结果
+      if (cancelledRef.current || seq !== requestSeqRef.current) return
       console.log(`[Loading] ${pageMode} response:`, res.data)
 
       const apiData = res.data?.data
@@ -125,6 +136,7 @@ const LoadingPage = () => {
         generatedAt: Date.now(),
       }
       saveDailyResult(dailyResult)
+      clearDailyGenerateFailed(archiveId, dateStr)
       setProgressValue(100)
       if (fromRef.current === 'result') {
         // 从结果页“再测一次”进入，返回原结果页展示新数据
@@ -133,11 +145,16 @@ const LoadingPage = () => {
         Taro.switchTab({ url: '/pages/index/index' })
       }
     } catch (error) {
-      // 页面已退出或被主动取消，静默处理
-      if (cancelledRef.current) return
+      // 页面已退出、被主动取消或请求已被新一轮取代，静默处理
+      if (cancelledRef.current || seq !== requestSeqRef.current) return
+      // 请求已终结，清理残留引用，避免退出页面时误判为"进行中"而重复写标记/发无效 cancel
+      requestTaskRef.current = null
+      clientTaskIdRef.current = ''
       console.error(`[Loading] ${pageMode} request failed:`, error)
-      Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
-      setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
+      // 失败停留本页展示重试入口，不再自动回首页：首页 onShow 会自动跳回 loading，直接返回会形成死循环。
+      // daily 自动场景写冷却标记，首页据此暂停自动跳转，把主动权交还用户。
+      if (pageMode === 'daily') markDailyGenerateFailed(archiveId)
+      setRequestFailed(true)
     }
   }
 
@@ -145,6 +162,7 @@ const LoadingPage = () => {
   const redesignData = async (archiveId: string, pageMode: 'daily' | 'native') => {
     if (requestedRef.current) return
     requestedRef.current = true
+    const seq = ++requestSeqRef.current
 
     try {
       const currentArchive = getArchiveById(archiveId)
@@ -192,7 +210,7 @@ const LoadingPage = () => {
       const res = await task
       requestTaskRef.current = null
       clientTaskIdRef.current = ''
-      if (cancelledRef.current) return
+      if (cancelledRef.current || seq !== requestSeqRef.current) return
       console.log('[Loading] redesign response:', res.data)
 
       const llmPlan = res.data?.data?.llmPlan
@@ -237,7 +255,7 @@ const LoadingPage = () => {
       }
 
       setProgressValue(100)
-      if (cancelledRef.current) return
+      if (cancelledRef.current || seq !== requestSeqRef.current) return
       if (fromRef.current === 'result') {
         Taro.navigateBack()
       } else if (pageMode === 'native') {
@@ -246,10 +264,12 @@ const LoadingPage = () => {
         Taro.switchTab({ url: '/pages/index/index' })
       }
     } catch (error) {
-      if (cancelledRef.current) return
+      if (cancelledRef.current || seq !== requestSeqRef.current) return
+      requestTaskRef.current = null
+      clientTaskIdRef.current = ''
       console.error(`[Loading] redesign ${pageMode} failed:`, error)
-      Taro.showToast({ title: '推演失败，请重试', icon: 'none' })
-      setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
+      // redesign 均为用户手动触发（结果页「再测一次」），不参与首页自动跳转，无需写冷却标记
+      setRequestFailed(true)
     }
   }
 
@@ -259,8 +279,25 @@ const LoadingPage = () => {
     const pageMode = (params?.mode as 'daily' | 'native') || 'daily'
     const action = (params?.action as string) || ''
     fromRef.current = (params?.from as string) || ''
+
+    // 中断可能残留的上一次请求，并递增序号使其回调静默失效（在重置 cancelledRef 之前执行）
+    requestTaskRef.current?.abort?.()
+    requestTaskRef.current = null
+    notifyBackendCancel()
+    requestSeqRef.current += 1
+
+    // 每次进入都重置为干净起点：requestedRef 必须复位，否则 loadData 首行直接 return 永远不发请求
+    requestedRef.current = false
     cancelledRef.current = false
+    setRequestFailed(false)
     setMode(pageMode)
+    setCurrentStep(0)
+    setProgressValue(0)
+    setIsAccelerated(false)
+    startTimeRef.current = Date.now()
+
+    lastRequestRef.current = archiveId ? { archiveId: archiveId as string, pageMode, action } : null
+
     if (archiveId) {
       if (action === 'redesign') {
         redesignData(archiveId as string, pageMode)
@@ -272,10 +309,11 @@ const LoadingPage = () => {
       setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1500)
     }
 
-    const timer = setTimeout(() => {
+    // Taro 的 useDidShow 回调返回值不会被当作 cleanup 调用，计时器用 ref 管理并在 useUnload 中清理
+    if (accelerateTimerRef.current) clearTimeout(accelerateTimerRef.current)
+    accelerateTimerRef.current = setTimeout(() => {
       setIsAccelerated(true)
     }, 25000)
-    return () => clearTimeout(timer)
   })
 
   // 页面销毁（返回/关闭）时中断进行中的请求，阻止结果保存与页面跳转（通用能力）。
@@ -283,10 +321,24 @@ const LoadingPage = () => {
   // onHide 不会触发，放 useDidHide 会导致取消逻辑失效。
   useUnload(() => {
     cancelledRef.current = true
+    requestedRef.current = false
+    // 递增序号，使进行中请求的响应/失败回调全部静默失效
+    requestSeqRef.current += 1
+    const wasRequesting = !!requestTaskRef.current
     requestTaskRef.current?.abort?.()
     requestTaskRef.current = null
     // 前端 abort 只断开本地等待，后端 AI 请求仍在执行；通知后端真实中断，避免空跑消耗
     notifyBackendCancel()
+    if (accelerateTimerRef.current) {
+      clearTimeout(accelerateTimerRef.current)
+      accelerateTimerRef.current = null
+    }
+    // daily 自动生成场景下用户主动退出（请求未完成）：写冷却标记，防止回到首页后
+    // 首页 onShow 立即又自动跳进 loading（用户感知为"退不出去"）
+    const last = lastRequestRef.current
+    if (wasRequesting && last && last.pageMode === 'daily' && last.action !== 'redesign') {
+      markDailyGenerateFailed(last.archiveId)
+    }
   })
 
   useEffect(() => {
@@ -308,6 +360,59 @@ const LoadingPage = () => {
   }, [])
 
   const genderText = archive?.gender === 'male' ? '男' : archive?.gender === 'female' ? '女' : archive?.gender || ''
+
+  // 失败界面「重新生成」：按最近一次请求的参数重发
+  const handleRetry = () => {
+    const last = lastRequestRef.current
+    if (!last) return
+    setRequestFailed(false)
+    requestedRef.current = false
+    setCurrentStep(0)
+    setProgressValue(0)
+    setIsAccelerated(false)
+    startTimeRef.current = Date.now()
+    if (accelerateTimerRef.current) clearTimeout(accelerateTimerRef.current)
+    accelerateTimerRef.current = setTimeout(() => {
+      setIsAccelerated(true)
+    }, 25000)
+    if (last.action === 'redesign') {
+      redesignData(last.archiveId, last.pageMode)
+    } else {
+      loadData(last.archiveId, last.pageMode)
+    }
+  }
+
+  const handleBackFromFailed = () => {
+    if (fromRef.current === 'result') {
+      Taro.navigateBack()
+    } else {
+      Taro.switchTab({ url: '/pages/index/index' })
+    }
+  }
+
+  // 请求失败：停留本页给出明确出口，不自动跳转（避免与首页 onShow 自动跳 loading 形成死循环）
+  if (requestFailed) {
+    return (
+      <View className="min-h-full bg-white px-6 py-8 flex flex-col items-center justify-center">
+        <CloudOff size={56} color="#9ca3af" />
+        <Text className="block text-lg font-semibold text-gray-900 mt-5">生成失败</Text>
+        <Text className="block text-sm text-gray-500 mt-2 text-center leading-relaxed">
+          网络繁忙或服务暂时不可用，请稍后重试
+        </Text>
+        <View className="w-full mt-8 flex flex-col gap-3">
+          <Button className="w-full" onClick={handleRetry}>
+            <View className="flex flex-row items-center justify-center gap-1">
+              <RefreshCw size={16} color="#ffffff" />
+              <Text className="text-sm">重新生成</Text>
+            </View>
+          </Button>
+          <Button variant="outline" className="w-full" onClick={handleBackFromFailed}>
+            <Text className="text-sm">{fromRef.current === 'result' ? '返回结果页' : '返回首页'}</Text>
+          </Button>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View className="min-h-full bg-white px-6 py-8 flex flex-col">
