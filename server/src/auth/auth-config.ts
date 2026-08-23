@@ -7,30 +7,14 @@
  *   2. JwtAuthGuard 对无 token 请求注入固定 dev 用户，H5 预览/本地开发不受鉴权阻塞
  *
  * 安全约束（fail-closed）：
- * - JWT_SECRET 在生产环境必须通过环境变量配置，缺失时拒绝启动
+ * - JWT 密钥由 secrets.ts 的 resolveJwtSecret() 解析：环境变量 JWT_SECRET 优先，
+ *   未配置则数据库自举持久化；数据库不可用时服务拒绝启动。源码不含任何硬编码密钥。
  * - 开发 bypass / dev 登录仅在「非生产 + 未配置微信凭证」时开放；
  *   生产环境缺少微信凭证视为配置错误，受保护接口一律 503，不降级放行
  */
 export const isProduction = (): boolean => process.env.NODE_ENV === 'production'
 
 export const isStrictAuthMode = (): boolean => !!(process.env.WX_APPID && process.env.WX_SECRET)
-
-const DEV_JWT_SECRET = 'dev-only-jwt-secret-change-me-in-prod'
-
-/**
- * JWT 密钥获取：优先环境变量 JWT_SECRET。
- * 生产环境未配置时抛错（JwtModule 注册阶段即失败，服务拒绝启动）；
- * 本地开发允许使用内置回退值并打印警告。
- */
-export const getJwtSecret = (): string => {
-  const secret = process.env.JWT_SECRET
-  if (secret) return secret
-  if (isProduction()) {
-    throw new Error('[Auth] JWT_SECRET 未配置：生产环境必须通过环境变量设置 JWT_SECRET，服务拒绝启动')
-  }
-  console.warn('[Auth] JWT_SECRET 未配置，使用开发回退值（仅限本地开发，禁止用于生产）')
-  return DEV_JWT_SECRET
-}
 
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 export const PRIVACY_VERSION = process.env.PRIVACY_VERSION || '1.0'
