@@ -159,6 +159,25 @@ export async function ensureLoggedIn(): Promise<boolean> {
   return silentLogin()
 }
 
+/**
+ * AI 功能准入检查：调用 AI 接口前调用。
+ * - 非微信小程序：直接放行（后端开发模式注入 dev 用户）
+ * - 已登录：放行
+ * - 未登录但已同意隐私协议：尝试静默登录，成功则放行
+ * - 未同意隐私协议：拒绝（隐私弹窗此时应正覆盖页面，用户需先同意）
+ * - 登录失败：toast 提示并拒绝
+ */
+export async function ensureAiAccess(): Promise<boolean> {
+  if (!isWeappEnv()) return true
+  if (getToken()) return true
+  if (!hasAgreedPrivacy()) return false
+  const ok = await silentLogin()
+  if (!ok) {
+    Taro.showToast({ title: '登录失败，请稍后重试', icon: 'none', duration: 2000 })
+  }
+  return ok
+}
+
 /** 退出登录：仅清除本地凭证，服务端无状态 */
 export function logout(): void {
   clearAuth()

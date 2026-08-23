@@ -7,9 +7,11 @@ import { Venus, Mars, Pencil, Trash2, Plus } from 'lucide-react-taro'
 import {
   getArchives,
   deleteArchive,
+  saveArchive,
   setCurrentArchiveId,
   getCurrentArchiveId,
 } from '@/utils/archiveStorage'
+import { deleteArchiveOnServer, fetchServerArchives, syncAllArchivesToServer } from '@/utils/serverSync'
 import type { Archive } from '@/types/archive'
 import './index.css'
 
@@ -18,10 +20,44 @@ const ArchiveListPage = () => {
   const [currentId, setCurrentId] = useState<string>('')
   const [animating, setAnimating] = useState(false)
 
+  // 登录后：先把本地档案全量同步到服务端（老用户补传），再把服务端有而本地缺失的档案合并回来（云端恢复）
+  const syncAndRestore = async () => {
+    const local = getArchives()
+    syncAllArchivesToServer(local)
+    const serverProfiles = await fetchServerArchives()
+    if (!serverProfiles) return
+    const localIds = new Set(local.map(a => a.id))
+    let restored = 0
+    const now = Date.now()
+    for (const p of serverProfiles) {
+      if (localIds.has(p.id)) continue
+      saveArchive({
+        id: p.id,
+        nickname: p.nickname || '未命名',
+        gender: (p.gender === 'female' ? 'female' : 'male') as Archive['gender'],
+        birthDate: p.birthDate || '',
+        birthTime: p.birthTime || '',
+        location: p.location || '',
+        calendarType: (p.calendarType === 'lunar' ? 'lunar' : 'solar') as Archive['calendarType'],
+        age: p.age ? parseInt(p.age, 10) || 0 : 0,
+        stylePreference: p.stylePreference || '',
+        isDefault: false,
+        createdAt: now,
+        updatedAt: now,
+      })
+      restored++
+    }
+    if (restored > 0) {
+      console.log('[Archive] 从服务端恢复档案:', restored)
+      setArchives(getArchives())
+    }
+  }
+
   useDidShow(() => {
     setArchives(getArchives())
     setCurrentId(getCurrentArchiveId())
     setAnimating(false)
+    void syncAndRestore()
   })
 
   const handleSwitch = (archive: Archive) => {
@@ -63,6 +99,7 @@ const ArchiveListPage = () => {
       success: (res) => {
         if (res.confirm) {
           deleteArchive(archive.id)
+          deleteArchiveOnServer(archive.id)
           setArchives(getArchives())
           setCurrentId(getCurrentArchiveId())
           Taro.showToast({ title: '已删除', icon: 'success' })

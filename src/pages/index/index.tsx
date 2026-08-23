@@ -23,6 +23,7 @@ import {
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
+import { ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isWeappEnv } from '@/utils/auth'
 
 // 静态图（幸运星/示例图/兜底图）URL 由 remote-assets 动态签发，禁止硬编码签名 URL（会过期）
 const EXAMPLE_DAILY_RESULT: DailyResult = {
@@ -146,10 +147,14 @@ export default function Index() {
       setDailyResult(null)
       setGenerateFailed(true)
     } else {
+      // 微信小程序：未同意隐私协议时不自动触发 AI 生成（弹窗正覆盖页面，待用户同意）
+      if (isWeappEnv() && !hasAgreedPrivacy()) return
       // 日期变化或缓存异常：清除该档案所有旧日期缓存，重新进入 loading 请求
       clearDailyResultsByArchive(activeArchive.id)
       setHasArchiveChanged(false)
       setGenerateFailed(false)
+      // 确保已持有 token 再进入生成流程（登录未完成时等一次静默登录，避免 401）
+      await ensureLoggedIn()
       Taro.navigateTo({
         url: `/pages/loading/index?mode=daily&archiveId=${activeArchive.id}`,
       })
@@ -179,8 +184,9 @@ export default function Index() {
   }, [currentArchive, handleAddArchive])
 
   // 失败冷却态的手动重试入口：清除冷却标记并进入 loading 重新生成
-  const handleRetryGenerate = useCallback(() => {
+  const handleRetryGenerate = useCallback(async () => {
     if (!currentArchive) return
+    if (!(await ensureAiAccess())) return
     clearDailyGenerateFailed(currentArchive.id, todayStr)
     setGenerateFailed(false)
     Taro.navigateTo({
@@ -197,7 +203,7 @@ export default function Index() {
     Taro.navigateTo({ url: `/pages/result/index?archiveId=${currentArchive.id}&anchor=${anchor}` })
   }, [currentArchive, handleAddArchive])
 
-  const handleViewNative = useCallback(() => {
+  const handleViewNative = useCallback(async () => {
     if (!currentArchive) return
     if (currentArchive.isDefault) {
       handleAddArchive()
@@ -209,11 +215,13 @@ export default function Index() {
       Taro.navigateTo({ url: `/pages/result/index?mode=native&archiveId=${currentArchive.id}` })
       return
     }
+    if (!(await ensureAiAccess())) return
     Taro.navigateTo({ url: `/pages/loading/index?mode=native&archiveId=${currentArchive.id}` })
   }, [currentArchive, handleAddArchive])
 
-  const handleUpdateArchive = useCallback(() => {
+  const handleUpdateArchive = useCallback(async () => {
     if (!currentArchive || currentArchive.isDefault) return
+    if (!(await ensureAiAccess())) return
     clearDailyResultsByArchive(currentArchive.id)
     Taro.navigateTo({
       url: `/pages/loading/index?mode=daily&archiveId=${currentArchive.id}`,

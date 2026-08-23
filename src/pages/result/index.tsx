@@ -20,7 +20,9 @@ import { Network } from '@/network'
 import { useLoadingTask } from '@/hooks/useLoadingTask'
 import { useRewardedVideoAd } from '@/hooks/useRewardedVideoAd'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday } from '@/utils/archiveStorage'
-import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
+import { saveHistoryFromDailyResult, saveHistoryFromNativeResult, getHistoryRecords } from '@/utils/historyStorage'
+import { syncHistoryToServer } from '@/utils/serverSync'
+import { ensureAiAccess } from '@/utils/auth'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 import { ELEMENT_COLORS } from '@/constants/element-colors'
 import { ensureRemoteAssets, refreshImageUrls, extractTosKeyFromUrl, type RemoteAssets } from '@/constants/remote-assets'
@@ -248,13 +250,28 @@ const ResultPage = () => {
   // 当前完整的 NativeResult 缓存（用于本命穿搭图片状态同步）
   const nativeResultRef = useRef<NativeResult | null>(null)
 
-  // 同步当前结果到历史记录
+  // 同步当前结果到历史记录（本地保存后，登录态下异步双写到服务端）
   const syncHistoryRecord = (dailyResult: DailyResult, patch?: { imageUrl?: string; tryOnUrl?: string; imageKey?: string; tryOnKey?: string }) => {
     try {
       const archive = getArchiveById(dailyResult.archiveId)
       saveHistoryFromDailyResult(dailyResult, archive, patch)
+      // 取合并后的最新本地记录同步服务端（幂等 upsert，图片补丁更新不会重复产生记录）
+      const record = getHistoryRecords().find(r => r.id === `${dailyResult.archiveId}_${dailyResult.date}`)
+      if (record) syncHistoryToServer(record)
     } catch (e) {
       console.error('Sync history record failed:', e)
+    }
+  }
+
+  // 本命穿搭历史记录补丁保存 + 服务端双写
+  const syncNativeHistoryRecord = (nativeResult: NativeResult, patch?: { imageUrl?: string; tryOnUrl?: string; imageKey?: string; tryOnKey?: string }) => {
+    try {
+      const archive = getArchiveById(nativeResult.archiveId)
+      saveHistoryFromNativeResult(nativeResult, archive, patch)
+      const record = getHistoryRecords().find(r => r.id === `${nativeResult.archiveId}_native`)
+      if (record) syncHistoryToServer(record)
+    } catch (e) {
+      console.error('Sync native history record failed:', e)
     }
   }
 
@@ -286,8 +303,7 @@ const ResultPage = () => {
           // 历史查看模式只回写历史记录，避免把历史图片写入今日缓存
           if (!viewingHistoryRef.current) updateNativeCache(tryOnPatch)
           if (nativeResultRef.current) {
-            const archive = getArchiveById(nativeResultRef.current.archiveId)
-            saveHistoryFromNativeResult(nativeResultRef.current, archive, tryOnPatch)
+            syncNativeHistoryRecord(nativeResultRef.current, tryOnPatch)
           }
         } else {
           if (dailyResultRef.current) {
@@ -380,6 +396,7 @@ const ResultPage = () => {
       Taro.showToast({ title: '缺少生图描述，请重试', icon: 'none' })
       return
     }
+    if (!(await ensureAiAccess())) return
     const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
     if (isWeapp) {
       const canProceed = await ensureAdWatched('请完整观看视频以解锁')
@@ -412,8 +429,7 @@ const ResultPage = () => {
           // 历史查看模式只回写历史记录，避免把历史图片写入今日缓存
           if (!viewingHistoryRef.current) updateNativeCache(imagePatch)
           if (nativeResultRef.current) {
-            const archive = getArchiveById(nativeResultRef.current.archiveId)
-            saveHistoryFromNativeResult(nativeResultRef.current, archive, imagePatch)
+            syncNativeHistoryRecord(nativeResultRef.current, imagePatch)
           }
         } else {
           if (!viewingHistoryRef.current) updateDailyCache(imagePatch)
@@ -441,6 +457,7 @@ const ResultPage = () => {
       Taro.showToast({ title: '请先解锁平铺图', icon: 'none' })
       return
     }
+    if (!(await ensureAiAccess())) return
     const isWeapp = Taro.getEnv() === Taro.ENV_TYPE.WEAPP
     if (isWeapp) {
       const canProceed = await ensureAdWatched('请完整观看视频以解锁上身图')
@@ -660,7 +677,6 @@ const ResultPage = () => {
     recordMode: 'daily' | 'native' = 'daily'
   ) => {
     if (mode === 'history') {
-      const { getHistoryRecords } = await import('@/utils/historyStorage')
       const records = getHistoryRecords()
       const record = records.find(
         r => r.archiveId === archiveId && r.mode === recordMode && (recordMode === 'native' || r.date === historyDate)
@@ -830,12 +846,13 @@ const ResultPage = () => {
   }
 
   // 再测一次确认：进入 loading 页重新请求数据，覆盖之前生成的记录
-  const handleRetestConfirm = () => {
+  const handleRetestConfirm = async () => {
     const archiveId = currentArchiveIdRef.current
     if (!archiveId) {
       Taro.showToast({ title: '未找到档案信息', icon: 'none' })
       return
     }
+    if (!(await ensureAiAccess())) return
     const mode = pageModeRef.current === 'native' ? 'native' : 'daily'
     // action=redesign：仅重新生成穿搭方案，喜用神/幸运指数沿用不变；
     // from=result：生成完成后返回结果页而不是首页

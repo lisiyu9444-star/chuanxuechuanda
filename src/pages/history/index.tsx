@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronRight, Trash2 } from 'lucide-react-taro'
-import { getHistoryRecords, deleteHistoryRecord, clearHistoryRecords, refreshHistoryImageUrls, type HistoryRecordItem } from '@/utils/historyStorage'
+import { getHistoryRecords, deleteHistoryRecord, clearHistoryRecords, refreshHistoryImageUrls, saveHistoryRecord, type HistoryRecordItem } from '@/utils/historyStorage'
 import { refreshImageUrls, extractTosKeyFromUrl } from '@/constants/remote-assets'
+import { deleteHistoryOnServer, clearHistoryOnServer, fetchServerHistory, parseServerHistoryRecord } from '@/utils/serverSync'
 
 export default function HistoryPage() {
   const [records, setRecords] = useState<HistoryRecordItem[]>([])
@@ -43,14 +44,37 @@ export default function HistoryPage() {
     }
   }
 
+  // 登录后从服务端拉取记录，把本地缺失的合并回来（跨设备/换机恢复），再刷新页面
+  const restoreFromServer = async () => {
+    const rows = await fetchServerHistory()
+    if (!rows || rows.length === 0) return
+    const localIds = new Set(getHistoryRecords().map(r => r.id))
+    let restored = 0
+    for (const row of rows) {
+      if (!row.clientId || localIds.has(row.clientId)) continue
+      const record = parseServerHistoryRecord(row)
+      if (record) {
+        saveHistoryRecord(record)
+        restored++
+      }
+    }
+    if (restored > 0) {
+      console.log('[History] 从服务端恢复记录:', restored)
+      const list = loadRecords()
+      refreshRecordImages(list)
+    }
+  }
+
   useDidShow(() => {
     const list = loadRecords()
     setActiveId(null)
     refreshRecordImages(list)
+    void restoreFromServer()
   })
 
   const handleDelete = (id: string) => {
     deleteHistoryRecord(id)
+    deleteHistoryOnServer(id)
     loadRecords()
     setActiveId(null)
   }
@@ -63,6 +87,7 @@ export default function HistoryPage() {
       success: (res) => {
         if (res.confirm) {
           clearHistoryRecords()
+          clearHistoryOnServer()
           loadRecords()
           setActiveId(null)
         }

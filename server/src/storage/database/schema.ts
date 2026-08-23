@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, varchar, text, bigint, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, bigint, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const shares = pgTable(
   "shares",
@@ -85,12 +85,15 @@ export const baziRecords = pgTable(
     tryOnUrl: varchar("try_on_url", { length: 500 }),
     llmPlan: text("llm_plan"), // JSON
     luckyScore: text("lucky_score"), // JSON
+    /** 前端本地记录 id（`${archiveId}_${date}` / `${archiveId}_native`），用于幂等 upsert 与删除同步 */
+    clientId: varchar("client_id", { length: 128 }),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
   },
   (table) => [
     index("bazi_records_user_id_idx").on(table.userId),
     index("bazi_records_profile_id_idx").on(table.profileId),
     index("bazi_records_type_idx").on(table.type),
+    uniqueIndex("bazi_records_user_client_idx").on(table.userId, table.clientId),
   ]
 );
 

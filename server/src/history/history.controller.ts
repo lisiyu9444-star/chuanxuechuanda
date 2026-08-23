@@ -5,6 +5,8 @@ import { db } from '@/storage/database/db'
 import { baziRecords } from '@/storage/database/schema'
 
 interface SaveRecordBody {
+  /** 前端本地记录 id（幂等键）：同用户 + clientId 已存在时执行更新而非新增 */
+  clientId?: string
   profileId?: string
   type?: string
   nickname?: string
@@ -49,14 +51,43 @@ export class HistoryController {
     return { data: { list: rows, total, page: pageNum, pageSize: size } }
   }
 
-  /** 保存一条 AI 生成记录（异步双写，前端在生成完成后调用） */
+  /** 保存一条 AI 生成记录（幂等：携带 clientId 时同记录重复保存执行更新） */
   @Post('save')
   @HttpCode(200)
   async save(@Req() req: any, @Body() body: SaveRecordBody) {
+    const clientId = body?.clientId || null
+
+    if (clientId) {
+      const existing = await db
+        .select()
+        .from(baziRecords)
+        .where(and(eq(baziRecords.userId, req.user.userId), eq(baziRecords.clientId, clientId)))
+        .limit(1)
+      if (existing[0]) {
+        // 更新图片/结果字段（后续补丁如试穿图、平铺图换签后同步更新）
+        await db
+          .update(baziRecords)
+          .set({
+            profileId: body?.profileId ?? existing[0].profileId,
+            type: body?.type ?? existing[0].type,
+            nickname: body?.nickname ?? existing[0].nickname,
+            gender: body?.gender ?? existing[0].gender,
+            result: body?.result ?? existing[0].result,
+            imageUrl: body?.imageUrl ?? existing[0].imageUrl,
+            tryOnUrl: body?.tryOnUrl ?? existing[0].tryOnUrl,
+            llmPlan: body?.llmPlan ?? existing[0].llmPlan,
+            luckyScore: body?.luckyScore ?? existing[0].luckyScore,
+          })
+          .where(eq(baziRecords.id, existing[0].id))
+        return { data: { id: existing[0].id, updated: true } }
+      }
+    }
+
     const id = uuidv4()
     await db.insert(baziRecords).values({
       id,
       userId: req.user.userId,
+      clientId,
       profileId: body?.profileId || null,
       type: body?.type || 'daily',
       nickname: body?.nickname || '',
@@ -68,7 +99,7 @@ export class HistoryController {
       luckyScore: body?.luckyScore || null,
       createdAt: Date.now(),
     })
-    return { data: { id } }
+    return { data: { id, updated: false } }
   }
 
   /** 记录详情 */
@@ -82,13 +113,29 @@ export class HistoryController {
     return { data: record }
   }
 
-  /** 删除记录 */
+  /** 删除记录（按服务端 id） */
   @Delete(':id')
   async remove(@Req() req: any, @Param('id') id: string) {
     const rows = await db.select().from(baziRecords).where(eq(baziRecords.id, id)).limit(1)
     if (rows[0] && rows[0].userId === req.user.userId) {
       await db.delete(baziRecords).where(eq(baziRecords.id, id))
     }
+    return { data: { success: true } }
+  }
+
+  /** 删除记录（按前端本地记录 clientId，用于本地删除联动） */
+  @Delete('client/:clientId')
+  async removeByClientId(@Req() req: any, @Param('clientId') clientId: string) {
+    await db
+      .delete(baziRecords)
+      .where(and(eq(baziRecords.userId, req.user.userId), eq(baziRecords.clientId, clientId)))
+    return { data: { success: true } }
+  }
+
+  /** 清空本人全部历史记录 */
+  @Delete()
+  async clearAll(@Req() req: any) {
+    await db.delete(baziRecords).where(eq(baziRecords.userId, req.user.userId))
     return { data: { success: true } }
   }
 }
