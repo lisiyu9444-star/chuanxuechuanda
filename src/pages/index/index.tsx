@@ -147,7 +147,7 @@ export default function Index() {
       setDailyResult(null)
       setGenerateFailed(true)
     } else {
-      // 微信小程序：未同意隐私协议时不自动触发 AI 生成（弹窗正覆盖页面，待用户同意）
+      // 微信小程序：未同意隐私协议（未登录）时不自动触发 AI 生成，等待用户在登录弹层完成授权
       if (isWeappEnv() && !hasAgreedPrivacy()) return
       // 日期变化或缓存异常：清除该档案所有旧日期缓存，重新进入 loading 请求
       clearDailyResultsByArchive(activeArchive.id)
@@ -171,7 +171,7 @@ export default function Index() {
   }, [])
 
   const handleAddArchive = useCallback(async () => {
-    // 添加档案需登录：未登录时唤起全局登录引导（隐私弹窗），同意登录后再次点击即可
+    // 添加档案需登录：未登录时唤起全局登录弹层，完成登录后再次点击即可
     if (!(await requireLogin())) return
     Taro.navigateTo({ url: '/pages/archive/form/index' })
   }, [])

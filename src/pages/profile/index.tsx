@@ -60,8 +60,8 @@ export default function ProfilePage() {
     Taro.navigateTo({ url: '/pages/privacy/index' })
   }
 
-  const handleRelogin = async () => {
-    // 统一登录门禁：未同意隐私协议时唤起登录（隐私）弹窗；失败提示由 requireLogin 内部处理
+  const handleLogin = async () => {
+    // 统一登录门禁：未同意隐私协议时唤起登录弹层；失败提示由 requireLogin 内部处理
     const ok = await requireLogin()
     refreshAuthState()
     if (ok) {
@@ -88,37 +88,45 @@ export default function ProfilePage() {
       </View>
 
       <View className="px-4 space-y-4 pb-8">
-        {/* 登录状态卡片（仅微信小程序展示） */}
+        {/* 登录状态卡片（仅微信小程序展示）：未登录整卡即登录入口，点击唤起登录弹层 */}
         {showAuthSection && (
-          <Card className="border-0 shadow-sm">
+          <Card
+            className={`border-0 shadow-sm ${loggedIn ? '' : 'active:opacity-80'}`}
+            onClick={loggedIn ? undefined : () => { void handleLogin() }}
+          >
             <CardContent className="p-4">
               <View className="flex items-center justify-between">
                 <View className="flex items-center gap-3">
-                  <Avatar className="w-12 h-12 bg-slate-100">
+                  <Avatar className="w-14 h-14 bg-slate-100">
                     {authUser?.avatarUrl && <AvatarImage src={authUser.avatarUrl} mode="aspectFill" />}
                     <AvatarFallback className="bg-slate-100">
-                      <UserRound size={22} color="#9ca3af" />
+                      <UserRound size={26} color="#9ca3af" />
                     </AvatarFallback>
                   </Avatar>
                   <View>
-                    <Text className="block text-base font-semibold text-slate-900">
-                      {loggedIn ? authUser?.nickname || '微信用户' : '未登录'}
-                    </Text>
-                    <Text className="block text-xs text-slate-500 mt-1">
-                      {loggedIn ? '已开启云端数据同步' : '登录后云端保存档案与记录'}
-                    </Text>
+                    {loggedIn ? (
+                      <>
+                        <Text className="block text-base font-semibold text-slate-900">
+                          {authUser?.nickname || '微信用户'}
+                        </Text>
+                        <Text className="block text-xs text-slate-500 mt-1">
+                          ID: {authUser?.displayId || '--'}
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text className="block text-lg font-semibold text-slate-900">点击登录</Text>
+                        <Text className="block text-xs text-slate-500 mt-1">登录后解锁更多精彩功能</Text>
+                      </>
+                    )}
                   </View>
                 </View>
-                {loggedIn ? (
-                  <Button variant="outline" size="sm" className="rounded-full" onClick={() => setLogoutDialogOpen(true)}>
+                {loggedIn && (
+                  <Button variant="outline" size="sm" className="rounded-full" onClick={(e) => { e.stopPropagation(); setLogoutDialogOpen(true) }}>
                     <View className="flex items-center gap-1">
                       <LogOut size={14} color="#64748b" />
                       <Text className="text-xs">退出</Text>
                     </View>
-                  </Button>
-                ) : (
-                  <Button size="sm" className="rounded-full" onClick={handleRelogin}>
-                    <Text className="text-xs">微信登录</Text>
                   </Button>
                 )}
               </View>

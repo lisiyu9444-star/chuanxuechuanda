@@ -1,27 +1,25 @@
 import { PropsWithChildren, useEffect, useState } from 'react';
-import Taro, { useDidHide, useDidShow, useLaunch } from '@tarojs/taro';
+import Taro, { useDidHide, useLaunch } from '@tarojs/taro';
 import { LucideTaroProvider } from 'lucide-react-taro';
 import '@/app.css';
 import { Toaster } from '@/components/ui/toast';
-import { PrivacyDialog } from '@/components/privacy-dialog';
-import { AUTH_EVENTS, agreePrivacy, hasAgreedPrivacy, isWeappEnv, setupAuthHooks, silentLogin } from '@/utils/auth';
+import { LoginSheet } from '@/components/login-sheet';
+import { AUTH_EVENTS, hasAgreedPrivacy, isWeappEnv, setupAuthHooks, silentLogin } from '@/utils/auth';
 import { Preset } from './presets';
 
 const App = ({ children }: PropsWithChildren) => {
-  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [showLoginSheet, setShowLoginSheet] = useState(false);
 
   useLaunch(() => {
     // 注册全局鉴权钩子（所有请求自动携带 token，401 自动后台重登）
     setupAuthHooks();
 
-    // 仅微信小程序启用登录与隐私协议流程
+    // 仅微信小程序启用登录体系：已同意过隐私协议的老用户后台静默登录，不阻塞启动。
+    // 未登录/未同意的新用户不再强制弹窗，可正常浏览示例内容；
+    // 在「添加档案 / AI 生成 / 历史记录」等入口由 requireLogin 唤起登录弹层。
     if (!isWeappEnv()) return;
-
     if (hasAgreedPrivacy()) {
-      // 已同意过当前版本：后台静默登录，不阻塞启动
       void silentLogin();
-    } else {
-      setShowPrivacyDialog(true);
     }
   });
 
@@ -30,40 +28,24 @@ const App = ({ children }: PropsWithChildren) => {
     Taro.eventCenter.trigger('onHide')
   })
 
-  // 每次回到前台复查隐私协议状态：版本过期/从未同意时重新弹出（弹窗遮罩阻断使用，不同意不可使用）
-  useDidShow(() => {
-    if (isWeappEnv() && !hasAgreedPrivacy()) {
-      setShowPrivacyDialog(true);
-    }
-  })
-
-  // 全局登录引导：业务页面在「添加档案 / AI 生成 / 历史记录」等入口触发 SHOW_PRIVACY_DIALOG，
-  // 此处统一唤起隐私弹窗（用户同意即完成微信登录，之后重新触发原操作即可）
+  // 全局登录弹层：业务页面在登录门禁入口触发 SHOW_LOGIN_DIALOG，此处统一唤起
   useEffect(() => {
-    const handleShowPrivacy = () => {
-      if (isWeappEnv() && !hasAgreedPrivacy()) {
-        setShowPrivacyDialog(true);
+    const handleShowLogin = () => {
+      if (isWeappEnv()) {
+        setShowLoginSheet(true);
       }
     };
-    Taro.eventCenter.on(AUTH_EVENTS.SHOW_PRIVACY_DIALOG, handleShowPrivacy);
+    Taro.eventCenter.on(AUTH_EVENTS.SHOW_LOGIN_DIALOG, handleShowLogin);
     return () => {
-      Taro.eventCenter.off(AUTH_EVENTS.SHOW_PRIVACY_DIALOG, handleShowPrivacy);
+      Taro.eventCenter.off(AUTH_EVENTS.SHOW_LOGIN_DIALOG, handleShowLogin);
     };
   }, []);
-
-  const handleAgreePrivacy = async () => {
-    const ok = await agreePrivacy();
-    setShowPrivacyDialog(false);
-    if (!ok) {
-      Taro.showToast({ title: '登录失败，部分功能暂不可用', icon: 'none', duration: 2000 });
-    }
-  };
 
   return (
     <LucideTaroProvider defaultColor="#000" defaultSize={24}>
       <Preset>{children}</Preset>
       <Toaster />
-      <PrivacyDialog open={showPrivacyDialog} onAgree={handleAgreePrivacy} />
+      <LoginSheet open={showLoginSheet} onOpenChange={setShowLoginSheet} />
     </LucideTaroProvider>
   );
 };

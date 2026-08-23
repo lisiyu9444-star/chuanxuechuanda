@@ -36,6 +36,7 @@ export class AuthController {
         userId: req.user.userId,
         nickname: user?.nickname || null,
         avatarUrl: user?.avatarUrl || null,
+        displayId: user?.displayId || null,
         privacyVersion: PRIVACY_VERSION,
         latestConsentedVersion,
       },

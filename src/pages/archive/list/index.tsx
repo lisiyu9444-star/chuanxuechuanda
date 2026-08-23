@@ -131,7 +131,7 @@ const ArchiveListPage = () => {
   }
 
   const handleAdd = async () => {
-    // 添加档案需登录：未登录时 requireLogin 会唤起全局登录（隐私弹窗），同意登录后再次点击即可
+    // 添加档案需登录：未登录时 requireLogin 会唤起全局登录弹层，完成登录后再次点击即可
     if (!(await requireLogin())) return
     Taro.navigateTo({ url: '/pages/archive/form/index' })
   }

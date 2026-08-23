@@ -20,12 +20,24 @@ export interface LoginResult {
   isNewUser: boolean
   nickname: string | null
   avatarUrl: string | null
+  displayId: string
   privacyVersion: string
 }
 
 @Injectable()
 export class AuthService {
   constructor(private readonly jwtService: JwtService) {}
+
+  /** 生成全局唯一的随机数字 ID（8 位，如 16109284），冲突时重试 */
+  private async generateDisplayId(): Promise<string> {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = String(10000000 + Math.floor(Math.random() * 90000000))
+      const dup = await db.select({ id: users.id }).from(users).where(eq(users.displayId, candidate)).limit(1)
+      if (dup.length === 0) return candidate
+    }
+    // 理论几乎不可达；兜底用 10 位降低碰撞域
+    return String(1000000000 + Math.floor(Math.random() * 9000000000))
+  }
 
   /** 微信登录：code 换 openid，创建/更新用户，签发 JWT */
   async wxLogin(code: string): Promise<LoginResult> {
@@ -38,20 +50,28 @@ export class AuthService {
     let isNewUser: boolean
     let nickname: string | null = null
     let avatarUrl: string | null = null
+    let displayId: string | null = null
 
     if (existing.length > 0) {
       userId = existing[0].id
       nickname = existing[0].nickname
       avatarUrl = existing[0].avatarUrl
+      displayId = existing[0].displayId
       isNewUser = false
-      await db.update(users).set({ lastLoginAt: now, updatedAt: now }).where(eq(users.id, userId))
+      // 老用户首次升级到本版本时补发数字 ID
+      if (!displayId) {
+        displayId = await this.generateDisplayId()
+      }
+      await db.update(users).set({ lastLoginAt: now, updatedAt: now, displayId }).where(eq(users.id, userId))
     } else {
       userId = uuidv4()
       isNewUser = true
+      displayId = await this.generateDisplayId()
       await db.insert(users).values({
         id: userId,
         openid,
         unionid: unionid || null,
+        displayId,
         createdAt: now,
         updatedAt: now,
         lastLoginAt: now,
@@ -60,7 +80,7 @@ export class AuthService {
 
     // payload 只携带 userId（sub），openid 等敏感标识不进 token
     const token = this.jwtService.sign({ sub: userId })
-    return { token, userId, isNewUser, nickname, avatarUrl, privacyVersion: PRIVACY_VERSION }
+    return { token, userId, isNewUser, nickname, avatarUrl, displayId, privacyVersion: PRIVACY_VERSION }
   }
 
   /** 严格模式走微信 code2Session；开发模式以 code 派生伪 openid（仅本地开发可用） */

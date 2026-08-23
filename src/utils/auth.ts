@@ -13,9 +13,10 @@ import { setCurrentArchiveId, DEFAULT_ARCHIVE } from './archiveStorage'
  *
  * 登录门禁（数据与登录状态绑定）：
  * - 未登录仅可浏览示例档案；添加档案 / AI 生成 / 历史记录均需登录
- * - 业务入口统一调用 requireLogin()：已登录放行；未同意隐私 → 唤起全局隐私弹窗（同意即登录）；
- *   已同意但无 token → 静默重登
+ * - 业务入口统一调用 requireLogin()：已登录放行；未同意隐私 → 唤起全局登录弹层（LoginSheet，
+ *   勾选协议 + 微信快捷登录）；已同意但无 token → 静默重登
  * - 登录/退出通过 AUTH_EVENTS 广播，各页面监听后刷新视图
+ * - 登录成功后服务端下发随机数字 ID（displayId），「我的」页展示为 ID: xxxxxxxx
  *
  * H5/抖音端：不启用登录与隐私弹窗，后端在开发模式下会注入 dev 用户。
  */
@@ -31,6 +32,8 @@ export interface AuthUser {
   userId: string
   nickname: string | null
   avatarUrl: string | null
+  /** 对外展示的随机数字 ID（如 16109284），登录时由服务端下发 */
+  displayId: string | null
 }
 
 /** 仅微信小程序启用登录体系 */
@@ -41,12 +44,12 @@ export const isWeappEnv = (): boolean => Taro.getEnv() === Taro.ENV_TYPE.WEAPP
 /**
  * 登录状态相关事件（Taro.eventCenter）。
  * 页面（档案列表/历史记录/首页等）监听 LOGIN_SUCCESS / LOGOUT 后刷新视图；
- * SHOW_PRIVACY_DIALOG 由 app.tsx 监听以唤起全局隐私弹窗（同意即登录）。
+ * SHOW_LOGIN_DIALOG 由 app.tsx 监听以唤起全局登录弹层（LoginSheet）。
  */
 export const AUTH_EVENTS = {
-  /** 请求弹出隐私协议弹窗（requireLogin 在未同意隐私时触发） */
-  SHOW_PRIVACY_DIALOG: 'auth:show-privacy-dialog',
-  /** 登录成功广播（静默登录/隐私同意完成后） */
+  /** 请求唤起登录弹层（requireLogin 在未登录时触发，app.tsx 监听挂载 LoginSheet） */
+  SHOW_LOGIN_DIALOG: 'auth:show-login-dialog',
+  /** 登录成功广播（静默登录/登录弹层完成后） */
   LOGIN_SUCCESS: 'auth:login-success',
   /** 退出登录广播（各页面据此恢复示例/空态） */
   LOGOUT: 'auth:logout',
@@ -159,6 +162,7 @@ export function silentLogin(): Promise<boolean> {
           userId: data.userId,
           nickname: data.nickname || null,
           avatarUrl: data.avatarUrl || null,
+          displayId: data.displayId || null,
         } as AuthUser)
         console.log('[Auth] 静默登录成功, userId:', data.userId)
         // 广播登录成功：档案列表/历史记录等页面监听后恢复用户数据视图
@@ -188,7 +192,7 @@ export async function ensureLoggedIn(): Promise<boolean> {
 
 /**
  * AI 功能准入检查：调用 AI 接口前调用。
- * 规则与 requireLogin 一致：未登录时唤起全局登录引导（隐私弹窗），用户同意登录后重新触发即可。
+ * 规则与 requireLogin 一致：未登录时唤起全局登录弹层，用户完成登录后重新触发即可。
  */
 export async function ensureAiAccess(): Promise<boolean> {
   return requireLogin()
@@ -198,15 +202,15 @@ export async function ensureAiAccess(): Promise<boolean> {
  * 统一登录门禁：业务入口（添加档案 / AI 生成 / 历史记录等）调用。
  * - 非微信小程序：直接放行（后端开发模式注入 dev 用户）
  * - 已登录：放行
- * - 未登录且未同意隐私协议：唤起全局隐私弹窗（用户同意即完成登录），本次操作拒绝，用户同意后重新触发即可
- * - 未登录但已同意隐私协议：尝试静默重登
+ * - 未登录且未同意隐私协议：唤起全局登录弹层（勾选协议 + 微信快捷登录），本次操作拒绝，登录成功后重新触发即可
+ * - 未登录但已同意隐私协议：尝试静默重登（无需打扰用户）
  */
 export async function requireLogin(): Promise<boolean> {
   if (!isWeappEnv()) return true
   if (getToken()) return true
   if (!hasAgreedPrivacy()) {
-    console.log('[Auth] requireLogin: 未同意隐私协议，唤起登录弹窗')
-    Taro.eventCenter.trigger(AUTH_EVENTS.SHOW_PRIVACY_DIALOG)
+    console.log('[Auth] requireLogin: 未登录，唤起登录弹层')
+    Taro.eventCenter.trigger(AUTH_EVENTS.SHOW_LOGIN_DIALOG)
     return false
   }
   const ok = await silentLogin()

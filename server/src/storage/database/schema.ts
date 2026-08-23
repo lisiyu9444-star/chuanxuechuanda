@@ -30,11 +30,16 @@ export const users = pgTable(
     unionid: varchar("unionid", { length: 128 }),
     nickname: varchar("nickname", { length: 100 }),
     avatarUrl: varchar("avatar_url", { length: 500 }),
+    // 对外展示的随机数字 ID（如 ID: 16109284），创建用户时生成，全局唯一
+    displayId: varchar("display_id", { length: 16 }),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
     lastLoginAt: bigint("last_login_at", { mode: "number" }),
   },
-  (table) => [index("users_openid_idx").on(table.openid)]
+  (table) => [
+    index("users_openid_idx").on(table.openid),
+    uniqueIndex("users_display_id_idx").on(table.displayId),
+  ]
 );
 
 // 隐私协议同意记录表：每次同意留痕
