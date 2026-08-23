@@ -133,7 +133,8 @@ const SheetOverlay = React.forwardRef<
       <View
         data-state={state}
         className={cn(
-          "fixed inset-0 isolate z-50 bg-black bg-opacity-10 opacity-0 transition-opacity duration-300 ease-in-out data-[state=open]:opacity-100 supports-[backdrop-filter]:backdrop-blur-sm will-change-opacity",
+          "fixed inset-0 isolate z-50 bg-black bg-opacity-10 transition-opacity duration-300 ease-in-out supports-[backdrop-filter]:backdrop-blur-sm will-change-opacity",
+          visualOpen ? "opacity-100" : "opacity-0",
           className
         )}
         {...props}
@@ -149,18 +150,17 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = "SheetOverlay"
 
 // 动画方案：transition-transform + translate（跨端可靠），不使用 tailwindcss-animate keyframes
-//（项目未配置该插件，animate-in/slide-in-from-* 类无对应 CSS，会导致弹层生硬闪现）
+//（项目未配置该插件，animate-in/slide-in-from-* 类无对应 CSS，会导致弹层生硬闪现）；
+// 也不用 data-[state=...] 选择器类：小程序端该 variant 不会生成匹配规则，弹层会永远停在屏外
 const sheetVariants = cva(
   "fixed z-50 gap-4 bg-background p-6 shadow-lg transition-transform ease-in-out duration-300 will-change-transform",
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b -translate-y-full data-[state=open]:translate-y-0",
-        bottom:
-          "inset-x-0 bottom-0 border-t translate-y-full data-[state=open]:translate-y-0",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r -translate-x-full data-[state=open]:translate-x-0 sm:max-w-sm",
-        right:
-          "inset-y-0 right-0 h-full w-3/4  border-l translate-x-full data-[state=open]:translate-x-0 sm:max-w-sm",
+        top: "inset-x-0 top-0 border-b",
+        bottom: "inset-x-0 bottom-0 border-t",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
+        right: "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
       },
     },
     defaultVariants: {
@@ -168,6 +168,14 @@ const sheetVariants = cva(
     },
   }
 )
+
+// 关闭态屏外偏移类（打开时由 translate-x-0/translate-y-0 覆盖归位，transition 产生滑动动画）
+const sheetHiddenClass: Record<string, string> = {
+  top: "-translate-y-full",
+  bottom: "translate-y-full",
+  left: "-translate-x-full",
+  right: "translate-x-full",
+}
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof View>,
@@ -189,15 +197,23 @@ const SheetContent = React.forwardRef<
         <SheetOverlay />
         <View
           ref={ref}
-          className={cn(sheetVariants({ side }), "sheet-content", className)}
+          className={cn(
+            sheetVariants({ side }),
+            "sheet-content",
+            visualOpen ? "translate-x-0 translate-y-0" : sheetHiddenClass[side || "right"],
+            className
+          )}
           data-state={state}
           data-side={side}
           onClick={(e) => e.stopPropagation()}
           {...props}
         >
           {children}
-          <View 
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary"
+          <View
+            className={cn(
+              "absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none",
+              visualOpen && "bg-secondary"
+            )}
             data-state={state}
             onClick={(e) => {
                   e.stopPropagation()
