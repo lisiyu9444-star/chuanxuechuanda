@@ -8,7 +8,8 @@ import { CloudOff, RefreshCw } from 'lucide-react-taro'
 import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, clearDailyGenerateFailed, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
-import { saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
+import { buildHistoryRecord, saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
+import { syncArchiveToServer, syncHistoryToServer } from '@/utils/serverSync'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 
 const getLoadingSteps = (mode: 'daily' | 'native') => [
@@ -113,6 +114,9 @@ const LoadingPage = () => {
         saveNativeResult(nativeResult)
         // 本命穿搭也生成历史记录，与今日穿搭独立存储
         saveHistoryFromNativeResult(nativeResult, currentArchive)
+        // 登录后异步双写到服务端（档案也兜底同步一次）
+        syncArchiveToServer(currentArchive)
+        syncHistoryToServer(buildHistoryRecord(nativeResult, currentArchive, 'native'))
         setProgressValue(100)
         if (fromRef.current === 'result') {
           // 从结果页“再测一次”进入，返回原结果页展示新数据
@@ -136,6 +140,9 @@ const LoadingPage = () => {
         generatedAt: Date.now(),
       }
       saveDailyResult(dailyResult)
+      // 本地历史记录由结果页统一保存（含图片补丁合并），此处仅做服务端双写
+      syncArchiveToServer(currentArchive)
+      syncHistoryToServer(buildHistoryRecord(dailyResult, currentArchive, 'daily'))
       clearDailyGenerateFailed(archiveId, dateStr)
       setProgressValue(100)
       if (fromRef.current === 'result') {
@@ -235,6 +242,8 @@ const LoadingPage = () => {
         }
         saveNativeResult(newNative)
         saveHistoryFromNativeResult(newNative, currentArchive)
+        syncArchiveToServer(currentArchive)
+        syncHistoryToServer(buildHistoryRecord(newNative, currentArchive, 'native'))
       } else {
         const newDaily: DailyResult = {
           ...(cached as DailyResult),
@@ -252,6 +261,8 @@ const LoadingPage = () => {
         }
         saveDailyResult(newDaily)
         saveHistoryFromDailyResult(newDaily, currentArchive)
+        syncArchiveToServer(currentArchive)
+        syncHistoryToServer(buildHistoryRecord(newDaily, currentArchive, 'daily'))
       }
 
       setProgressValue(100)

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common'
 import { SkipThrottle } from '@nestjs/throttler'
+import { Public } from '@/auth/public.decorator'
 import { getStorage, signKey, DEFAULT_SIGN_EXPIRE_SECONDS } from './tos-utils'
 
 /**
@@ -63,6 +64,7 @@ async function resolveAssetKey(name: string, configuredKey: string): Promise<str
   return resolved
 }
 
+@Public()
 @Controller('assets')
 export class AssetsController {
   /**

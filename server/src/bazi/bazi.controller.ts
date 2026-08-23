@@ -10,6 +10,7 @@ import { BaziService, BaZiResult, FourPillar, FavorableAnalysis, OutfitRecommend
 import { StylistService, StylistResult, LuckyScore } from './stylist.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
 import { v4 as uuidv4 } from 'uuid'
+import { Public } from '@/auth/public.decorator'
 
 @Controller('bazi')
 export class BaziController {
@@ -150,7 +151,8 @@ export class BaziController {
     }
   }
 
-  // 取消任务接口
+  // 取消任务接口（用户退出页面时调用，可能处于未登录态，放行）
+  @Public()
   @Post('cancel')
   @HttpCode(200)
   async cancelTask(

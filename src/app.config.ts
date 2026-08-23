@@ -6,7 +6,8 @@ export default defineAppConfig({
     'pages/profile/index',
     'pages/archive/list/index',
     'pages/archive/form/index',
-    'pages/history/index'
+    'pages/history/index',
+    'pages/privacy/index'
   ],
   window: {
     backgroundTextStyle: 'light',

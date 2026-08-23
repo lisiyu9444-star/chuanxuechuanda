@@ -10,6 +10,9 @@ import { ConfigController } from '@/config/config.controller'
 import { ShareController } from '@/share/share.controller'
 import { LogController } from '@/log/log.controller'
 import { AssetsController } from '@/assets/assets.controller'
+import { AuthModule } from '@/auth/auth.module'
+import { ProfileModule } from '@/profile/profile.module'
+import { HistoryModule } from '@/history/history.module'
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { AssetsController } from '@/assets/assets.controller'
         limit: 10,  // 每分钟最多 10 次请求
       },
     ]),
+    AuthModule,
+    ProfileModule,
+    HistoryModule,
   ],
   controllers: [AppController, BaziController, ConfigController, ShareController, LogController, AssetsController],
   providers: [

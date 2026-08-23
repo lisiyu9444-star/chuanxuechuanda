@@ -1,5 +1,7 @@
 import { Controller, Get, HttpCode } from '@nestjs/common'
+import { Public } from '@/auth/public.decorator'
 
+@Public()
 @Controller('config')
 export class ConfigController {
   @Get('features')

@@ -11,17 +11,28 @@ import {
   BadRequestException,
 } from '@nestjs/common'
 import { eq } from 'drizzle-orm'
+import { Headers } from '@nestjs/common'
 import { db } from '../storage/database/db'
 import { shares } from '../storage/database/schema'
 import { signUrl } from '../assets/tos-utils'
+import { Public } from '../auth/public.decorator'
+import { AuthService } from '../auth/auth.service'
 
+// 分享查看页可能被未登录访客打开，整个控制器保持公开；
+// save 时若携带有效 token 则关联 userId，便于后续统计。
+@Public()
 @Controller('share')
 export class ShareController {
   private readonly logger = new Logger(ShareController.name)
 
+  constructor(private readonly authService: AuthService) {}
+
   @Post('save')
   @HttpCode(HttpStatus.OK)
-  async saveShare(@Body() body: { nickname: string; gender: string; result: any; imageUrl?: string; tryOnUrl?: string }) {
+  async saveShare(
+    @Body() body: { nickname: string; gender: string; result: any; imageUrl?: string; tryOnUrl?: string },
+    @Headers('authorization') authorization?: string,
+  ) {
     const shareId = `share_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     const now = Date.now()
     const expiresAt = now + 180 * 24 * 60 * 60 * 1000
@@ -30,8 +41,12 @@ export class ShareController {
       throw new BadRequestException('Result is required')
     }
 
+    const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : ''
+    const authUser = token ? await this.authService.verifyTokenOptional(token) : null
+
     const shareData = {
       id: shareId,
+      userId: authUser?.userId || null,
       nickname: body.nickname,
       gender: body.gender || 'male',
       result: JSON.stringify(body.result),

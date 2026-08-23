@@ -13,6 +13,7 @@ import {
   hasRealArchive,
   setCurrentArchiveId,
 } from '@/utils/archiveStorage'
+import { syncArchiveToServer } from '@/utils/serverSync'
 import type { Archive } from '@/types/archive'
 import './index.css'
 
@@ -169,6 +170,8 @@ const ArchiveFormPage = () => {
     const onlyHasDefaultArchive = isCreating && !hasRealArchive()
 
     saveArchive(newArchive)
+    // 登录后异步同步到服务端（本地仍是主存储，失败不影响使用）
+    syncArchiveToServer(newArchive)
 
     // 新建档案时：如果当前只有示例档案，自动选中新档案并进入 loading 生成今日穿搭
     if (onlyHasDefaultArchive) {

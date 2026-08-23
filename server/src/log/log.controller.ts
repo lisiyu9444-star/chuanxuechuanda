@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common'
 import { SkipThrottle } from '@nestjs/throttler'
+import { Public } from '@/auth/public.decorator'
 
 interface ClientLogBody {
   /** 日志来源标签，如 rewarded-ad */
@@ -16,6 +17,7 @@ interface ClientLogBody {
  * 客户端日志上报接口。
  * 用于正式环境（无 vConsole）诊断端侧问题，日志写入服务 stdout 后可在线上运行日志中检索。
  */
+@Public()
 @Controller('log')
 export class LogController {
   @Post('client')

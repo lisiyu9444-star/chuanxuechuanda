@@ -16,10 +16,45 @@ export namespace Network {
         return `${PROJECT_DOMAIN}${url}`
     }
 
+    /**
+     * 鉴权钩子（全局 header 场景）。
+     * 由 src/utils/auth.ts 在应用启动时注册：为所有请求注入 Authorization，
+     * 并在收到 401 时触发静默重登（不重试当前请求，保住 RequestTask 的 abort 能力）。
+     */
+    interface AuthHooks {
+        getAuthHeader?: () => Record<string, string>
+        onUnauthorized?: () => void
+    }
+    let authHooks: AuthHooks = {}
+
+    export const setAuthHooks = (hooks: AuthHooks): void => {
+        authHooks = hooks
+    }
+
+    const mergeAuthHeader = (header?: Record<string, string>): Record<string, string> => {
+        const authHeader = authHooks.getAuthHeader?.() || {}
+        return { ...authHeader, ...(header || {}) }
+    }
+
+    const handleResponseStatus = (statusCode: number): void => {
+        if (statusCode === 401) {
+            try {
+                authHooks.onUnauthorized?.()
+            } catch (e) {
+                console.warn('[Network] onUnauthorized hook error:', e)
+            }
+        }
+    }
+
     export const request: typeof Taro.request = option => {
         return Taro.request({
             ...option,
             url: createUrl(option.url),
+            header: mergeAuthHeader(option.header as Record<string, string> | undefined),
+            success: res => {
+                handleResponseStatus(res.statusCode)
+                option.success?.(res)
+            },
         })
     }
 
@@ -27,6 +62,11 @@ export namespace Network {
         return Taro.uploadFile({
             ...option,
             url: createUrl(option.url),
+            header: mergeAuthHeader(option.header as Record<string, string> | undefined),
+            success: res => {
+                handleResponseStatus(res.statusCode)
+                option.success?.(res)
+            },
         })
     }
 
