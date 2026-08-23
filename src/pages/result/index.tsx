@@ -176,11 +176,16 @@ function getColorHex(name: string): string {
 
 interface LuckyScore {
   total: number
-  love: number
+  /** 气场 */
+  aura: number
+  /** 事业 */
   career: number
-  family: number
-  life: number
-  study: number
+  /** 桃花 */
+  romance: number
+  /** 放松 */
+  relax: number
+  /** 灵感 */
+  inspiration: number
   description: string
 }
 

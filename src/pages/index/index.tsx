@@ -24,6 +24,7 @@ import {
   consumePreviousArchiveId,
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
+import { pickLuckyStarIconName } from '@/constants/lucky-icons'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 import { ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isWeappEnv, requireLogin } from '@/utils/auth'
 import { LoginSheet } from '@/components/login-sheet'
@@ -95,11 +96,11 @@ const EXAMPLE_DAILY_RESULT: DailyResult = {
   } as StylistResult,
   luckyScore: {
     total: 82,
-    love: 80,
+    aura: 80,
     career: 84,
-    family: 78,
-    life: 85,
-    study: 75,
+    romance: 78,
+    relax: 85,
+    inspiration: 75,
     description: '今日木气通达，行动力与创意兼具。穿上森林绿与燕麦灰的搭配，贵人运与自信气场同步提升。',
   } as LuckyScore,
   ganZhiDate: { month: '丁卯', day: '甲子' },
@@ -321,6 +322,11 @@ export default function Index() {
 
   const { luckyScore, llmPlan, baziResult } = dailyResult
   const themeColor = llmPlan.luckyColors?.primaryHex || '#1E3A5F'
+  // 幸运星图：示例档案固定展示图，其他档案从幸运星库按档案 ID 稳定选取（同一档案始终同一张）
+  const luckyStarKey: keyof RemoteAssets = currentArchive?.isDefault
+    ? 'exampleLuckyStar'
+    : pickLuckyStarIconName(currentArchive?.id ?? 'default')
+  const luckyStarUrl = assets?.[luckyStarKey] || assets?.exampleLuckyStar || ''
 
   return (
     <View className="min-h-screen bg-gray-50 pb-8">
@@ -373,15 +379,17 @@ export default function Index() {
             </View>
 
             <View className="flex items-center gap-4 mb-4">
-              {assets?.exampleLuckyStar ? (
+              {luckyStarUrl ? (
                 <Image
                   className="w-20 h-20"
-                  src={assets.exampleLuckyStar}
+                  src={luckyStarUrl}
                   mode="aspectFit"
                   lazyLoad
                   onError={() => {
                     console.warn('[Index] lucky star image load failed')
-                    setAssets((prev) => (prev ? { ...prev, exampleLuckyStar: '' } : prev))
+                    // 实际渲染 URL 来自 luckyStarKey 或回退的 exampleLuckyStar，置空对应 key
+                    const brokenKey = assets?.[luckyStarKey] ? luckyStarKey : 'exampleLuckyStar'
+                    setAssets((prev) => (prev ? { ...prev, [brokenKey]: '' } : prev))
                   }}
                 />
               ) : (
@@ -394,11 +402,11 @@ export default function Index() {
 
             <View className="grid grid-cols-5 gap-2">
               {[
-                { label: '气场', value: luckyScore.love },
+                { label: '气场', value: luckyScore.aura },
                 { label: '事业', value: luckyScore.career },
-                { label: '桃花', value: luckyScore.family },
-                { label: '放松', value: luckyScore.life },
-                { label: '灵感', value: luckyScore.study },
+                { label: '桃花', value: luckyScore.romance },
+                { label: '放松', value: luckyScore.relax },
+                { label: '灵感', value: luckyScore.inspiration },
               ].map((item) => (
                 <View key={item.label} className="flex flex-col items-center gap-1">
                   <Text className="block text-xs text-gray-500">{item.label}</Text>

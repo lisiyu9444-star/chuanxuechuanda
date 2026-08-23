@@ -39,11 +39,16 @@ export interface StylistResult {
 
 export interface LuckyScore {
   total: number
-  love: number
+  /** 气场指数 */
+  aura: number
+  /** 事业指数 */
   career: number
-  family: number
-  life: number
-  study: number
+  /** 桃花指数 */
+  romance: number
+  /** 放松指数 */
+  relax: number
+  /** 灵感指数 */
+  inspiration: number
   description: string
 }
 
@@ -217,11 +222,11 @@ export class StylistService {
 
 {
   "total": "综合幸运指数，40-99之间的整数",
-  "love": "爱情指数，40-99之间的整数",
+  "aura": "气场指数，40-99之间的整数",
   "career": "事业指数，40-99之间的整数",
-  "family": "家庭指数，40-99之间的整数",
-  "life": "生活指数，40-99之间的整数",
-  "study": "学习指数，40-99之间的整数",
+  "romance": "桃花指数，40-99之间的整数",
+  "relax": "放松指数，40-99之间的整数",
+  "inspiration": "灵感指数，40-99之间的整数",
   "description": "2-3句基于用神的今日运势描述，内容总长度必须小于等于50个汉字，温暖积极，与穿搭相关但不直接推销"
 }
 
@@ -267,11 +272,12 @@ export class StylistService {
     }
     return {
       total: clamp(data.total),
-      love: clamp(data.love),
+      // 兼容 LLM 偶发返回的旧字段名（love/family/life/study）
+      aura: clamp(data.aura ?? data.love),
       career: clamp(data.career),
-      family: clamp(data.family),
-      life: clamp(data.life),
-      study: clamp(data.study),
+      romance: clamp(data.romance ?? data.family),
+      relax: clamp(data.relax ?? data.life),
+      inspiration: clamp(data.inspiration ?? data.study),
       description: String(data.description || '今日运势平稳，保持积极心态'),
     }
   }

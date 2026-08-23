@@ -1,5 +1,6 @@
 import Taro from '@tarojs/taro'
 import type { Archive, DailyResult, NativeResult, ImageUnlockState } from '@/types/archive'
+import { normalizeLuckyScore } from '@/types/archive'
 
 const ARCHIVES_KEY = 'outfit_archives'
 const CURRENT_ARCHIVE_ID_KEY = 'current_archive_id'
@@ -142,7 +143,10 @@ export function getDailyResults(): Record<string, DailyResult> {
 }
 
 export function getDailyResult(archiveId: string, date: string = getToday()): DailyResult | undefined {
-  return getDailyResults()[getDailyResultKey(archiveId, date)]
+  const result = getDailyResults()[getDailyResultKey(archiveId, date)]
+  if (!result?.luckyScore) return result
+  // 历史缓存可能为旧字段（love/family/life/study），统一归一化为展示五维
+  return { ...result, luckyScore: normalizeLuckyScore(result.luckyScore) }
 }
 
 export function saveDailyResult(result: DailyResult): void {

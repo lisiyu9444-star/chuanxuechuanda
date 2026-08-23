@@ -19,12 +19,35 @@ export interface Archive {
 
 export interface LuckyScore {
   total: number
-  love: number
+  /** 气场 */
+  aura: number
+  /** 事业 */
   career: number
-  family: number
-  life: number
-  study: number
+  /** 桃花 */
+  romance: number
+  /** 放松 */
+  relax: number
+  /** 灵感 */
+  inspiration: number
   description: string
+}
+
+/**
+ * 归一化幸运指数：兼容历史缓存中的旧字段（love/family/life/study），
+ * 统一转换为展示五维（气场/事业/桃花/放松/灵感）。
+ */
+export function normalizeLuckyScore(raw: unknown): LuckyScore {
+  const data = (raw ?? {}) as Record<string, unknown>
+  const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
+  return {
+    total: num(data.total),
+    aura: num(data.aura ?? data.love),
+    career: num(data.career),
+    romance: num(data.romance ?? data.family),
+    relax: num(data.relax ?? data.life),
+    inspiration: num(data.inspiration ?? data.study),
+    description: typeof data.description === 'string' ? data.description : '',
+  }
 }
 
 export interface DailyResult {
