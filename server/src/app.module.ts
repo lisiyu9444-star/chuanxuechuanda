@@ -10,6 +10,7 @@ import { ConfigController } from '@/config/config.controller'
 import { ShareController } from '@/share/share.controller'
 import { LogController } from '@/log/log.controller'
 import { AssetsController } from '@/assets/assets.controller'
+import { AdminController } from '@/admin/admin.controller'
 import { AuthModule } from '@/auth/auth.module'
 import { ProfileModule } from '@/profile/profile.module'
 import { HistoryModule } from '@/history/history.module'
@@ -26,7 +27,7 @@ import { HistoryModule } from '@/history/history.module'
     ProfileModule,
     HistoryModule,
   ],
-  controllers: [AppController, BaziController, ConfigController, ShareController, LogController, AssetsController],
+  controllers: [AppController, BaziController, ConfigController, ShareController, LogController, AssetsController, AdminController],
   providers: [
     AppService,
     BaziService,

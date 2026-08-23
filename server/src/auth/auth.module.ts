@@ -1,11 +1,11 @@
-import { Module } from '@nestjs/common'
+import { Module, OnModuleInit } from '@nestjs/common'
 import { JwtModule, JwtSignOptions } from '@nestjs/jwt'
 import { APP_GUARD } from '@nestjs/core'
 import { AuthService } from './auth.service'
 import { AuthController } from './auth.controller'
 import { JwtAuthGuard } from './jwt-auth.guard'
 import { JWT_EXPIRES_IN } from './auth-config'
-import { resolveJwtSecret } from './secrets'
+import { loadWxCredentialsCache, resolveJwtSecret } from './secrets'
 
 @Module({
   imports: [
@@ -30,4 +30,9 @@ import { resolveJwtSecret } from './secrets'
   ],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule implements OnModuleInit {
+  /** 启动时从数据库加载微信凭证缓存（未配置则保持开发模式/生产 fail-closed 语义） */
+  async onModuleInit(): Promise<void> {
+    await loadWxCredentialsCache()
+  }
+}

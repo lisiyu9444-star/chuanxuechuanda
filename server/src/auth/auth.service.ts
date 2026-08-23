@@ -4,7 +4,8 @@ import { desc, eq } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/storage/database/db'
 import { privacyConsents, users } from '@/storage/database/schema'
-import { DEV_USER, isDevBypassAllowed, isStrictAuthMode, PRIVACY_VERSION } from './auth-config'
+import { DEV_USER, isDevBypassAllowed, PRIVACY_VERSION } from './auth-config'
+import { getWxCredentials } from './secrets'
 
 interface WxSessionResponse {
   openid?: string
@@ -85,7 +86,8 @@ export class AuthService {
 
   /** 严格模式走微信 code2Session；开发模式以 code 派生伪 openid（仅本地开发可用） */
   private async resolveOpenid(code: string): Promise<{ openid: string; unionid?: string }> {
-    if (!isStrictAuthMode()) {
+    const credentials = getWxCredentials()
+    if (!credentials) {
       // 生产环境未配置微信凭证属于配置错误：登录 fail-closed，不允许任意 code 派生身份
       if (!isDevBypassAllowed()) {
         throw new ServiceUnavailableException('登录服务未配置，暂不可用')
@@ -97,8 +99,8 @@ export class AuthService {
     // 因此禁止把该 URL 写入任何日志或错误响应，下方日志均做脱敏处理。
     const url =
       'https://api.weixin.qq.com/sns/jscode2session' +
-      `?appid=${process.env.WX_APPID}` +
-      `&secret=${process.env.WX_SECRET}` +
+      `?appid=${encodeURIComponent(credentials.appid)}` +
+      `&secret=${encodeURIComponent(credentials.secret)}` +
       `&js_code=${encodeURIComponent(code)}` +
       '&grant_type=authorization_code'
 
