@@ -13,6 +13,7 @@ import {
 } from '@/utils/archiveStorage'
 import { deleteArchiveOnServer, fetchServerArchives, syncAllArchivesToServer } from '@/utils/serverSync'
 import { AUTH_EVENTS, isLoggedIn, isWeappEnv, requireLogin } from '@/utils/auth'
+import { LoginSheet } from '@/components/login-sheet'
 import type { Archive } from '@/types/archive'
 import './index.css'
 
@@ -219,6 +220,9 @@ const ArchiveListPage = () => {
           <Text className="block text-xl font-semibold text-gray-900">切换中...</Text>
         </View>
       )}
+
+      {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}
+      <LoginSheet />
     </View>
   )
 }

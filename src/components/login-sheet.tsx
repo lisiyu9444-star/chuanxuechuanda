@@ -6,24 +6,30 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { MessageCircle } from 'lucide-react-taro'
 import { agreePrivacy } from '@/utils/auth'
-
-interface LoginSheetProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+import { loginSheetStore, useLoginSheetOpen } from '@/utils/login-sheet-store'
 
 /**
  * 全局登录弹层（底部半屏）。
- * - 由 requireLogin 在未登录时唤起（auth 事件总线 → app.tsx 挂载）
+ *
+ * 使用方式：在每个有登录入口的页面根部挂载一次 `<LoginSheet />`（小程序端 App 组件不渲染 UI，
+ * 全局浮层必须存在于页面组件树内）。各页面实例通过 loginSheetStore 共享开关状态：
+ * requireLogin 唤起后仅当前可见页面呈现；关闭/登录成功全局同步，无残留。
+ *
  * - 勾选「已阅读并同意隐私政策」后点击「微信快捷登录」完成静默登录
  * - 可取消（遮罩点击 / 右上角关闭）：取消后保持未登录示例视图，不做任何阻断
  */
-export function LoginSheet({ open, onOpenChange }: LoginSheetProps) {
+export function LoginSheet() {
+  const open = useLoginSheetOpen()
   const [checked, setChecked] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!submitting) onOpenChange(nextOpen)
+    if (submitting) return
+    if (nextOpen) {
+      loginSheetStore.open()
+    } else {
+      loginSheetStore.close()
+    }
   }
 
   const openPrivacyPage = () => {
@@ -41,7 +47,7 @@ export function LoginSheet({ open, onOpenChange }: LoginSheetProps) {
       // 同意隐私协议 + 微信静默登录（登录成功会广播 LOGIN_SUCCESS，各页面自动刷新）
       const ok = await agreePrivacy()
       if (ok) {
-        onOpenChange(false)
+        loginSheetStore.close()
         Taro.showToast({ title: '登录成功', icon: 'success' })
       } else {
         Taro.showToast({ title: '登录失败，请稍后重试', icon: 'none', duration: 2000 })

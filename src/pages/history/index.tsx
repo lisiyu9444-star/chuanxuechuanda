@@ -8,6 +8,7 @@ import { getHistoryRecords, deleteHistoryRecord, clearHistoryRecords, refreshHis
 import { refreshImageUrls, extractTosKeyFromUrl } from '@/constants/remote-assets'
 import { deleteHistoryOnServer, clearHistoryOnServer, fetchServerHistory, parseServerHistoryRecord } from '@/utils/serverSync'
 import { AUTH_EVENTS, isLoggedIn, isWeappEnv, requireLogin } from '@/utils/auth'
+import { LoginSheet } from '@/components/login-sheet'
 
 export default function HistoryPage() {
   const [records, setRecords] = useState<HistoryRecordItem[]>([])
@@ -305,6 +306,9 @@ export default function HistoryPage() {
         )}
       </View>
       )}
+
+      {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}
+      <LoginSheet />
     </View>
   )
 }

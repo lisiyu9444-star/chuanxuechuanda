@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ChevronRight, FolderOpen, Clock, ShieldCheck, LogOut, UserRound } from 'lucide-react-taro'
 import { getCurrentArchive, getArchives, type Archive } from '@/utils/archiveStorage'
 import { AUTH_EVENTS, getAuthUser, isLoggedIn, isWeappEnv, logout, requireLogin, type AuthUser } from '@/utils/auth'
+import { LoginSheet } from '@/components/login-sheet'
 
 export default function ProfilePage() {
   const [currentArchive, setCurrentArchive] = useState<Archive | null>(null)
@@ -230,6 +231,9 @@ export default function ProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}
+      <LoginSheet />
     </View>
   )
 }

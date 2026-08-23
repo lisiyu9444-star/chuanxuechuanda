@@ -1,6 +1,7 @@
 import Taro from '@tarojs/taro'
 import { Network } from '@/network'
 import { setCurrentArchiveId, DEFAULT_ARCHIVE } from './archiveStorage'
+import { loginSheetStore } from './login-sheet-store'
 
 /**
  * 微信登录与隐私协议工具（仅微信小程序启用）。
@@ -43,12 +44,11 @@ export const isWeappEnv = (): boolean => Taro.getEnv() === Taro.ENV_TYPE.WEAPP
 
 /**
  * 登录状态相关事件（Taro.eventCenter）。
- * 页面（档案列表/历史记录/首页等）监听 LOGIN_SUCCESS / LOGOUT 后刷新视图；
- * SHOW_LOGIN_DIALOG 由 app.tsx 监听以唤起全局登录弹层（LoginSheet）。
+ * 页面（档案列表/历史记录/我的等）监听 LOGIN_SUCCESS / LOGOUT 后刷新视图。
+ * 登录弹层的唤起不经事件总线：requireLogin 直接调用 loginSheetStore.open()，
+ * 各页面挂载的 LoginSheet 实例通过 store 订阅同步（小程序端 App 组件不渲染 UI）。
  */
 export const AUTH_EVENTS = {
-  /** 请求唤起登录弹层（requireLogin 在未登录时触发，app.tsx 监听挂载 LoginSheet） */
-  SHOW_LOGIN_DIALOG: 'auth:show-login-dialog',
   /** 登录成功广播（静默登录/登录弹层完成后） */
   LOGIN_SUCCESS: 'auth:login-success',
   /** 退出登录广播（各页面据此恢复示例/空态） */
@@ -210,7 +210,7 @@ export async function requireLogin(): Promise<boolean> {
   if (getToken()) return true
   if (!hasAgreedPrivacy()) {
     console.log('[Auth] requireLogin: 未登录，唤起登录弹层')
-    Taro.eventCenter.trigger(AUTH_EVENTS.SHOW_LOGIN_DIALOG)
+    loginSheetStore.open()
     return false
   }
   const ok = await silentLogin()

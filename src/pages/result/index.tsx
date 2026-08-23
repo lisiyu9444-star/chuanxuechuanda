@@ -23,6 +23,7 @@ import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveN
 import { saveHistoryFromDailyResult, saveHistoryFromNativeResult, getHistoryRecords } from '@/utils/historyStorage'
 import { syncHistoryToServer } from '@/utils/serverSync'
 import { ensureAiAccess } from '@/utils/auth'
+import { LoginSheet } from '@/components/login-sheet'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 import { ELEMENT_COLORS } from '@/constants/element-colors'
 import { ensureRemoteAssets, refreshImageUrls, extractTosKeyFromUrl, type RemoteAssets } from '@/constants/remote-assets'
@@ -1496,6 +1497,9 @@ const ResultPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}
+      <LoginSheet />
     </View>
   )
 }

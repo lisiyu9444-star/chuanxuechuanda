@@ -24,6 +24,7 @@ import {
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 import { ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isWeappEnv, requireLogin } from '@/utils/auth'
+import { LoginSheet } from '@/components/login-sheet'
 
 // 静态图（幸运星/示例图/兜底图）URL 由 remote-assets 动态签发，禁止硬编码签名 URL（会过期）
 const EXAMPLE_DAILY_RESULT: DailyResult = {
@@ -243,6 +244,8 @@ export default function Index() {
         <Skeleton className="h-48 w-full mb-4" />
         <Skeleton className="h-64 w-full mb-4" />
         <Skeleton className="h-40 w-full" />
+        {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}
+        <LoginSheet />
       </View>
     )
   }
@@ -267,6 +270,8 @@ export default function Index() {
             </Button>
           </CardContent>
         </Card>
+        {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}
+        <LoginSheet />
       </View>
     )
   }
@@ -521,6 +526,9 @@ export default function Index() {
           </Button>
         </View>
       )}
+
+      {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}
+      <LoginSheet />
     </View>
   )
 }
