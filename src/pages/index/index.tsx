@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
-import { ChevronRight, CloudOff, Plus, RefreshCw } from 'lucide-react-taro'
+import { ChevronRight, CloudOff, Plus, RefreshCw, Sparkles } from 'lucide-react-taro'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -19,6 +19,7 @@ import {
   DEFAULT_ARCHIVE,
   getNativeResult,
   isDailyGenerateCoolingDown,
+  isDailyGenerateCancelled,
   clearDailyGenerateFailed,
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
@@ -114,6 +115,8 @@ export default function Index() {
   const [assets, setAssets] = useState<RemoteAssets | null>(null)
   // 生成失败冷却态：loading 页失败/被中断后回首页不再自动重进，展示失败卡片由用户手动重试
   const [generateFailed, setGenerateFailed] = useState(false)
+  // 冷却来源为用户主动取消：首页展示正常空态（非失败卡片），仅 toast 提示「生成已取消」
+  const [generateCancelled, setGenerateCancelled] = useState(false)
 
   const loadData = useCallback(async () => {
     // 静态图 URL 动态签发（本地缓存 7 天），失败时以背景色占位
@@ -133,6 +136,7 @@ export default function Index() {
       })
       setHasArchiveChanged(false)
       setGenerateFailed(false)
+      setGenerateCancelled(false)
       return
     }
 
@@ -142,11 +146,14 @@ export default function Index() {
       setDailyResult(cachedDaily)
       setHasArchiveChanged(activeArchive.updatedAt > cachedDaily.generatedAt)
       setGenerateFailed(false)
+      setGenerateCancelled(false)
     } else if (isDailyGenerateCoolingDown(activeArchive.id, today)) {
-      // 冷却期内（最近生成失败或被用户中断）：不自动跳 loading，展示失败态交还用户主动权，
-      // 打破「失败 → 回首页 → onShow 自动再进 → 再失败」的死循环
+      // 冷却期内（最近生成失败或被用户取消）：不自动跳 loading，交还用户主动权，
+      // 打破「中断 → 回首页 → onShow 自动再进 → 再中断」的死循环；
+      // 取消来源展示正常空态，失败来源展示失败重试卡片
       setDailyResult(null)
       setGenerateFailed(true)
+      setGenerateCancelled(isDailyGenerateCancelled(activeArchive.id, today))
     } else {
       // 微信小程序：未同意隐私协议（未登录）时不自动触发 AI 生成，等待用户在登录弹层完成授权
       if (isWeappEnv() && !hasAgreedPrivacy()) return
@@ -154,6 +161,7 @@ export default function Index() {
       clearDailyResultsByArchive(activeArchive.id)
       setHasArchiveChanged(false)
       setGenerateFailed(false)
+      setGenerateCancelled(false)
       // 确保已持有 token 再进入生成流程（登录未完成时等一次静默登录，避免 401）
       await ensureLoggedIn()
       Taro.navigateTo({
@@ -186,12 +194,13 @@ export default function Index() {
     Taro.navigateTo({ url: `/pages/result/index?archiveId=${currentArchive.id}` })
   }, [currentArchive, handleAddArchive])
 
-  // 失败冷却态的手动重试入口：清除冷却标记并进入 loading 重新生成
+  // 冷却态（失败/取消）的手动生成入口：清除冷却标记并进入 loading 重新生成
   const handleRetryGenerate = useCallback(async () => {
     if (!currentArchive) return
     if (!(await ensureAiAccess())) return
     clearDailyGenerateFailed(currentArchive.id, todayStr)
     setGenerateFailed(false)
+    setGenerateCancelled(false)
     Taro.navigateTo({
       url: `/pages/loading/index?mode=daily&archiveId=${currentArchive.id}`,
     })
@@ -250,24 +259,43 @@ export default function Index() {
     )
   }
 
-  // 生成失败冷却态：无结果数据可渲染（内容区依赖 dailyResult），仅展示失败卡片与重试入口。
-  // 上一分支已排除 (!dailyResult && !generateFailed)，到达这里且 dailyResult 为空时必为冷却态
+  // 冷却态：无结果数据可渲染（内容区依赖 dailyResult），仅展示静态卡片与手动生成入口。
+  // 上一分支已排除 (!dailyResult && !generateFailed)，到达这里且 dailyResult 为空时必为冷却态。
+  // 用户主动取消 → 正常空态；真实失败 → 失败重试卡片
   if (!dailyResult) {
     return (
       <View className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
         <Card className="w-full">
           <CardContent className="p-6 flex flex-col items-center">
-            <CloudOff size={56} color="#9ca3af" />
-            <Text className="block text-lg font-semibold text-gray-900 mt-5">今日穿搭尚未生成</Text>
-            <Text className="block text-sm text-gray-500 mt-2 text-center leading-relaxed">
-              网络繁忙或生成已取消，点击按钮重试
-            </Text>
-            <Button className="w-full mt-6" onClick={handleRetryGenerate}>
-              <View className="flex flex-row items-center justify-center gap-1">
-                <RefreshCw size={16} color="#ffffff" />
-                <Text className="text-sm">重新生成</Text>
-              </View>
-            </Button>
+            {generateCancelled ? (
+              <>
+                <Sparkles size={56} color="#8b5cf6" />
+                <Text className="block text-lg font-semibold text-gray-900 mt-5">今日穿搭待生成</Text>
+                <Text className="block text-sm text-gray-500 mt-2 text-center leading-relaxed">
+                  点击下方按钮，生成你的专属幸运穿搭
+                </Text>
+                <Button className="w-full mt-6" onClick={handleRetryGenerate}>
+                  <View className="flex flex-row items-center justify-center gap-1">
+                    <Sparkles size={16} color="#ffffff" />
+                    <Text className="text-sm">立即生成</Text>
+                  </View>
+                </Button>
+              </>
+            ) : (
+              <>
+                <CloudOff size={56} color="#9ca3af" />
+                <Text className="block text-lg font-semibold text-gray-900 mt-5">今日穿搭尚未生成</Text>
+                <Text className="block text-sm text-gray-500 mt-2 text-center leading-relaxed">
+                  网络繁忙或服务暂时不可用，点击按钮重试
+                </Text>
+                <Button className="w-full mt-6" onClick={handleRetryGenerate}>
+                  <View className="flex flex-row items-center justify-center gap-1">
+                    <RefreshCw size={16} color="#ffffff" />
+                    <Text className="text-sm">重新生成</Text>
+                  </View>
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
         {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}

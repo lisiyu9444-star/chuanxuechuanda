@@ -169,18 +169,27 @@ export function setImageUnlock(archiveId: string, date: string = getToday(), sta
   safeSet(IMAGE_UNLOCKS_KEY, map)
 }
 
-// 今日穿搭生成失败冷却标记：loading 页失败/中断回首页后，首页 onShow 会再次自动跳转 loading，
-// 无标记会形成「失败 → 回首页 → 自动再进 → 再失败」死循环。冷却期内首页改为展示失败态，由用户手动重试。
+// 今日穿搭生成中断冷却标记：loading 页失败/被用户取消回首页后，首页 onShow 会再次自动跳转 loading，
+// 无标记会形成「中断 → 回首页 → 自动再进 → 再中断」死循环。冷却期内首页改为静态卡片，由用户手动重试。
+// 标记区分来源：用户主动取消（cancelled）首页展示正常空态；真实失败展示失败重试卡片。
 const DAILY_FAIL_KEY = 'daily_generate_failures'
 const DAILY_FAIL_COOLDOWN_MS = 30 * 60 * 1000 // 30 分钟
 
-type DailyFailMap = Record<string, number>
+// 兼容旧数据：number 时间戳视为失败标记；对象形式可携带 cancelled 区分用户主动取消
+type DailyFailEntry = { ts: number; cancelled?: boolean }
+type DailyFailMap = Record<string, number | DailyFailEntry>
 
 const getDailyFailKey = (archiveId: string, date: string) => `${archiveId}_${date}`
 
 export function markDailyGenerateFailed(archiveId: string, date: string = getToday()): void {
   const map = safeGet<DailyFailMap>(DAILY_FAIL_KEY, {})
   map[getDailyFailKey(archiveId, date)] = Date.now()
+  safeSet(DAILY_FAIL_KEY, map)
+}
+
+export function markDailyGenerateCancelled(archiveId: string, date: string = getToday()): void {
+  const map = safeGet<DailyFailMap>(DAILY_FAIL_KEY, {})
+  map[getDailyFailKey(archiveId, date)] = { ts: Date.now(), cancelled: true }
   safeSet(DAILY_FAIL_KEY, map)
 }
 
@@ -195,9 +204,18 @@ export function clearDailyGenerateFailed(archiveId: string, date: string = getTo
 
 export function isDailyGenerateCoolingDown(archiveId: string, date: string = getToday()): boolean {
   const map = safeGet<DailyFailMap>(DAILY_FAIL_KEY, {})
-  const ts = map[getDailyFailKey(archiveId, date)]
-  if (!ts) return false
+  const entry = map[getDailyFailKey(archiveId, date)]
+  if (!entry) return false
+  const ts = typeof entry === 'number' ? entry : entry.ts
   return Date.now() - ts <= DAILY_FAIL_COOLDOWN_MS
+}
+
+// 最近一次中断是否为用户主动取消（需在冷却期内）
+export function isDailyGenerateCancelled(archiveId: string, date: string = getToday()): boolean {
+  const map = safeGet<DailyFailMap>(DAILY_FAIL_KEY, {})
+  const entry = map[getDailyFailKey(archiveId, date)]
+  if (!entry || typeof entry === 'number' || !entry.cancelled) return false
+  return Date.now() - entry.ts <= DAILY_FAIL_COOLDOWN_MS
 }
 
 export function clearAllStorage(): void {

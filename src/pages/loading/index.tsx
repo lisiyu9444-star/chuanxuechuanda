@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { CloudOff, RefreshCw } from 'lucide-react-taro'
 import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
-import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, clearDailyGenerateFailed, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
+import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, markDailyGenerateCancelled, clearDailyGenerateFailed, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import { buildHistoryRecord, saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import { syncArchiveToServer, syncHistoryToServer } from '@/utils/serverSync'
 import { isLoggedIn, isWeappEnv } from '@/utils/auth'
@@ -353,11 +353,13 @@ const LoadingPage = () => {
       clearTimeout(accelerateTimerRef.current)
       accelerateTimerRef.current = null
     }
-    // daily 自动生成场景下用户主动退出（请求未完成）：写冷却标记，防止回到首页后
-    // 首页 onShow 立即又自动跳进 loading（用户感知为"退不出去"）
+    // daily 自动生成场景下用户主动退出（请求未完成）：写取消标记（区别于失败标记），
+    // 防止回到首页后 onShow 立即又自动跳进 loading（用户感知为"退不出去"），
+    // 首页据此展示正常空态而非失败卡片；toast 为全局提示，会在返回后的页面上展示
     const last = lastRequestRef.current
     if (wasRequesting && last && last.pageMode === 'daily' && last.action !== 'redesign') {
-      markDailyGenerateFailed(last.archiveId)
+      markDailyGenerateCancelled(last.archiveId)
+      Taro.showToast({ title: '生成已取消', icon: 'none', duration: 1500 })
     }
   })
 
