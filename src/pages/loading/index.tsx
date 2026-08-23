@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { CloudOff, RefreshCw } from 'lucide-react-taro'
 import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
-import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, markDailyGenerateCancelled, clearDailyGenerateFailed, getPreviousArchiveId, setCurrentArchiveId, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
+import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, markDailyGenerateCancelled, clearDailyGenerateFailed, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import { buildHistoryRecord, saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import { syncArchiveToServer, syncHistoryToServer } from '@/utils/serverSync'
 import { isLoggedIn, isWeappEnv } from '@/utils/auth'
@@ -359,18 +359,6 @@ const LoadingPage = () => {
     const last = lastRequestRef.current
     if (wasRequesting && last && last.pageMode === 'daily' && last.action !== 'redesign') {
       markDailyGenerateCancelled(last.archiveId)
-      // 恢复上一个选中档案：取消生成后回到用户此前查看的档案首页，而非停留在无数据档案的空态。
-      // 仅当上一个档案有今日缓存或为示例档案时才恢复（无缓存档案恢复后会被首页再次自动送入 loading，
-      // 形成「取消 A → 恢复 B → B 自动生成 → 取消 B」循环）；未登录时用户档案已隐藏，仅能恢复示例档案
-      const previousId = getPreviousArchiveId()
-      if (previousId && previousId !== last.archiveId) {
-        const target = getArchiveById(previousId)
-        const visible = !!target && (!isWeappEnv() || isLoggedIn() || target.isDefault)
-        const hasContent = !!target && (target.isDefault || !!getDailyResult(target.id, getToday()))
-        if (visible && hasContent) {
-          setCurrentArchiveId(previousId)
-        }
-      }
       Taro.showToast({ title: '生成已取消', icon: 'none', duration: 1500 })
     }
   })
