@@ -1033,7 +1033,7 @@ const ResultPage = () => {
                       <Lock size={28} color="#6b7280" />
                     </View>
                     <Text className="block text-gray-500 text-sm text-center mb-6 px-4">
-                      观看激励视频，免费解锁专属穿搭平铺图（生成约需 30 秒）
+                      观看激励视频，免费解锁专属穿搭平铺图（仅需 15 秒）
                     </Text>
                     <Button
                       variant="outline"
@@ -1083,7 +1083,7 @@ const ResultPage = () => {
                     <Lock size={28} color="#6b7280" />
                   </View>
                   <Text className="block text-gray-500 text-sm text-center mb-6 px-4">
-                    观看激励视频，免费解锁模特上身效果图（生成约需 30 秒）
+                    观看激励视频，免费解锁模特上身效果图（仅需 15 秒）
                   </Text>
                   <Button
                     variant="outline"
