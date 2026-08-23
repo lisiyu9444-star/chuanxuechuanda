@@ -3,7 +3,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Venus, Mars, Pencil, Trash2, Plus, LogIn } from 'lucide-react-taro'
+import { Venus, Mars, Trash2, Plus, LogIn } from 'lucide-react-taro'
 import {
   getArchives,
   deleteArchive,
@@ -82,6 +82,7 @@ const ArchiveListPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // 「使用」按钮：切换为当前档案并回首页展示其内容
   const handleSwitch = (archive: Archive) => {
     if (archive.id === currentId) {
       Taro.showToast({ title: '当前已是该档案', icon: 'none' })
@@ -95,6 +96,7 @@ const ArchiveListPage = () => {
     }, 550)
   }
 
+  // 点击档案卡片：进入编辑页
   const handleEdit = (archive: Archive) => {
     if (archive.isDefault) {
       Taro.showToast({ title: '示例档案不可编辑', icon: 'none' })
@@ -157,7 +159,7 @@ const ArchiveListPage = () => {
             >
               <CardContent className="p-4">
                 <View className="flex items-center justify-between">
-                  <View className="flex-1" onClick={() => handleSwitch(archive)}>
+                  <View className="flex-1" onClick={() => handleEdit(archive)}>
                     <View className="flex items-center gap-2 mb-1">
                       <Text className="block text-base font-semibold text-gray-900">{archive.nickname}</Text>
                       {isActive && (
@@ -174,12 +176,15 @@ const ArchiveListPage = () => {
                     </View>
                   </View>
                   <View className="flex items-center gap-2">
-                    <View
-                      className="p-2 rounded-full bg-gray-100"
-                      onClick={() => handleEdit(archive)}
-                    >
-                      <Pencil size={16} color="#4B5563" />
-                    </View>
+                    {!isActive && (
+                      <Button
+                        size="sm"
+                        className="rounded-full h-8 px-3"
+                        onClick={() => handleSwitch(archive)}
+                      >
+                        <Text className="text-xs">使用</Text>
+                      </Button>
+                    )}
                     <View
                       className="p-2 rounded-full bg-red-50"
                       onClick={() => handleDelete(archive)}

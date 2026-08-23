@@ -3,6 +3,7 @@ import type { Archive, DailyResult, NativeResult, ImageUnlockState } from '@/typ
 
 const ARCHIVES_KEY = 'outfit_archives'
 const CURRENT_ARCHIVE_ID_KEY = 'current_archive_id'
+const PREVIOUS_ARCHIVE_ID_KEY = 'previous_archive_id'
 const DAILY_RESULTS_KEY = 'daily_results'
 const NATIVE_RESULTS_KEY = 'native_results'
 const IMAGE_UNLOCKS_KEY = 'image_unlocks'
@@ -88,7 +89,17 @@ export function getCurrentArchiveId(): string {
 }
 
 export function setCurrentArchiveId(id: string): void {
+  // 切换前记录旧选中项：loading 取消生成后据此恢复用户此前查看的档案首页
+  const prev = getCurrentArchiveId()
+  if (prev && prev !== id) {
+    safeSet(PREVIOUS_ARCHIVE_ID_KEY, prev)
+  }
   safeSet(CURRENT_ARCHIVE_ID_KEY, id)
+}
+
+// 上一次选中的档案 id（无记录时返回空串）
+export function getPreviousArchiveId(): string {
+  return safeGet<string>(PREVIOUS_ARCHIVE_ID_KEY, '')
 }
 
 export function getCurrentArchive(): Archive {
@@ -222,6 +233,7 @@ export function clearAllStorage(): void {
   try {
     Taro.removeStorageSync(ARCHIVES_KEY)
     Taro.removeStorageSync(CURRENT_ARCHIVE_ID_KEY)
+    Taro.removeStorageSync(PREVIOUS_ARCHIVE_ID_KEY)
     Taro.removeStorageSync(DAILY_RESULTS_KEY)
     Taro.removeStorageSync(NATIVE_RESULTS_KEY)
     Taro.removeStorageSync(IMAGE_UNLOCKS_KEY)
