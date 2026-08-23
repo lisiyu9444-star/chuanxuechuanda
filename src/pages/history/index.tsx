@@ -1,16 +1,19 @@
 import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ChevronRight, Trash2 } from 'lucide-react-taro'
+import { ChevronRight, Trash2, LogIn } from 'lucide-react-taro'
 import { getHistoryRecords, deleteHistoryRecord, clearHistoryRecords, refreshHistoryImageUrls, saveHistoryRecord, type HistoryRecordItem } from '@/utils/historyStorage'
 import { refreshImageUrls, extractTosKeyFromUrl } from '@/constants/remote-assets'
 import { deleteHistoryOnServer, clearHistoryOnServer, fetchServerHistory, parseServerHistoryRecord } from '@/utils/serverSync'
+import { AUTH_EVENTS, isLoggedIn, isWeappEnv, requireLogin } from '@/utils/auth'
 
 export default function HistoryPage() {
   const [records, setRecords] = useState<HistoryRecordItem[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
+  // 历史记录与登录状态绑定：未登录（微信端）不展示任何记录，改为登录引导
+  const [canView, setCanView] = useState(true)
 
   const loadRecords = () => {
     const list = getHistoryRecords()
@@ -66,11 +69,40 @@ export default function HistoryPage() {
   }
 
   useDidShow(() => {
-    const list = loadRecords()
     setActiveId(null)
+    const authed = !isWeappEnv() || isLoggedIn()
+    setCanView(authed)
+    if (!authed) {
+      // 未登录：清空视图，不读取本地记录、不请求服务端
+      setRecords([])
+      return
+    }
+    const list = loadRecords()
     refreshRecordImages(list)
     void restoreFromServer()
   })
+
+  // 登录成功后立即加载记录；退出登录后清空为登录引导视图
+  useEffect(() => {
+    const handleLogin = () => {
+      setCanView(true)
+      const list = loadRecords()
+      refreshRecordImages(list)
+      void restoreFromServer()
+    }
+    const handleLogout = () => {
+      setCanView(false)
+      setRecords([])
+      setActiveId(null)
+    }
+    Taro.eventCenter.on(AUTH_EVENTS.LOGIN_SUCCESS, handleLogin)
+    Taro.eventCenter.on(AUTH_EVENTS.LOGOUT, handleLogout)
+    return () => {
+      Taro.eventCenter.off(AUTH_EVENTS.LOGIN_SUCCESS, handleLogin)
+      Taro.eventCenter.off(AUTH_EVENTS.LOGOUT, handleLogout)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleDelete = (id: string) => {
     deleteHistoryRecord(id)
@@ -117,7 +149,7 @@ export default function HistoryPage() {
           <Text className="block text-lg font-semibold text-slate-900">历史记录</Text>
           <Text className="block text-sm text-slate-500 mt-1">查看过往穿搭</Text>
         </View>
-        {records.length > 0 && (
+        {canView && records.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
@@ -129,6 +161,27 @@ export default function HistoryPage() {
         )}
       </View>
 
+      {!canView && (
+        <View className="px-4 pb-8">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-8 flex flex-col items-center justify-center">
+              <LogIn size={32} color="#94a3b8" className="mb-3" />
+              <Text className="block text-slate-500 text-center mb-2">历史记录与账号绑定</Text>
+              <Text className="block text-xs text-slate-400 text-center mb-5">
+                登录后可查看并跨设备同步你的穿搭记录
+              </Text>
+              <Button
+                className="w-full bg-slate-900 text-white py-3 rounded-xl"
+                onClick={() => { void requireLogin() }}
+              >
+                微信登录
+              </Button>
+            </CardContent>
+          </Card>
+        </View>
+      )}
+
+      {canView && (
       <View className="px-4 pb-8 space-y-3">
         {records.length === 0 ? (
           <Card className="border-0 shadow-sm">
@@ -251,6 +304,7 @@ export default function HistoryPage() {
           ))
         )}
       </View>
+      )}
     </View>
   )
 }

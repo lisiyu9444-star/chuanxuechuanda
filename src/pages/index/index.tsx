@@ -23,7 +23,7 @@ import {
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
-import { ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isWeappEnv } from '@/utils/auth'
+import { ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isWeappEnv, requireLogin } from '@/utils/auth'
 
 // 静态图（幸运星/示例图/兜底图）URL 由 remote-assets 动态签发，禁止硬编码签名 URL（会过期）
 const EXAMPLE_DAILY_RESULT: DailyResult = {
@@ -170,7 +170,9 @@ export default function Index() {
     Taro.navigateTo({ url: '/pages/archive/list/index' })
   }, [])
 
-  const handleAddArchive = useCallback(() => {
+  const handleAddArchive = useCallback(async () => {
+    // 添加档案需登录：未登录时唤起全局登录引导（隐私弹窗），同意登录后再次点击即可
+    if (!(await requireLogin())) return
     Taro.navigateTo({ url: '/pages/archive/form/index' })
   }, [])
 

@@ -1,13 +1,13 @@
 import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { ChevronRight, FolderOpen, Clock, ShieldCheck, LogOut, UserRound } from 'lucide-react-taro'
 import { getCurrentArchive, getArchives, type Archive } from '@/utils/archiveStorage'
-import { getAuthUser, isLoggedIn, isWeappEnv, logout, silentLogin, type AuthUser } from '@/utils/auth'
+import { AUTH_EVENTS, getAuthUser, isLoggedIn, isWeappEnv, logout, requireLogin, type AuthUser } from '@/utils/auth'
 
 export default function ProfilePage() {
   const [currentArchive, setCurrentArchive] = useState<Archive | null>(null)
@@ -21,19 +21,38 @@ export default function ProfilePage() {
     setAuthUser(getAuthUser())
   }
 
-  useDidShow(() => {
+  const refreshPageState = () => {
     const archive = getCurrentArchive()
     setCurrentArchive(archive)
     const archives = getArchives()
-    setUserArchiveCount(archives.filter(a => !a.isDefault).length)
+    // 未登录（微信端）时隐藏用户档案数量：档案数据与登录状态绑定
+    const authed = !isWeappEnv() || isLoggedIn()
+    setUserArchiveCount(authed ? archives.filter(a => !a.isDefault).length : 0)
     refreshAuthState()
+  }
+
+  useDidShow(() => {
+    refreshPageState()
   })
+
+  // 登录弹窗在本页上方完成（页面不切换，useDidShow 不触发），需监听事件实时刷新登录状态与档案视图
+  useEffect(() => {
+    Taro.eventCenter.on(AUTH_EVENTS.LOGIN_SUCCESS, refreshPageState)
+    Taro.eventCenter.on(AUTH_EVENTS.LOGOUT, refreshPageState)
+    return () => {
+      Taro.eventCenter.off(AUTH_EVENTS.LOGIN_SUCCESS, refreshPageState)
+      Taro.eventCenter.off(AUTH_EVENTS.LOGOUT, refreshPageState)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleManageArchives = () => {
     Taro.navigateTo({ url: '/pages/archive/list/index' })
   }
 
-  const handleViewHistory = () => {
+  const handleViewHistory = async () => {
+    // 历史记录需登录：未登录时唤起全局登录引导，登录后再次点击进入
+    if (!(await requireLogin())) return
     Taro.navigateTo({ url: '/pages/history/index' })
   }
 
@@ -42,13 +61,18 @@ export default function ProfilePage() {
   }
 
   const handleRelogin = async () => {
-    const ok = await silentLogin()
+    // 统一登录门禁：未同意隐私协议时唤起登录（隐私）弹窗；失败提示由 requireLogin 内部处理
+    const ok = await requireLogin()
     refreshAuthState()
-    Taro.showToast({ title: ok ? '登录成功' : '登录失败，请稍后重试', icon: ok ? 'success' : 'none' })
+    if (ok) {
+      Taro.showToast({ title: '登录成功', icon: 'success' })
+    }
   }
 
   const handleLogout = () => {
+    // logout 内部已将当前视角重置为示例档案并广播退出事件
     logout()
+    setCurrentArchive(getCurrentArchive())
     refreshAuthState()
     setLogoutDialogOpen(false)
     Taro.showToast({ title: '已退出登录', icon: 'none' })
@@ -189,7 +213,7 @@ export default function ProfilePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>退出登录？</AlertDialogTitle>
             <AlertDialogDescription>
-              退出后将清除本设备的登录状态，本地档案与历史记录不受影响。
+              退出后将恢复为示例档案视图，档案与历史记录会暂时隐藏，重新登录后可找回。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

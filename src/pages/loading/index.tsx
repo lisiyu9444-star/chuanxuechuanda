@@ -10,6 +10,7 @@ import { Network } from '@/network'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, clearDailyGenerateFailed, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import { buildHistoryRecord, saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import { syncArchiveToServer, syncHistoryToServer } from '@/utils/serverSync'
+import { isLoggedIn, isWeappEnv } from '@/utils/auth'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 
 const getLoadingSteps = (mode: 'daily' | 'native') => [
@@ -286,6 +287,13 @@ const LoadingPage = () => {
   }
 
   useDidShow(() => {
+    // 防御：AI 生成与登录状态绑定（正常入口已门禁，此处拦截直接分享/扫码进入的场景）
+    if (isWeappEnv() && !isLoggedIn()) {
+      Taro.showToast({ title: '请先登录', icon: 'none', duration: 1500 })
+      setTimeout(() => Taro.switchTab({ url: '/pages/index/index' }), 1200)
+      return
+    }
+
     const params = Taro.getCurrentInstance().router?.params
     const archiveId = params?.archiveId
     const pageMode = (params?.mode as 'daily' | 'native') || 'daily'

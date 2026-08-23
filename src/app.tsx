@@ -1,10 +1,10 @@
-import { PropsWithChildren, useState } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 import Taro, { useDidHide, useDidShow, useLaunch } from '@tarojs/taro';
 import { LucideTaroProvider } from 'lucide-react-taro';
 import '@/app.css';
 import { Toaster } from '@/components/ui/toast';
 import { PrivacyDialog } from '@/components/privacy-dialog';
-import { agreePrivacy, hasAgreedPrivacy, isWeappEnv, setupAuthHooks, silentLogin } from '@/utils/auth';
+import { AUTH_EVENTS, agreePrivacy, hasAgreedPrivacy, isWeappEnv, setupAuthHooks, silentLogin } from '@/utils/auth';
 import { Preset } from './presets';
 
 const App = ({ children }: PropsWithChildren) => {
@@ -36,6 +36,20 @@ const App = ({ children }: PropsWithChildren) => {
       setShowPrivacyDialog(true);
     }
   })
+
+  // 全局登录引导：业务页面在「添加档案 / AI 生成 / 历史记录」等入口触发 SHOW_PRIVACY_DIALOG，
+  // 此处统一唤起隐私弹窗（用户同意即完成微信登录，之后重新触发原操作即可）
+  useEffect(() => {
+    const handleShowPrivacy = () => {
+      if (isWeappEnv() && !hasAgreedPrivacy()) {
+        setShowPrivacyDialog(true);
+      }
+    };
+    Taro.eventCenter.on(AUTH_EVENTS.SHOW_PRIVACY_DIALOG, handleShowPrivacy);
+    return () => {
+      Taro.eventCenter.off(AUTH_EVENTS.SHOW_PRIVACY_DIALOG, handleShowPrivacy);
+    };
+  }, []);
 
   const handleAgreePrivacy = async () => {
     const ok = await agreePrivacy();

@@ -14,6 +14,7 @@ import {
   setCurrentArchiveId,
 } from '@/utils/archiveStorage'
 import { syncArchiveToServer } from '@/utils/serverSync'
+import { isLoggedIn, isWeappEnv } from '@/utils/auth'
 import type { Archive } from '@/types/archive'
 import './index.css'
 
@@ -96,6 +97,17 @@ const ArchiveFormPage = () => {
   const styleOptions = useMemo(() => getStyleOptions(gender), [gender])
 
   useDidShow(() => {
+    // 防御：档案表单需登录（正常入口已门禁，此处拦截直接分享/扫码进入的场景）
+    if (isWeappEnv() && !isLoggedIn()) {
+      Taro.showToast({ title: '请先登录后再编辑档案', icon: 'none', duration: 1500 })
+      setTimeout(() => {
+        Taro.navigateBack({ delta: 1 }).catch(() => {
+          Taro.switchTab({ url: '/pages/index/index' })
+        })
+      }, 1200)
+      return
+    }
+
     const router = Taro.getCurrentInstance().router
     const id = router?.params?.id
     if (id) {

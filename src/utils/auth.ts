@@ -1,5 +1,6 @@
 import Taro from '@tarojs/taro'
 import { Network } from '@/network'
+import { setCurrentArchiveId, DEFAULT_ARCHIVE } from './archiveStorage'
 
 /**
  * 微信登录与隐私协议工具（仅微信小程序启用）。
@@ -9,6 +10,12 @@ import { Network } from '@/network'
  * 2. 已同意 → 后台静默登录（wx.login → /api/auth/login → JWT）
  * 3. 所有请求由 Network 层自动注入 Authorization: Bearer <token>
  * 4. 收到 401 → 清除 token 并静默重登；重登成功后 Network 层自动重试一次原请求（对业务透明）
+ *
+ * 登录门禁（数据与登录状态绑定）：
+ * - 未登录仅可浏览示例档案；添加档案 / AI 生成 / 历史记录均需登录
+ * - 业务入口统一调用 requireLogin()：已登录放行；未同意隐私 → 唤起全局隐私弹窗（同意即登录）；
+ *   已同意但无 token → 静默重登
+ * - 登录/退出通过 AUTH_EVENTS 广播，各页面监听后刷新视图
  *
  * H5/抖音端：不启用登录与隐私弹窗，后端在开发模式下会注入 dev 用户。
  */
@@ -28,6 +35,22 @@ export interface AuthUser {
 
 /** 仅微信小程序启用登录体系 */
 export const isWeappEnv = (): boolean => Taro.getEnv() === Taro.ENV_TYPE.WEAPP
+
+// ==================== 登录状态事件总线 ====================
+
+/**
+ * 登录状态相关事件（Taro.eventCenter）。
+ * 页面（档案列表/历史记录/首页等）监听 LOGIN_SUCCESS / LOGOUT 后刷新视图；
+ * SHOW_PRIVACY_DIALOG 由 app.tsx 监听以唤起全局隐私弹窗（同意即登录）。
+ */
+export const AUTH_EVENTS = {
+  /** 请求弹出隐私协议弹窗（requireLogin 在未同意隐私时触发） */
+  SHOW_PRIVACY_DIALOG: 'auth:show-privacy-dialog',
+  /** 登录成功广播（静默登录/隐私同意完成后） */
+  LOGIN_SUCCESS: 'auth:login-success',
+  /** 退出登录广播（各页面据此恢复示例/空态） */
+  LOGOUT: 'auth:logout',
+} as const
 
 function safeGet<T>(key: string, fallback: T): T {
   try {
@@ -138,6 +161,8 @@ export function silentLogin(): Promise<boolean> {
           avatarUrl: data.avatarUrl || null,
         } as AuthUser)
         console.log('[Auth] 静默登录成功, userId:', data.userId)
+        // 广播登录成功：档案列表/历史记录等页面监听后恢复用户数据视图
+        Taro.eventCenter.trigger(AUTH_EVENTS.LOGIN_SUCCESS)
         return true
       }
       console.warn('[Auth] 登录接口异常:', res.statusCode, res.data)
@@ -163,16 +188,27 @@ export async function ensureLoggedIn(): Promise<boolean> {
 
 /**
  * AI 功能准入检查：调用 AI 接口前调用。
- * - 非微信小程序：直接放行（后端开发模式注入 dev 用户）
- * - 已登录：放行
- * - 未登录但已同意隐私协议：尝试静默登录，成功则放行
- * - 未同意隐私协议：拒绝（隐私弹窗此时应正覆盖页面，用户需先同意）
- * - 登录失败：toast 提示并拒绝
+ * 规则与 requireLogin 一致：未登录时唤起全局登录引导（隐私弹窗），用户同意登录后重新触发即可。
  */
 export async function ensureAiAccess(): Promise<boolean> {
+  return requireLogin()
+}
+
+/**
+ * 统一登录门禁：业务入口（添加档案 / AI 生成 / 历史记录等）调用。
+ * - 非微信小程序：直接放行（后端开发模式注入 dev 用户）
+ * - 已登录：放行
+ * - 未登录且未同意隐私协议：唤起全局隐私弹窗（用户同意即完成登录），本次操作拒绝，用户同意后重新触发即可
+ * - 未登录但已同意隐私协议：尝试静默重登
+ */
+export async function requireLogin(): Promise<boolean> {
   if (!isWeappEnv()) return true
   if (getToken()) return true
-  if (!hasAgreedPrivacy()) return false
+  if (!hasAgreedPrivacy()) {
+    console.log('[Auth] requireLogin: 未同意隐私协议，唤起登录弹窗')
+    Taro.eventCenter.trigger(AUTH_EVENTS.SHOW_PRIVACY_DIALOG)
+    return false
+  }
   const ok = await silentLogin()
   if (!ok) {
     Taro.showToast({ title: '登录失败，请稍后重试', icon: 'none', duration: 2000 })
@@ -180,10 +216,16 @@ export async function ensureAiAccess(): Promise<boolean> {
   return ok
 }
 
-/** 退出登录：仅清除本地凭证，服务端无状态 */
+/**
+ * 退出登录：清除本地凭证（服务端无状态），并恢复到示例档案视图。
+ * 本地档案/历史数据保留（重新登录后恢复展示），仅切换当前视角为示例档案。
+ */
 export function logout(): void {
   clearAuth()
   safeRemove(PRIVACY_CONSENT_KEY)
+  // 视角切回示例档案：首页等页面 useDidShow 重新加载后即展示示例数据
+  setCurrentArchiveId(DEFAULT_ARCHIVE.id)
+  Taro.eventCenter.trigger(AUTH_EVENTS.LOGOUT)
 }
 
 // ==================== 注册 Network 鉴权钩子 ====================

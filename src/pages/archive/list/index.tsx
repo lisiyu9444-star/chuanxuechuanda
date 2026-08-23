@@ -1,9 +1,9 @@
 import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Venus, Mars, Pencil, Trash2, Plus } from 'lucide-react-taro'
+import { Venus, Mars, Pencil, Trash2, Plus, LogIn } from 'lucide-react-taro'
 import {
   getArchives,
   deleteArchive,
@@ -12,6 +12,7 @@ import {
   getCurrentArchiveId,
 } from '@/utils/archiveStorage'
 import { deleteArchiveOnServer, fetchServerArchives, syncAllArchivesToServer } from '@/utils/serverSync'
+import { AUTH_EVENTS, isLoggedIn, isWeappEnv, requireLogin } from '@/utils/auth'
 import type { Archive } from '@/types/archive'
 import './index.css'
 
@@ -19,6 +20,8 @@ const ArchiveListPage = () => {
   const [archives, setArchives] = useState<Archive[]>([])
   const [currentId, setCurrentId] = useState<string>('')
   const [animating, setAnimating] = useState(false)
+  // 是否可查看用户档案：非微信端（dev bypass）或已登录；未登录时用户档案隐藏（数据与登录状态绑定）
+  const [canViewArchives, setCanViewArchives] = useState(true)
 
   // 登录后：先把本地档案全量同步到服务端（老用户补传），再把服务端有而本地缺失的档案合并回来（云端恢复）
   const syncAndRestore = async () => {
@@ -53,12 +56,30 @@ const ArchiveListPage = () => {
     }
   }
 
-  useDidShow(() => {
+  const refreshView = () => {
+    const canView = !isWeappEnv() || isLoggedIn()
+    setCanViewArchives(canView)
     setArchives(getArchives())
     setCurrentId(getCurrentArchiveId())
+    // 登录状态下从服务端合并恢复；未登录跳过（canSync 内部也有 token 判断，此处前置避免无谓调用）
+    if (canView) void syncAndRestore()
+  }
+
+  useDidShow(() => {
     setAnimating(false)
-    void syncAndRestore()
+    refreshView()
   })
+
+  // 登录/退出登录后刷新视图：登录恢复用户档案 + 云端合并，退出回到示例视角
+  useEffect(() => {
+    Taro.eventCenter.on(AUTH_EVENTS.LOGIN_SUCCESS, refreshView)
+    Taro.eventCenter.on(AUTH_EVENTS.LOGOUT, refreshView)
+    return () => {
+      Taro.eventCenter.off(AUTH_EVENTS.LOGIN_SUCCESS, refreshView)
+      Taro.eventCenter.off(AUTH_EVENTS.LOGOUT, refreshView)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSwitch = (archive: Archive) => {
     if (archive.id === currentId) {
@@ -81,7 +102,8 @@ const ArchiveListPage = () => {
     Taro.navigateTo({ url: `/pages/archive/form/index?id=${archive.id}` })
   }
 
-  const userArchives = archives.filter(a => !a.isDefault)
+  // 未登录（微信端）时不展示用户档案：档案数据与登录状态绑定，退出登录后隐藏，重新登录恢复
+  const userArchives = canViewArchives ? archives.filter(a => !a.isDefault) : []
 
   const handleDelete = (archive: Archive) => {
     if (archive.isDefault) {
@@ -108,7 +130,9 @@ const ArchiveListPage = () => {
     })
   }
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
+    // 添加档案需登录：未登录时 requireLogin 会唤起全局登录（隐私弹窗），同意登录后再次点击即可
+    if (!(await requireLogin())) return
     Taro.navigateTo({ url: '/pages/archive/form/index' })
   }
 
@@ -171,10 +195,22 @@ const ArchiveListPage = () => {
 
       {userArchives.length === 0 && (
         <View className="mt-8 p-6 bg-white rounded-2xl text-center">
-          <Text className="block text-gray-500 mb-4">还没有真实档案，添加后即可查看专属运势</Text>
-          <Button className="w-full bg-gray-900 text-white py-3 rounded-xl" onClick={handleAdd}>
-            添加档案
-          </Button>
+          {!canViewArchives ? (
+            <>
+              <LogIn size={32} color="#9CA3AF" className="mx-auto mb-3" />
+              <Text className="block text-gray-500 mb-4">登录后即可创建专属档案，生成你的每日穿搭</Text>
+              <Button className="w-full bg-gray-900 text-white py-3 rounded-xl" onClick={handleAdd}>
+                微信登录并添加档案
+              </Button>
+            </>
+          ) : (
+            <>
+              <Text className="block text-gray-500 mb-4">还没有真实档案，添加后即可查看专属运势</Text>
+              <Button className="w-full bg-gray-900 text-white py-3 rounded-xl" onClick={handleAdd}>
+                添加档案
+              </Button>
+            </>
+          )}
         </View>
       )}
 
