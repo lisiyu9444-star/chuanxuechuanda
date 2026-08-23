@@ -3,6 +3,8 @@ import type { Archive, DailyResult, NativeResult, ImageUnlockState } from '@/typ
 
 const ARCHIVES_KEY = 'outfit_archives'
 const CURRENT_ARCHIVE_ID_KEY = 'current_archive_id'
+// 切换前的档案 id：loading 取消生成时回退用（一次性消费语义）
+const PREVIOUS_ARCHIVE_ID_KEY = 'previous_archive_id'
 const DAILY_RESULTS_KEY = 'daily_results'
 const NATIVE_RESULTS_KEY = 'native_results'
 const IMAGE_UNLOCKS_KEY = 'image_unlocks'
@@ -88,7 +90,34 @@ export function getCurrentArchiveId(): string {
 }
 
 export function setCurrentArchiveId(id: string): void {
+  const current = getCurrentArchiveId()
+  // 真实切换时记录旧档案，供「取消生成」场景回退（一次性消费，见 loading 页 useDidShow）
+  if (current && current !== id) {
+    safeSet(PREVIOUS_ARCHIVE_ID_KEY, current)
+  }
   safeSet(CURRENT_ARCHIVE_ID_KEY, id)
+}
+
+// 读取并清除切换前的档案 id（一次性消费）。loading 页进入时快照，用户取消生成时据此回退；
+// 首页在切换已生效（展示缓存/示例/冷却态）时也会消费，避免过期残留导致误回退
+export function consumePreviousArchiveId(): string {
+  const prev = safeGet<string>(PREVIOUS_ARCHIVE_ID_KEY, '')
+  if (prev) {
+    try {
+      Taro.removeStorageSync(PREVIOUS_ARCHIVE_ID_KEY)
+    } catch {
+      /* noop */
+    }
+  }
+  return prev
+}
+
+// 取消生成时回退到指定档案。必须直写存储：走 setCurrentArchiveId 会把被取消的档案再次记入 previous
+export function revertToArchiveId(id: string): boolean {
+  if (!id || id === getCurrentArchiveId()) return false
+  if (!getArchiveById(id)) return false
+  safeSet(CURRENT_ARCHIVE_ID_KEY, id)
+  return true
 }
 
 export function getCurrentArchive(): Archive {

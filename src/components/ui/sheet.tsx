@@ -108,17 +108,32 @@ const SheetPortal = ({ children }: { children: React.ReactNode }) => {
     return <Portal>{children}</Portal>
 }
 
+// 视觉开关：挂载首帧强制渲染 closed 初始态，延迟一帧再跟随真实 open，
+// 让 CSS transition 有过渡起点（否则首帧即终态，弹层无生硬出现没有动画）。
+// 关闭时 open 变 false 立即回落 closed 态，配合 usePresence 延迟卸载完成退出动画。
+const useVisualOpen = () => {
+  const context = React.useContext(SheetContext)
+  const open = !!context?.open
+  const [entered, setEntered] = React.useState(false)
+  React.useEffect(() => {
+    const t = setTimeout(() => setEntered(true), 50)
+    return () => clearTimeout(t)
+  }, [])
+  return open && entered
+}
+
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof View>,
   React.ComponentPropsWithoutRef<typeof View>
 >(({ className, onClick, ...props }, ref) => {
   const context = React.useContext(SheetContext)
-  const state = context?.open ? "open" : "closed"
+  const visualOpen = useVisualOpen()
+  const state = visualOpen ? "open" : "closed"
   return (
       <View
         data-state={state}
         className={cn(
-          "fixed inset-0 isolate z-50 bg-black bg-opacity-10 transition-opacity duration-300 ease-in-out supports-[backdrop-filter]:backdrop-blur-sm will-change-opacity data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+          "fixed inset-0 isolate z-50 bg-black bg-opacity-10 opacity-0 transition-opacity duration-300 ease-in-out data-[state=open]:opacity-100 supports-[backdrop-filter]:backdrop-blur-sm will-change-opacity",
           className
         )}
         {...props}
@@ -133,17 +148,19 @@ const SheetOverlay = React.forwardRef<
 })
 SheetOverlay.displayName = "SheetOverlay"
 
+// 动画方案：transition-transform + translate（跨端可靠），不使用 tailwindcss-animate keyframes
+//（项目未配置该插件，animate-in/slide-in-from-* 类无对应 CSS，会导致弹层生硬闪现）
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out will-change-transform",
+  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition-transform ease-in-out duration-300 will-change-transform",
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+        top: "inset-x-0 top-0 border-b -translate-y-full data-[state=open]:translate-y-0",
         bottom:
-          "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+          "inset-x-0 bottom-0 border-t translate-y-full data-[state=open]:translate-y-0",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r -translate-x-full data-[state=open]:translate-x-0 sm:max-w-sm",
         right:
-          "inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+          "inset-y-0 right-0 h-full w-3/4  border-l translate-x-full data-[state=open]:translate-x-0 sm:max-w-sm",
       },
     },
     defaultVariants: {
@@ -161,7 +178,8 @@ const SheetContent = React.forwardRef<
   SheetContentProps
 >(({ side = "right", className, children, ...props }, ref) => {
     const context = React.useContext(SheetContext)
-    const state = context?.open ? "open" : "closed"
+    const visualOpen = useVisualOpen()
+    const state = visualOpen ? "open" : "closed"
   return (
     <SheetPortal>
       <View

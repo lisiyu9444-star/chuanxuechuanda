@@ -21,6 +21,7 @@ import {
   isDailyGenerateCoolingDown,
   isDailyGenerateCancelled,
   clearDailyGenerateFailed,
+  consumePreviousArchiveId,
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
@@ -137,6 +138,8 @@ export default function Index() {
       setHasArchiveChanged(false)
       setGenerateFailed(false)
       setGenerateCancelled(false)
+      // 切换已生效展示，消费掉「切换前档案」残留标记，避免后续 loading 取消时误回退
+      consumePreviousArchiveId()
       return
     }
 
@@ -147,6 +150,8 @@ export default function Index() {
       setHasArchiveChanged(activeArchive.updatedAt > cachedDaily.generatedAt)
       setGenerateFailed(false)
       setGenerateCancelled(false)
+      // 同上：切换已生效，消费残留标记
+      consumePreviousArchiveId()
     } else if (isDailyGenerateCoolingDown(activeArchive.id, today)) {
       // 冷却期内（最近生成失败或被用户取消）：不自动跳 loading，交还用户主动权，
       // 打破「中断 → 回首页 → onShow 自动再进 → 再中断」的死循环；
@@ -154,6 +159,9 @@ export default function Index() {
       setDailyResult(null)
       setGenerateFailed(true)
       setGenerateCancelled(isDailyGenerateCancelled(activeArchive.id, today))
+      // 冷却态意味着切换后的生成已被取消（回退逻辑在 loading 取消时已消费），
+      // 或切换恰逢冷却未进 loading——统一清除残留 previous，避免过期回退
+      consumePreviousArchiveId()
     } else {
       // 微信小程序：未同意隐私协议（未登录）时不自动触发 AI 生成，等待用户在登录弹层完成授权
       if (isWeappEnv() && !hasAgreedPrivacy()) return

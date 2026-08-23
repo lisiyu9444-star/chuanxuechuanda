@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { CloudOff, RefreshCw } from 'lucide-react-taro'
 import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
-import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, markDailyGenerateCancelled, clearDailyGenerateFailed, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
+import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, markDailyGenerateCancelled, clearDailyGenerateFailed, consumePreviousArchiveId, revertToArchiveId, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import { buildHistoryRecord, saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import { syncArchiveToServer, syncHistoryToServer } from '@/utils/serverSync'
 import { isLoggedIn, isWeappEnv } from '@/utils/auth'
@@ -38,6 +38,8 @@ const LoadingPage = () => {
   const requestSeqRef = useRef(0)
   // 最近一次请求参数：失败界面「重新生成」按钮据此重发
   const lastRequestRef = useRef<{ archiveId: string; pageMode: 'daily' | 'native'; action: string } | null>(null)
+  // 本次进入前选中的档案 id：用户取消生成时回退（撤销本次档案切换）
+  const prevArchiveIdRef = useRef('')
   // 25 秒加速动画计时器（Taro 的 useDidShow 回调返回值不会被当作 cleanup 调用，必须用 ref 手动管理）
   const accelerateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // 请求失败标记：true 时本页展示失败界面（重试/返回），不再自动跳回首页（避免与首页自动跳转形成死循环）
@@ -317,6 +319,8 @@ const LoadingPage = () => {
     startTimeRef.current = Date.now()
 
     lastRequestRef.current = archiveId ? { archiveId: archiveId as string, pageMode, action } : null
+    // 快照切换前的档案并消费存储（一次性）：本次生成若被用户取消，回退到该档案
+    prevArchiveIdRef.current = consumePreviousArchiveId()
 
     if (archiveId) {
       if (action === 'redesign') {
@@ -359,6 +363,12 @@ const LoadingPage = () => {
     const last = lastRequestRef.current
     if (wasRequesting && last && last.pageMode === 'daily' && last.action !== 'redesign') {
       markDailyGenerateCancelled(last.archiveId)
+      // 撤销本次档案切换：回退到上一个选中的档案，其首页按正常状态展示；
+      // 同时给回退目标写取消标记——若其无今日缓存，防止首页立即又自动跳进 loading（连环跳转）
+      const prevId = prevArchiveIdRef.current
+      if (prevId && revertToArchiveId(prevId)) {
+        markDailyGenerateCancelled(prevId)
+      }
       Taro.showToast({ title: '生成已取消', icon: 'none', duration: 1500 })
     }
   })
