@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
-import { ChevronRight, CloudOff, Plus, RefreshCw, Sparkles } from 'lucide-react-taro'
+import { ChevronRight, CloudOff, Plus, RefreshCw, Shirt, Sparkles, Users, WandSparkles } from 'lucide-react-taro'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -277,17 +277,17 @@ export default function Index() {
           <CardContent className="p-6 flex flex-col items-center">
             {generateCancelled ? (
               <>
-                <Sparkles size={56} color="#0f172a" />
+                {/* 空态图标：衬衫（穿搭主体）+ 右上角星光点缀（幸运/AI 生成），呼应「幸运穿搭」定位 */}
+                <View className="relative flex items-center justify-center w-20 h-20 rounded-full bg-slate-100">
+                  <Shirt size={36} color="#0f172a" strokeWidth={1.8} />
+                  <View className="absolute -top-1 -right-1 flex items-center justify-center w-6 h-6 rounded-full bg-white">
+                    <Sparkles size={14} color="#0f172a" />
+                  </View>
+                </View>
                 <Text className="block text-lg font-semibold text-gray-900 mt-5">今日穿搭待生成</Text>
                 <Text className="block text-sm text-gray-500 mt-2 text-center leading-relaxed">
                   点击下方按钮，生成你的专属幸运穿搭
                 </Text>
-                <Button className="w-full mt-6" onClick={handleRetryGenerate}>
-                  <View className="flex flex-row items-center justify-center gap-1">
-                    <Sparkles size={16} color="#ffffff" />
-                    <Text className="text-sm">立即生成</Text>
-                  </View>
-                </Button>
               </>
             ) : (
               <>
@@ -296,14 +296,21 @@ export default function Index() {
                 <Text className="block text-sm text-gray-500 mt-2 text-center leading-relaxed">
                   网络繁忙或服务暂时不可用，点击按钮重试
                 </Text>
-                <Button className="w-full mt-6" onClick={handleRetryGenerate}>
-                  <View className="flex flex-row items-center justify-center gap-1">
-                    <RefreshCw size={16} color="#ffffff" />
-                    <Text className="text-sm">重新生成</Text>
-                  </View>
-                </Button>
               </>
             )}
+            <Button className="w-full mt-6" onClick={handleRetryGenerate}>
+              <View className="flex flex-row items-center justify-center gap-1">
+                {generateCancelled ? <WandSparkles size={16} color="#ffffff" /> : <RefreshCw size={16} color="#ffffff" />}
+                <Text className="text-sm">{generateCancelled ? '立即生成' : '重新生成'}</Text>
+              </View>
+            </Button>
+            {/* 切换档案入口：冷却态页面无顶部档案栏，需独立提供切换通道 */}
+            <Button variant="outline" className="w-full mt-3" onClick={handleSwitchArchive}>
+              <View className="flex flex-row items-center justify-center gap-1">
+                <Users size={16} color="#0f172a" />
+                <Text className="text-sm">切换档案</Text>
+              </View>
+            </Button>
           </CardContent>
         </Card>
         {/* 全局登录弹层（页面级挂载，小程序端 App 不渲染 UI） */}
