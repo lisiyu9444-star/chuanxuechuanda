@@ -6,11 +6,14 @@ import {
   Req,
 } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
+import { and, eq } from 'drizzle-orm'
 import { BaziService, BaZiResult, FourPillar, FavorableAnalysis, OutfitRecommendation, getCurrentGanZhiDate, getTodayStr } from './bazi.service'
 import { StylistService, StylistResult, LuckyScore } from './stylist.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
 import { v4 as uuidv4 } from 'uuid'
 import { Public } from '@/auth/public.decorator'
+import { db } from '@/storage/database/db'
+import { baziRecords, profiles } from '@/storage/database/schema'
 
 @Controller('bazi')
 export class BaziController {
@@ -18,6 +21,88 @@ export class BaziController {
     private readonly baziService: BaziService,
     private readonly stylistService: StylistService,
   ) {}
+
+  /**
+   * 计算完成后自动保存记录到 bazi_records（fire-and-forget，不阻塞接口响应）。
+   * 幂等键 clientId 与前端历史记录一致：daily=`${archiveId}_${date}`，native=`${archiveId}_native`，
+   * 重复触发（再测一次/失败重试）时执行更新而非新增；
+   * 更新时保留已有图片字段（前端转存后的永久 URL 补丁），避免被本次空值覆盖。
+   */
+  private saveRecordAsync(params: {
+    userId?: string
+    archiveId?: string
+    clientId: string
+    type: 'daily' | 'native'
+    nickname: string
+    gender: string
+    recordPayload: Record<string, unknown>
+    llmPlan: unknown
+    luckyScore?: unknown
+  }) {
+    const { userId, archiveId, clientId, type, nickname, gender, recordPayload, llmPlan, luckyScore } = params
+    if (!userId) return
+    ;(async () => {
+      // profileId 外键防御：档案尚未同步到服务端时存 null（clientId 前缀已含档案 id），避免外键违反
+      let effectiveProfileId: string | null = null
+      if (archiveId) {
+        const profileRows = await db
+          .select({ id: profiles.id })
+          .from(profiles)
+          .where(eq(profiles.id, archiveId))
+          .limit(1)
+        if (profileRows[0]) effectiveProfileId = archiveId
+      }
+
+      const existing = await db
+        .select()
+        .from(baziRecords)
+        .where(and(eq(baziRecords.userId, userId), eq(baziRecords.clientId, clientId)))
+        .limit(1)
+      const llmPlanStr = JSON.stringify(llmPlan ?? null)
+      const luckyScoreStr = luckyScore !== undefined ? JSON.stringify(luckyScore) : null
+
+      if (existing[0]) {
+        const merged: Record<string, unknown> = { ...recordPayload }
+        try {
+          const prev = JSON.parse(existing[0].result || '{}') as Record<string, unknown>
+          for (const key of ['imageUrl', 'tryOnUrl', 'imageKey', 'tryOnKey']) {
+            if (!merged[key] && prev[key]) merged[key] = prev[key]
+          }
+        } catch {
+          // 旧记录解析失败时直接使用新 payload
+        }
+        await db
+          .update(baziRecords)
+          .set({
+            profileId: effectiveProfileId ?? existing[0].profileId,
+            type,
+            nickname,
+            gender,
+            result: JSON.stringify(merged),
+            llmPlan: llmPlanStr,
+            ...(luckyScoreStr !== null ? { luckyScore: luckyScoreStr } : {}),
+          })
+          .where(eq(baziRecords.id, existing[0].id))
+        console.log(`[History] 计算结果已更新: ${clientId}`)
+        return
+      }
+
+      await db.insert(baziRecords).values({
+        id: uuidv4(),
+        userId,
+        clientId,
+        profileId: effectiveProfileId,
+        type,
+        nickname,
+        gender,
+        result: JSON.stringify(recordPayload),
+        llmPlan: llmPlanStr,
+        luckyScore: luckyScoreStr,
+        createdAt: Date.now(),
+      })
+      console.log(`[History] 计算结果已保存: ${clientId}`)
+    })().catch((err) => console.error('[History] 计算结果自动保存失败:', err))
+  }
 
   @Post('calculate')
   @HttpCode(200)
@@ -177,6 +262,8 @@ export class BaziController {
       location: string
       calendarType?: 'solar' | 'lunar'
       clientTaskId?: string
+      /** 前端档案 id，用于自动保存 bazi_records（幂等键前缀） */
+      archiveId?: string
       age?: number
       stylePreference?: string
     },
@@ -234,28 +321,59 @@ export class BaziController {
       ])
 
       const ganZhiDate = getCurrentGanZhiDate()
+      const date = getTodayStr()
+
+      const resultBazi = {
+        nickname,
+        gender,
+        dayMaster: baziResult.dayMaster,
+        dayMasterElement: baziResult.dayMasterElement,
+        fourPillars: baziResult.fourPillars,
+        fiveElements: baziResult.fiveElements,
+        favorableElement: baziResult.favorableElement,
+        favorableAnalysis: baziResult.favorableAnalysis,
+        outfit: baziResult.outfit,
+        imageUrl: '',
+        age,
+        ganZhiDate,
+        dailyYongShen: baziResult.dailyYongShen || baziResult.favorableElement,
+        dailyXiShen: baziResult.dailyXiShen || baziResult.favorableAnalysis.assistantXiShen,
+      } as BaZiResult
+
+      // 计算结果自动保存到 bazi_records（后端兜底，与前端图片补丁共享幂等键）
+      const clientId = body.archiveId ? `${body.archiveId}_${date}` : ''
+      if (clientId) {
+        this.saveRecordAsync({
+          userId: req.user?.userId,
+          archiveId: body.archiveId,
+          clientId,
+          type: 'daily',
+          nickname,
+          gender,
+          recordPayload: {
+            ...resultBazi,
+            id: clientId,
+            archiveId: body.archiveId,
+            date,
+            mode: 'daily',
+            nickname,
+            birthDate,
+            birthTime,
+            city: location,
+            llmPlan,
+            createdAt: Date.now(),
+          },
+          llmPlan,
+          luckyScore,
+        })
+      }
 
       return {
         data: {
-          baziResult: {
-            nickname,
-            gender,
-            dayMaster: baziResult.dayMaster,
-            dayMasterElement: baziResult.dayMasterElement,
-            fourPillars: baziResult.fourPillars,
-            fiveElements: baziResult.fiveElements,
-            favorableElement: baziResult.favorableElement,
-            favorableAnalysis: baziResult.favorableAnalysis,
-            outfit: baziResult.outfit,
-            imageUrl: '',
-            age,
-            ganZhiDate,
-            dailyYongShen: baziResult.dailyYongShen || baziResult.favorableElement,
-            dailyXiShen: baziResult.dailyXiShen || baziResult.favorableAnalysis.assistantXiShen,
-          } as BaZiResult,
+          baziResult: resultBazi,
           llmPlan,
           luckyScore,
-          date: getTodayStr(),
+          date,
         },
       }
     } finally {
@@ -276,6 +394,8 @@ export class BaziController {
       location: string
       calendarType?: 'solar' | 'lunar'
       clientTaskId?: string
+      /** 前端档案 id，用于自动保存 bazi_records（幂等键前缀） */
+      archiveId?: string
       age?: number
       stylePreference?: string
     },
@@ -321,21 +441,49 @@ export class BaziController {
         mode: 'native',
       }, forwardHeaders, signal)
 
+      const resultBazi = {
+        nickname,
+        gender,
+        dayMaster: baziResult.dayMaster,
+        dayMasterElement: baziResult.dayMasterElement,
+        fourPillars: baziResult.fourPillars,
+        fiveElements: baziResult.fiveElements,
+        favorableElement: baziResult.favorableElement,
+        favorableAnalysis: baziResult.favorableAnalysis,
+        outfit: baziResult.outfit,
+        imageUrl: '',
+        age,
+      } as BaZiResult
+
+      // 计算结果自动保存到 bazi_records（后端兜底，与前端图片补丁共享幂等键）
+      const clientId = body.archiveId ? `${body.archiveId}_native` : ''
+      if (clientId) {
+        this.saveRecordAsync({
+          userId: req.user?.userId,
+          archiveId: body.archiveId,
+          clientId,
+          type: 'native',
+          nickname,
+          gender,
+          recordPayload: {
+            ...resultBazi,
+            id: clientId,
+            archiveId: body.archiveId,
+            mode: 'native',
+            nickname,
+            birthDate,
+            birthTime,
+            city: location,
+            llmPlan,
+            createdAt: Date.now(),
+          },
+          llmPlan,
+        })
+      }
+
       return {
         data: {
-          baziResult: {
-            nickname,
-            gender,
-            dayMaster: baziResult.dayMaster,
-            dayMasterElement: baziResult.dayMasterElement,
-            fourPillars: baziResult.fourPillars,
-            fiveElements: baziResult.fiveElements,
-            favorableElement: baziResult.favorableElement,
-            favorableAnalysis: baziResult.favorableAnalysis,
-            outfit: baziResult.outfit,
-            imageUrl: '',
-            age,
-          } as BaZiResult,
+          baziResult: resultBazi,
           llmPlan,
         },
       }

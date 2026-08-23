@@ -88,6 +88,8 @@ const LoadingPage = () => {
           age: currentArchive.age,
           stylePreference: currentArchive.stylePreference,
           clientTaskId: clientTaskIdRef.current,
+          // 透传档案 id：后端计算完成后自动保存 bazi_records（幂等键 `${archiveId}_${date}` / `${archiveId}_native`）
+          archiveId,
         },
         timeout: 120000,
       })
@@ -114,9 +116,8 @@ const LoadingPage = () => {
         saveNativeResult(nativeResult)
         // 本命穿搭也生成历史记录，与今日穿搭独立存储
         saveHistoryFromNativeResult(nativeResult, currentArchive)
-        // 登录后异步双写到服务端（档案也兜底同步一次）
+        // 服务端历史记录由 native 接口自动保存（幂等键一致），此处仅档案兜底同步
         syncArchiveToServer(currentArchive)
-        syncHistoryToServer(buildHistoryRecord(nativeResult, currentArchive, 'native'))
         setProgressValue(100)
         if (fromRef.current === 'result') {
           // 从结果页“再测一次”进入，返回原结果页展示新数据
@@ -140,9 +141,9 @@ const LoadingPage = () => {
         generatedAt: Date.now(),
       }
       saveDailyResult(dailyResult)
-      // 本地历史记录由结果页统一保存（含图片补丁合并），此处仅做服务端双写
+      // 本地历史记录由结果页统一保存（含图片补丁合并）；
+      // 服务端历史记录由 daily 接口自动保存（幂等键一致），此处仅档案兜底同步
       syncArchiveToServer(currentArchive)
-      syncHistoryToServer(buildHistoryRecord(dailyResult, currentArchive, 'daily'))
       clearDailyGenerateFailed(archiveId, dateStr)
       setProgressValue(100)
       if (fromRef.current === 'result') {
