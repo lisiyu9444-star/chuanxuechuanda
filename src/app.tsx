@@ -1,5 +1,5 @@
 import { PropsWithChildren, useState } from 'react';
-import Taro, { useDidHide, useLaunch } from '@tarojs/taro';
+import Taro, { useDidHide, useDidShow, useLaunch } from '@tarojs/taro';
 import { LucideTaroProvider } from 'lucide-react-taro';
 import '@/app.css';
 import { Toaster } from '@/components/ui/toast';
@@ -28,6 +28,13 @@ const App = ({ children }: PropsWithChildren) => {
   // 监听应用级别的 onHide，并转发到 eventCenter
   useDidHide(() => {
     Taro.eventCenter.trigger('onHide')
+  })
+
+  // 每次回到前台复查隐私协议状态：版本过期/从未同意时重新弹出（弹窗遮罩阻断使用，不同意不可使用）
+  useDidShow(() => {
+    if (isWeappEnv() && !hasAgreedPrivacy()) {
+      setShowPrivacyDialog(true);
+    }
   })
 
   const handleAgreePrivacy = async () => {

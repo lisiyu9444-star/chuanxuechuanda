@@ -13,6 +13,26 @@ import type { HistoryRecord } from '@/types/bazi'
 
 const canSync = (): boolean => isWeappEnv() && !!getToken()
 
+/**
+ * 同步失败上报：写入服务端客户端日志，便于发现「数据静默丢失」问题。
+ * fire-and-forget：上报本身失败不再重试/再上报，避免递归；跳过 401 自动重试（同步场景下重试意义不大）。
+ */
+function reportSyncFailure(action: string, err: unknown): void {
+  Network.request({
+    url: '/api/log/client',
+    method: 'POST',
+    data: {
+      level: 'warn',
+      tag: 'server-sync',
+      message: `${action} failed: ${err instanceof Error ? err.message : String(err)}`,
+    },
+    timeout: 5000,
+    _skipAuthRetry: true,
+  } as Parameters<typeof Network.request>[0]).catch(() => {
+    /* 上报失败则放弃，避免递归 */
+  })
+}
+
 // ==================== 档案同步 ====================
 
 const toProfilePayload = (archive: Archive) => ({
@@ -40,7 +60,10 @@ export function syncArchiveToServer(archive: Archive): void {
     .then(res => {
       console.log('[Sync] archive synced:', res.data?.data?.total ?? 0)
     })
-    .catch(e => console.warn('[Sync] archive sync failed:', e))
+    .catch(e => {
+      console.warn('[Sync] archive sync failed:', e)
+      reportSyncFailure('archive sync', e)
+    })
 }
 
 /** 全量同步本地档案到服务端（老用户首次登录后调用） */
@@ -56,7 +79,10 @@ export function syncAllArchivesToServer(archives: Archive[]): void {
     .then(res => {
       console.log('[Sync] all archives synced:', res.data?.data?.total ?? 0)
     })
-    .catch(e => console.warn('[Sync] all archives sync failed:', e))
+    .catch(e => {
+      console.warn('[Sync] all archives sync failed:', e)
+      reportSyncFailure('all archives sync', e)
+    })
 }
 
 /** 删除服务端档案（本地删除联动） */
@@ -66,7 +92,10 @@ export function deleteArchiveOnServer(archiveId: string): void {
     url: `/api/profile/${archiveId}`,
     method: 'DELETE',
     timeout: 10000,
-  }).catch(e => console.warn('[Sync] archive delete failed:', e))
+  }).catch(e => {
+    console.warn('[Sync] archive delete failed:', e)
+    reportSyncFailure('archive delete', e)
+  })
 }
 
 export interface ServerProfile {
@@ -93,6 +122,7 @@ export async function fetchServerArchives(): Promise<ServerProfile[] | null> {
     return null
   } catch (e) {
     console.warn('[Sync] fetch archives failed:', e)
+    reportSyncFailure('fetch archives', e)
     return null
   }
 }
@@ -122,7 +152,10 @@ export function syncHistoryToServer(record: HistoryRecord): void {
     .then(res => {
       console.log('[Sync] history synced:', res.data?.data?.id, 'updated:', res.data?.data?.updated)
     })
-    .catch(e => console.warn('[Sync] history sync failed:', e))
+    .catch(e => {
+      console.warn('[Sync] history sync failed:', e)
+      reportSyncFailure('history sync', e)
+    })
 }
 
 /** 删除服务端历史记录（本地删除联动，clientId 为本地记录 id） */
@@ -132,7 +165,10 @@ export function deleteHistoryOnServer(clientId: string): void {
     url: `/api/history/client/${encodeURIComponent(clientId)}`,
     method: 'DELETE',
     timeout: 10000,
-  }).catch(e => console.warn('[Sync] history delete failed:', e))
+  }).catch(e => {
+    console.warn('[Sync] history delete failed:', e)
+    reportSyncFailure('history delete', e)
+  })
 }
 
 /** 清空服务端历史记录（本地清空联动） */
@@ -142,7 +178,10 @@ export function clearHistoryOnServer(): void {
     url: '/api/history',
     method: 'DELETE',
     timeout: 10000,
-  }).catch(e => console.warn('[Sync] history clear failed:', e))
+  }).catch(e => {
+    console.warn('[Sync] history clear failed:', e)
+    reportSyncFailure('history clear', e)
+  })
 }
 
 export interface ServerHistoryRecord {
@@ -174,6 +213,7 @@ export async function fetchServerHistory(pageSize = 50): Promise<ServerHistoryRe
     return null
   } catch (e) {
     console.warn('[Sync] fetch history failed:', e)
+    reportSyncFailure('fetch history', e)
     return null
   }
 }

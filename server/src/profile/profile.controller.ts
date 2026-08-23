@@ -1,21 +1,9 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Req } from '@nestjs/common'
-import { asc, eq } from 'drizzle-orm'
+import { Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Put, Req } from '@nestjs/common'
+import { and, asc, eq } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/storage/database/db'
 import { profiles } from '@/storage/database/schema'
-
-interface ProfileBody {
-  id?: string
-  nickname?: string
-  gender?: string
-  birthDate?: string
-  birthTime?: string
-  location?: string
-  calendarType?: string
-  stylePreference?: string
-  age?: string
-  isDefault?: boolean
-}
+import { ProfileDto, SyncProfilesDto } from './profile.dto'
 
 @Controller('profile')
 export class ProfileController {
@@ -33,7 +21,7 @@ export class ProfileController {
   /** 新建档案 */
   @Post('create')
   @HttpCode(200)
-  async create(@Req() req: any, @Body() body: ProfileBody) {
+  async create(@Req() req: any, @Body() body: ProfileDto) {
     const now = Date.now()
     const id = body?.id || uuidv4()
     await db.insert(profiles).values({
@@ -54,63 +42,53 @@ export class ProfileController {
     return { data: { id } }
   }
 
-  /** 更新档案（仅允许更新本人档案） */
+  /** 更新档案（仅允许更新本人档案，不存在或非本人返回 404） */
   @Put(':id')
-  async update(@Req() req: any, @Param('id') id: string, @Body() body: ProfileBody) {
+  async update(@Req() req: any, @Param('id') id: string, @Body() body: ProfileDto) {
     const updateData: Record<string, unknown> = { updatedAt: Date.now() }
-    const fields: (keyof ProfileBody)[] = [
+    const fields: (keyof ProfileDto)[] = [
       'nickname', 'gender', 'birthDate', 'birthTime', 'location',
       'calendarType', 'stylePreference', 'age', 'isDefault',
     ]
     for (const f of fields) {
       if (body?.[f] !== undefined) updateData[f] = body[f]
     }
-    await db
+    const rows = await db
       .update(profiles)
       .set(updateData)
-      .where(eq(profiles.id, id))
+      .where(and(eq(profiles.id, id), eq(profiles.userId, req.user.userId)))
+      .returning({ id: profiles.id })
+    if (!rows[0]) throw new NotFoundException('档案不存在')
     return { data: { success: true } }
   }
 
-  /** 删除档案（仅允许删除本人档案） */
+  /** 删除档案（仅允许删除本人档案，不存在或非本人返回 404） */
   @Delete(':id')
   async remove(@Req() req: any, @Param('id') id: string) {
-    const rows = await db.select().from(profiles).where(eq(profiles.id, id)).limit(1)
-    if (rows[0] && rows[0].userId === req.user.userId) {
-      await db.delete(profiles).where(eq(profiles.id, id))
-    }
-    return { data: { success: true } }
+    const rows = await db
+      .delete(profiles)
+      .where(and(eq(profiles.id, id), eq(profiles.userId, req.user.userId)))
+      .returning({ id: profiles.id })
+    if (!rows[0]) throw new NotFoundException('档案不存在')
+    return { data: { success: true, deleted: true } }
   }
 
-  /** 档案同步（幂等 upsert）：前端本地档案全量推送到服务端 */
+  /**
+   * 档案同步（幂等 upsert）：前端本地档案全量推送到服务端。
+   * 原子 upsert（INSERT ... ON CONFLICT DO UPDATE）避免并发主键冲突；
+   * setWhere 限定冲突行必须属于当前用户，防止越权覆盖他人档案。
+   */
   @Post('sync')
   @HttpCode(200)
-  async sync(@Req() req: any, @Body() body: { profiles?: ProfileBody[] }) {
-    const list = Array.isArray(body?.profiles) ? body.profiles : []
+  async sync(@Req() req: any, @Body() body: SyncProfilesDto) {
+    const list = Array.isArray(body?.profiles) ? body.profiles.slice(0, 50) : []
     const now = Date.now()
     const syncedIds: string[] = []
     for (const p of list) {
       if (!p?.id) continue
-      const existing = await db.select().from(profiles).where(eq(profiles.id, p.id)).limit(1)
-      if (existing.length > 0) {
-        if (existing[0].userId !== req.user.userId) continue
-        await db
-          .update(profiles)
-          .set({
-            nickname: p.nickname ?? existing[0].nickname,
-            gender: p.gender ?? existing[0].gender,
-            birthDate: p.birthDate ?? existing[0].birthDate,
-            birthTime: p.birthTime ?? existing[0].birthTime,
-            location: p.location ?? existing[0].location,
-            calendarType: p.calendarType ?? existing[0].calendarType,
-            stylePreference: p.stylePreference ?? existing[0].stylePreference,
-            age: p.age ?? existing[0].age,
-            isDefault: p.isDefault ?? existing[0].isDefault,
-            updatedAt: now,
-          })
-          .where(eq(profiles.id, p.id))
-      } else {
-        await db.insert(profiles).values({
+      const rows = await db
+        .insert(profiles)
+        .values({
           id: p.id,
           userId: req.user.userId,
           nickname: p.nickname || '',
@@ -125,8 +103,25 @@ export class ProfileController {
           createdAt: now,
           updatedAt: now,
         })
-      }
-      syncedIds.push(p.id)
+        .onConflictDoUpdate({
+          target: profiles.id,
+          set: {
+            nickname: p.nickname || '',
+            gender: p.gender || '',
+            birthDate: p.birthDate || '',
+            birthTime: p.birthTime || '',
+            location: p.location || '',
+            calendarType: p.calendarType || '',
+            stylePreference: p.stylePreference || '',
+            age: p.age || null,
+            isDefault: p.isDefault ?? false,
+            updatedAt: now,
+          },
+          // 冲突行不属于当前用户时不执行更新（静默跳过，防越权）
+          setWhere: eq(profiles.userId, req.user.userId),
+        })
+        .returning({ id: profiles.id })
+      if (rows[0]) syncedIds.push(rows[0].id)
     }
     return { data: { syncedIds, total: syncedIds.length } }
   }

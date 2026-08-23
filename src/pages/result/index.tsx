@@ -800,12 +800,25 @@ const ResultPage = () => {
 
       if (shareId) {
         // 已有 shareId，更新现有分享数据
-        await Network.request({
+        const updateRes = await Network.request({
           url: `/api/share/${shareId}`,
           method: 'PUT',
           data: shareData,
         })
-        console.log('Share data updated:', shareId)
+        if (updateRes.statusCode === 200) {
+          console.log('Share data updated:', shareId)
+        } else if (updateRes.statusCode === 401 || updateRes.statusCode === 403 || updateRes.statusCode === 404) {
+          // 分享不可更新（未登录/匿名分享归属保护/已过期删除）：降级重新创建分享，保证分享链接内容最新
+          console.warn('Share update rejected, fallback to create:', updateRes.statusCode)
+          const saveRes = await Network.request({
+            url: '/api/share/save',
+            method: 'POST',
+            data: shareData,
+          })
+          if (saveRes.data?.shareId) {
+            setShareId(saveRes.data.shareId)
+          }
+        }
       } else {
         // 首次保存，创建分享数据
         const saveRes = await Network.request({

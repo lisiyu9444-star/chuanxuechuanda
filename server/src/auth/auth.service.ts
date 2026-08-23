@@ -1,10 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { desc, eq } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/storage/database/db'
 import { privacyConsents, users } from '@/storage/database/schema'
-import { DEV_USER, isStrictAuthMode, PRIVACY_VERSION } from './auth-config'
+import { DEV_USER, isDevBypassAllowed, isStrictAuthMode, PRIVACY_VERSION } from './auth-config'
 
 interface WxSessionResponse {
   openid?: string
@@ -58,16 +58,23 @@ export class AuthService {
       })
     }
 
-    const token = this.jwtService.sign({ sub: userId, openid })
+    // payload 只携带 userId（sub），openid 等敏感标识不进 token
+    const token = this.jwtService.sign({ sub: userId })
     return { token, userId, isNewUser, nickname, avatarUrl, privacyVersion: PRIVACY_VERSION }
   }
 
-  /** 严格模式走微信 code2Session；开发模式以 code 派生伪 openid */
+  /** 严格模式走微信 code2Session；开发模式以 code 派生伪 openid（仅本地开发可用） */
   private async resolveOpenid(code: string): Promise<{ openid: string; unionid?: string }> {
     if (!isStrictAuthMode()) {
+      // 生产环境未配置微信凭证属于配置错误：登录 fail-closed，不允许任意 code 派生身份
+      if (!isDevBypassAllowed()) {
+        throw new ServiceUnavailableException('登录服务未配置，暂不可用')
+      }
       return { openid: code === 'dev' ? DEV_USER.openid : `dev-${code}` }
     }
 
+    // 注意：微信 jscode2session 仅支持 query 传参，secret 必须出现在 URL 中（微信 API 设计）。
+    // 因此禁止把该 URL 写入任何日志或错误响应，下方日志均做脱敏处理。
     const url =
       'https://api.weixin.qq.com/sns/jscode2session' +
       `?appid=${process.env.WX_APPID}` +
@@ -80,13 +87,15 @@ export class AuthService {
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
       data = (await res.json()) as WxSessionResponse
     } catch (e) {
-      console.error('[Auth] 调用微信 code2Session 异常:', e)
+      // 仅记录错误消息，不打印可能包含完整 URL（含 secret）的错误对象
+      console.error('[Auth] 调用微信 code2Session 异常:', e instanceof Error ? e.message : 'unknown')
       throw new UnauthorizedException('微信服务调用失败，请稍后重试')
     }
 
     if (data.errcode || !data.openid) {
-      console.error('[Auth] 微信 code2Session 失败:', data.errcode, data.errmsg)
-      throw new UnauthorizedException(`微信登录失败: ${data.errmsg || '未知错误'}`)
+      // 微信侧错误详情只进服务端日志，对外统一脱敏文案
+      console.error('[Auth] 微信 code2Session 失败, errcode:', data.errcode)
+      throw new UnauthorizedException('微信登录失败，请稍后重试')
     }
     return { openid: data.openid, unionid: data.unionid }
   }
@@ -120,10 +129,10 @@ export class AuthService {
   }
 
   /** 供公开接口（如分享）可选解析 token：无 token 或无效时返回 null，不抛错 */
-  async verifyTokenOptional(token: string): Promise<{ userId: string; openid: string } | null> {
+  async verifyTokenOptional(token: string): Promise<{ userId: string } | null> {
     try {
-      const payload = await this.jwtService.verifyAsync<{ sub?: string; openid?: string }>(token)
-      return payload?.sub ? { userId: payload.sub, openid: payload.openid || '' } : null
+      const payload = await this.jwtService.verifyAsync<{ sub?: string }>(token)
+      return payload?.sub ? { userId: payload.sub } : null
     } catch {
       return null
     }

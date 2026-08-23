@@ -4,13 +4,14 @@ import { APP_GUARD } from '@nestjs/core'
 import { AuthService } from './auth.service'
 import { AuthController } from './auth.controller'
 import { JwtAuthGuard } from './jwt-auth.guard'
-import { JWT_EXPIRES_IN, JWT_SECRET } from './auth-config'
+import { getJwtSecret, JWT_EXPIRES_IN } from './auth-config'
 
 @Module({
   imports: [
     JwtModule.register({
       global: true,
-      secret: JWT_SECRET,
+      // getJwtSecret() 在生产环境未配置 JWT_SECRET 时抛错，服务拒绝启动（fail-closed）
+      secret: getJwtSecret(),
       signOptions: { expiresIn: JWT_EXPIRES_IN as JwtSignOptions['expiresIn'] },
     }),
   ],

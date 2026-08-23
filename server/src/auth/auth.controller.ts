@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Req, UnauthorizedException } from '@nestjs/common'
 import { AuthService } from './auth.service'
+import { LoginDto, PrivacyConsentDto, UpdateProfileDto } from './auth.dto'
 import { Public } from './public.decorator'
 import { PRIVACY_VERSION } from './auth-config'
 
@@ -11,7 +12,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(200)
-  async login(@Body() body: { code?: string; nickname?: string; avatarUrl?: string }) {
+  async login(@Body() body: LoginDto) {
     if (!body?.code) {
       throw new UnauthorizedException('缺少 code 参数')
     }
@@ -31,8 +32,8 @@ export class AuthController {
     const latestConsentedVersion = await this.authService.getLatestConsentedVersion(req.user.userId)
     return {
       data: {
+        // openid 属敏感标识，不下发给前端
         userId: req.user.userId,
-        openid: user?.openid || '',
         nickname: user?.nickname || null,
         avatarUrl: user?.avatarUrl || null,
         privacyVersion: PRIVACY_VERSION,
@@ -44,7 +45,7 @@ export class AuthController {
   /** 更新用户资料 */
   @Post('update-profile')
   @HttpCode(200)
-  async updateProfile(@Req() req: any, @Body() body: { nickname?: string; avatarUrl?: string }) {
+  async updateProfile(@Req() req: any, @Body() body: UpdateProfileDto) {
     await this.authService.updateUserInfo(req.user.userId, body?.nickname, body?.avatarUrl)
     return { data: { success: true } }
   }
@@ -52,7 +53,7 @@ export class AuthController {
   /** 记录隐私协议同意（服务端留痕） */
   @Post('privacy-consent')
   @HttpCode(200)
-  async recordPrivacyConsent(@Req() req: any, @Body() body: { version?: string }) {
+  async recordPrivacyConsent(@Req() req: any, @Body() body: PrivacyConsentDto) {
     const version = body?.version || PRIVACY_VERSION
     await this.authService.recordPrivacyConsent(req.user.userId, version)
     return { data: { success: true, version } }

@@ -5,7 +5,8 @@ export const shares = pgTable(
   "shares",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
-    userId: varchar("user_id", { length: 64 }), // 可选：已登录用户的分享关联
+    // 可选：已登录用户的分享关联；外键引用 users.id，用户删除后置空（保留匿名分享内容）
+    userId: varchar("user_id", { length: 64 }).references(() => users.id, { onDelete: "set null" }),
     nickname: varchar("nickname", { length: 100 }).notNull(),
     gender: varchar("gender", { length: 10 }).notNull().default("male"),
     result: text("result").notNull(),
@@ -76,7 +77,8 @@ export const baziRecords = pgTable(
   {
     id: varchar("id", { length: 64 }).primaryKey(),
     userId: varchar("user_id", { length: 64 }).notNull().references(() => users.id),
-    profileId: varchar("profile_id", { length: 64 }).references(() => profiles.id),
+    // 删除档案时历史记录保留，仅解除档案关联（clientId 前缀仍含档案 id，可定位来源）
+    profileId: varchar("profile_id", { length: 64 }).references(() => profiles.id, { onDelete: "set null" }),
     type: varchar("type", { length: 20 }).notNull(), // calculate / daily / native
     nickname: varchar("nickname", { length: 100 }),
     gender: varchar("gender", { length: 10 }),

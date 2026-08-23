@@ -8,7 +8,7 @@ import { Network } from '@/network'
  * 1. 小程序启动 → 检查本地隐私协议同意状态（版本匹配）
  * 2. 已同意 → 后台静默登录（wx.login → /api/auth/login → JWT）
  * 3. 所有请求由 Network 层自动注入 Authorization: Bearer <token>
- * 4. 收到 401 → 清除 token 并后台静默重登（当前请求不重试，保住 abort 能力）
+ * 4. 收到 401 → 清除 token 并静默重登；重登成功后 Network 层自动重试一次原请求（对业务透明）
  *
  * H5/抖音端：不启用登录与隐私弹窗，后端在开发模式下会注入 dev 用户。
  */
@@ -126,7 +126,9 @@ export function silentLogin(): Promise<boolean> {
         url: '/api/auth/login',
         method: 'POST',
         data: { code: loginRes.code },
-      })
+        // 登录请求自身不参与 401 自动重试：否则 login 401 → 触发静默重登 → 等待自身 loginPromise，死锁
+        _skipAuthRetry: true,
+      } as Parameters<typeof Network.request>[0])
       const data = res.data?.data
       if (res.statusCode === 200 && data?.token) {
         safeSet(TOKEN_KEY, data.token)
@@ -196,13 +198,12 @@ export function setupAuthHooks(): void {
       const token = getToken()
       return token ? { Authorization: `Bearer ${token}` } : {}
     },
-    onUnauthorized: () => {
-      // token 失效/未登录：清除后后台静默重登，当前请求不重试
+    onUnauthorized: async (): Promise<boolean> => {
+      // token 失效/未登录：清除后静默重登；返回是否恢复成功（Network 层据此自动重试原请求）
       console.warn('[Auth] 收到 401，清除 token 并尝试静默重登')
       clearAuth()
-      if (isWeappEnv() && hasAgreedPrivacy()) {
-        void silentLogin()
-      }
+      if (!isWeappEnv() || !hasAgreedPrivacy()) return false
+      return silentLogin()
     },
   })
 }

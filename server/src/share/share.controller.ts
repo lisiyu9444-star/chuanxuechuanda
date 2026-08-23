@@ -9,6 +9,10 @@ import {
   HttpStatus,
   Logger,
   BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+  Req,
 } from '@nestjs/common'
 import { eq } from 'drizzle-orm'
 import { Headers } from '@nestjs/common'
@@ -16,6 +20,7 @@ import { db } from '../storage/database/db'
 import { shares } from '../storage/database/schema'
 import { signUrl } from '../assets/tos-utils'
 import { Public } from '../auth/public.decorator'
+import { RequireAuth } from '../auth/require-auth.decorator'
 import { AuthService } from '../auth/auth.service'
 
 // 分享查看页可能被未登录访客打开，整个控制器保持公开；
@@ -61,14 +66,21 @@ export class ShareController {
       this.logger.log(`Share created: ${shareId}`)
       return { shareId }
     } catch (error) {
+      // 数据库错误细节只进服务端日志，对外脱敏
       this.logger.error('Failed to save share', error)
-      throw error
+      throw new InternalServerErrorException('保存分享失败')
     }
   }
 
+  /**
+   * 更新分享内容：必须登录，且仅允许更新本人创建的分享。
+   * 匿名分享（userId 为空）创建后不可变，前端更新失败应降级为重新创建。
+   */
+  @RequireAuth()
   @Put(':id')
   @HttpCode(HttpStatus.OK)
   async updateShare(
+    @Req() req: any,
     @Param('id') id: string,
     @Body() body: { nickname: string; gender: string; result: any; imageUrl?: string; tryOnUrl?: string },
   ) {
@@ -77,6 +89,19 @@ export class ShareController {
 
     if (!body.result) {
       throw new BadRequestException('result is required')
+    }
+
+    let existing: (typeof shares.$inferSelect) | undefined
+    try {
+      const rows = await db.select().from(shares).where(eq(shares.id, id)).limit(1)
+      existing = rows[0]
+    } catch (error) {
+      this.logger.error('Failed to load share', error)
+      throw new InternalServerErrorException('更新分享失败')
+    }
+    if (!existing) throw new NotFoundException('分享不存在')
+    if (!existing.userId || existing.userId !== req.user?.userId) {
+      throw new ForbiddenException('无权修改该分享')
     }
 
     const updateData = {
@@ -89,12 +114,12 @@ export class ShareController {
     }
 
     try {
-      const result = await db.update(shares).set(updateData).where(eq(shares.id, id))
+      await db.update(shares).set(updateData).where(eq(shares.id, id))
       this.logger.log(`Share updated: ${id}`)
       return { success: true }
     } catch (error) {
       this.logger.error('Failed to update share', error)
-      throw error
+      throw new InternalServerErrorException('更新分享失败')
     }
   }
 

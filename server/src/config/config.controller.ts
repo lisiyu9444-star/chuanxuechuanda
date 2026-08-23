@@ -1,6 +1,22 @@
 import { Controller, Get, HttpCode } from '@nestjs/common'
 import { Public } from '@/auth/public.decorator'
 
+/**
+ * 广告失败自动放行错误码白名单（启动时解析一次，模块级缓存，避免每请求重复 JSON.parse）：
+ * 这些 errCode 表示广告位「确定性不可用」，继续拦截只会造成功能死锁：
+ *   1002 = 广告单元无效   1005 = 广告组件审核中/被拒   1008 = 广告单元已关闭
+ * 注意：1004（无合适广告）属暂时性无填充，不在白名单内，提示用户稍后重试；
+ * 环境变量 AD_AUTO_SKIP_ERR_CODES 可用 JSON 数组覆盖，如 '[1002,1004,1005,1008]'
+ */
+const AD_AUTO_SKIP_ERR_CODES: number[] = (() => {
+  try {
+    const parsed = JSON.parse(process.env.AD_AUTO_SKIP_ERR_CODES || '[1002,1005,1008]')
+    return Array.isArray(parsed) ? parsed : [1002, 1005, 1008]
+  } catch {
+    return [1002, 1005, 1008]
+  }
+})()
+
 @Public()
 @Controller('config')
 export class ConfigController {
@@ -40,18 +56,8 @@ export class ConfigController {
           adFailOpen: process.env.AD_FAIL_OPEN === 'true',
 
           // 广告失败自动放行错误码白名单（严格模式下仍生效，无需手动切开关）：
-          // 这些 errCode 表示广告位「确定性不可用」，继续拦截只会造成功能死锁：
-          //   1002 = 广告单元无效   1005 = 广告组件审核中/被拒   1008 = 广告单元已关闭
-          // 注意：1004（无合适广告）属暂时性无填充，不在白名单内，提示用户稍后重试；
-          // 环境变量 AD_AUTO_SKIP_ERR_CODES 可用 JSON 数组覆盖，如 '[1002,1004,1005,1008]'
-          adAutoSkipErrCodes: (() => {
-            try {
-              const parsed = JSON.parse(process.env.AD_AUTO_SKIP_ERR_CODES || '[1002,1005,1008]')
-              return Array.isArray(parsed) ? parsed : [1002, 1005, 1008]
-            } catch {
-              return [1002, 1005, 1008]
-            }
-          })(),
+          // 见文件顶部 AD_AUTO_SKIP_ERR_CODES 常量说明
+          adAutoSkipErrCodes: AD_AUTO_SKIP_ERR_CODES,
         },
       },
     }

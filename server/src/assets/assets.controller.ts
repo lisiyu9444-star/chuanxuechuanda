@@ -26,8 +26,11 @@ const STATIC_ASSET_KEYS: Record<string, string> = {
 /** key 合法性：仅允许字母数字与 . _ - /，防路径穿越 */
 const KEY_PATTERN = /^[A-Za-z0-9._\-/]{1,512}$/
 
-/** sync-static 管理接口鉴权串（仅允许同步白名单内的静态资源） */
-const SYNC_SECRET = 'assets-sync-3f8a2c7e91b44d6f9e0c5a2b8d7f1635a0e4'
+/**
+ * sync-static 管理接口鉴权串：通过环境变量 ASSETS_SYNC_SECRET 配置。
+ * 未配置时同步接口一律拒绝（fail-closed），源码不内置任何密钥。
+ */
+const getSyncSecret = (): string => process.env.ASSETS_SYNC_SECRET || ''
 
 /** 源 URL 白名单：仅允许从本平台 TOS 域名拉取 */
 const SOURCE_URL_PATTERN = /^https:\/\/[^/]+\.tos\.coze\.site\//
@@ -102,7 +105,11 @@ export class AssetsController {
   ): Promise<{ data: { synced: Record<string, string>; errors: Record<string, string> } }> {
     const synced: Record<string, string> = {}
     const errors: Record<string, string> = {}
-    if (body?.secret !== SYNC_SECRET) {
+    const syncSecret = getSyncSecret()
+    if (!syncSecret) {
+      return { data: { synced, errors: { _auth: 'sync disabled: ASSETS_SYNC_SECRET not configured' } } }
+    }
+    if (!body?.secret || body.secret !== syncSecret) {
       return { data: { synced, errors: { _auth: 'invalid secret' } } }
     }
     const sources = body?.sources && typeof body.sources === 'object' ? body.sources : {}

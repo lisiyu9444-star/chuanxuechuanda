@@ -6,12 +6,15 @@ import {
   Req,
 } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
+import { NotFoundException } from '@nestjs/common'
 import { and, eq } from 'drizzle-orm'
+import { Lunar } from 'lunar-javascript'
 import { BaziService, BaZiResult, FourPillar, FavorableAnalysis, OutfitRecommendation, getCurrentGanZhiDate, getTodayStr } from './bazi.service'
 import { StylistService, StylistResult, LuckyScore } from './stylist.service'
 import { HeaderUtils } from 'coze-coding-dev-sdk'
 import { v4 as uuidv4 } from 'uuid'
 import { Public } from '@/auth/public.decorator'
+import { isProduction } from '@/auth/auth-config'
 import { db } from '@/storage/database/db'
 import { baziRecords, profiles } from '@/storage/database/schema'
 
@@ -41,7 +44,7 @@ export class BaziController {
   }) {
     const { userId, archiveId, clientId, type, nickname, gender, recordPayload, llmPlan, luckyScore } = params
     if (!userId) return
-    ;(async () => {
+    const persist = async () => {
       // profileId 外键防御：档案尚未同步到服务端时存 null（clientId 前缀已含档案 id），避免外键违反
       let effectiveProfileId: string | null = null
       if (archiveId) {
@@ -101,7 +104,17 @@ export class BaziController {
         createdAt: Date.now(),
       })
       console.log(`[History] 计算结果已保存: ${clientId}`)
-    })().catch((err) => console.error('[History] 计算结果自动保存失败:', err))
+    }
+    ;(async () => {
+      try {
+        await persist()
+      } catch (err) {
+        // 失败重试一次：覆盖并发 upsert 冲突、瞬时 DB 抖动；重试成功则数据不丢失
+        console.warn(`[History] 自动保存失败，2s 后重试: ${clientId}`, err instanceof Error ? err.message : err)
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        await persist()
+      }
+    })().catch((err) => console.error(`[History] 计算结果自动保存失败（重试后仍失败）: ${clientId}`, err))
   }
 
   @Post('calculate')
@@ -151,7 +164,7 @@ export class BaziController {
     let solarBirthDate = birthDate
     if (calendarType === 'lunar') {
       try {
-        const { Lunar } = require('lunar-javascript')
+        // Lunar 已在文件顶层导入
         const parts = birthDate.split('-')
         const lunar = Lunar.fromYmd(
           parseInt(parts[0]),
@@ -251,7 +264,7 @@ export class BaziController {
 
   @Post('daily')
   @HttpCode(200)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async daily(
     @Body()
     body: {
@@ -281,7 +294,7 @@ export class BaziController {
     let solarBirthDate = birthDate
     if (calendarType === 'lunar') {
       try {
-        const { Lunar } = require('lunar-javascript')
+        // Lunar 已在文件顶层导入
         const parts = birthDate.split('-')
         const lunar = Lunar.fromYmd(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
         const solar = lunar.getSolar()
@@ -383,7 +396,7 @@ export class BaziController {
 
   @Post('native')
   @HttpCode(200)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async native(
     @Body()
     body: {
@@ -411,7 +424,7 @@ export class BaziController {
     let solarBirthDate = birthDate
     if (calendarType === 'lunar') {
       try {
-        const { Lunar } = require('lunar-javascript')
+        // Lunar 已在文件顶层导入
         const parts = birthDate.split('-')
         const lunar = Lunar.fromYmd(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
         const solar = lunar.getSolar()
@@ -498,7 +511,7 @@ export class BaziController {
    */
   @Post('redesign')
   @HttpCode(200)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async redesign(
     @Body()
     body: {
@@ -540,7 +553,7 @@ export class BaziController {
 
   @Post('generate-image')
   @HttpCode(200)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async generateImage(
     @Body() body: { imagePrompt: string; taskId?: string; clientTaskId?: string },
     @Req() req,
@@ -559,7 +572,10 @@ export class BaziController {
     }
   }
 
-  // LLM 穿搭顾问测试接口
+  /**
+   * LLM 穿搭顾问测试接口（仅开发/联调环境可用）。
+   * 直接触发 LLM 调用且无业务校验，生产环境禁用（404），防止被刷量产生费用。
+   */
   @Post('stylist')
   @HttpCode(200)
   async stylist(
@@ -574,6 +590,7 @@ export class BaziController {
       dayMaster?: string
     },
   ): Promise<{ data: StylistResult }> {
+    if (isProduction()) throw new NotFoundException()
     console.log('[Stylist] Request:', body)
     const result = await this.stylistService.generatePlan(body)
     console.log('[Stylist] Result:', result)
@@ -582,7 +599,7 @@ export class BaziController {
 
   @Post('try-on')
   @HttpCode(200)
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 每 IP 每分钟最多 10 次
+  @Throttle({ default: { limit: 20, ttl: 60000 } }) // 每 IP 每分钟最多 10 次
   async generateTryOn(
     @Body()
     body: {

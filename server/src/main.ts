@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from '@/app.module';
 import * as express from 'express';
 import { HttpStatusInterceptor } from '@/interceptors/http-status.interceptor';
@@ -68,6 +69,15 @@ async function bootstrap() {
     credentials: true,
   });
   app.setGlobalPrefix('api');
+  // 全局输入校验：基于 DTO（class-validator）做长度/类型限制，剥离未声明字段。
+  // 内联类型的 @Body() 不受影响的接口保持原行为。
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: false,
+    }),
+  );
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
