@@ -105,9 +105,9 @@ const getTokenColor = (type: TokenType) => {
     case 'string': return '#032F62' // dark blue
     case 'comment': return '#6A737D' // gray
     case 'number': return '#005CC5' // blue
-    case 'function': return '#6F42C1' // purple
+    case 'function': return '#0f172a' // 主题主色（原 purple，全局去紫色化）
     case 'tag': return '#005CC5' // blue
-    case 'attr': return '#6F42C1' // purple
+    case 'attr': return '#0f172a' // 主题主色（原 purple，全局去紫色化）
     case 'operator': return '#D73A49' // red
     default: return '#24292E'
   }

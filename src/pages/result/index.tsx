@@ -479,9 +479,9 @@ const ResultPage = () => {
   // 获取主题色：今日穿搭用今日用神，本命穿搭/历史记录用本命用神
   const themeColor = pageMode === 'daily'
     ? (result?.dailyYongShen
-      ? ELEMENT_COLORS[result.dailyYongShen] || '#9333ea'
+      ? ELEMENT_COLORS[result.dailyYongShen] || '#0f172a'
       : '#9333ea')
-    : ELEMENT_COLORS[result?.favorableElement || ''] || '#9333ea'
+    : ELEMENT_COLORS[result?.favorableElement || ''] || '#0f172a'
 
   // 签名 URL 过期导致图片加载失败时，凭 URL 中的对象 key 换签重试（每 URL 只重试一次）
   const refreshedUrlsRef = useRef<Set<string>>(new Set())
@@ -1232,15 +1232,15 @@ const ResultPage = () => {
                     <View
                       className="w-8 h-8 rounded-full flex items-center justify-center"
                       style={{
-                        backgroundColor: `${ELEMENT_COLORS[result.dailyYongShen] || '#a855f7'}15`,
+                        backgroundColor: `${ELEMENT_COLORS[result.dailyYongShen] || '#0f172a'}15`,
                         borderWidth: '2px',
                         borderStyle: 'solid',
-                        borderColor: ELEMENT_COLORS[result.dailyYongShen] || '#a855f7',
+                        borderColor: ELEMENT_COLORS[result.dailyYongShen] || '#0f172a',
                       }}
                     >
                       <Text
                         className="block text-sm font-bold"
-                        style={{ color: ELEMENT_COLORS[result.dailyYongShen] || '#a855f7' }}
+                        style={{ color: ELEMENT_COLORS[result.dailyYongShen] || '#0f172a' }}
                       >
                         {result.dailyYongShen}
                       </Text>

@@ -277,7 +277,7 @@ export default function Index() {
           <CardContent className="p-6 flex flex-col items-center">
             {generateCancelled ? (
               <>
-                <Sparkles size={56} color="#8b5cf6" />
+                <Sparkles size={56} color="#0f172a" />
                 <Text className="block text-lg font-semibold text-gray-900 mt-5">今日穿搭待生成</Text>
                 <Text className="block text-sm text-gray-500 mt-2 text-center leading-relaxed">
                   点击下方按钮，生成你的专属幸运穿搭

@@ -148,15 +148,15 @@ export function OutfitGuideContent({
                 <View
                   className="w-8 h-8 rounded-full flex items-center justify-center"
                   style={{
-                    backgroundColor: `${ELEMENT_COLORS[yongShen] || '#a855f7'}15`,
+                    backgroundColor: `${ELEMENT_COLORS[yongShen] || '#0f172a'}15`,
                     borderWidth: '2px',
                     borderStyle: 'solid',
-                    borderColor: ELEMENT_COLORS[yongShen] || '#a855f7',
+                    borderColor: ELEMENT_COLORS[yongShen] || '#0f172a',
                   }}
                 >
                   <Text
                     className="block text-sm font-bold"
-                    style={{ color: ELEMENT_COLORS[yongShen] || '#a855f7' }}
+                    style={{ color: ELEMENT_COLORS[yongShen] || '#0f172a' }}
                   >
                     {yongShen}
                   </Text>
