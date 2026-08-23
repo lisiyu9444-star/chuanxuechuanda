@@ -1,3 +1,6 @@
+// 必须放在所有 import 之前：优先加载 server/.env（本地开发用）。
+// dotenv 不会覆盖已存在的环境变量，生产环境由平台注入的变量优先级不变。
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from '@/app.module';
