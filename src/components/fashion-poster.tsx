@@ -3,6 +3,7 @@ import Taro from '@tarojs/taro'
 import { View, Text, Image, Canvas } from '@tarojs/components'
 import { Save, RotateCcw, Share2 } from 'lucide-react-taro'
 import { Button } from '@/components/ui/button'
+import { AspectRatio } from '@/components/ui/aspect-ratio'
 import type { FashionRatingResult } from '@/types/fashion'
 
 interface FashionPosterProps {
@@ -12,11 +13,20 @@ interface FashionPosterProps {
   result: FashionRatingResult
   /** 再测一次回调（记录页重现时不传，隐藏该按钮） */
   onRetry?: () => void
+  /** 重测按钮文案（分享落地场景传「我也要测」） */
+  retryText?: string
 }
 
 /** 海报画布逻辑尺寸（px，绘制时按 dpr 放大） */
 const CANVAS_W = 375
 const CANVAS_H = 800
+/** 照片卡：与页面端一致的边距与 3:4 竖版比例 */
+const CARD_X = 24
+const CARD_Y = 16
+const CARD_W = CANVAS_W - CARD_X * 2
+const CARD_H = Math.round((CARD_W * 4) / 3)
+/** 分数相对照片上移距离（页面端 -mt-12 对应 48px，压入底部渐隐遮罩） */
+const SCORE_OVERLAP = 48
 
 /** 圆角矩形路径（兼容无 roundRect 的基础库） */
 function roundRectPath(ctx: any, x: number, y: number, w: number, h: number, r: number) {
@@ -47,10 +57,11 @@ function wrapLines(ctx: any, text: string, maxWidth: number, maxLines: number): 
 }
 
 /**
- * 时尚测评结果海报（黑色高级风）
- * 还原原型 fashion-rating-result.html：顶部大圆角图卡（底部渐隐）+ 超大极细分数 + 等级 + 风格人格 + 毒舌点评
+ * 时尚测评结果海报（黑色高级风）。
+ * 照片卡固定 3:4 竖版（手机拍照比例），任意比例照片统一居中裁剪；
+ * 页面端与保存图片共用同一布局：大图渐隐 + 分数上压遮罩 + 衬线粗体分数 + 等级 + 人格 + 毒舌点评。
  */
-export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps) {
+export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测一次' }: FashionPosterProps) {
   const [saving, setSaving] = useState(false)
 
   /** 将海报绘制到离屏 canvas 并保存到相册（H5 降级为长按截图提示） */
@@ -109,19 +120,15 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
     }
   }
 
-  /** 实际绘制逻辑（375x800 逻辑坐标系） */
+  /** 实际绘制逻辑（375x800 逻辑坐标系，与页面端布局保持一致） */
   const drawPoster = (ctx: any, img: any) => {
     // 黑底
     ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
 
-    // 照片卡：x=16 y=16 w=343 h=457（3:4），圆角 24，cover 裁剪
-    const cardX = 16
-    const cardY = 16
-    const cardW = CANVAS_W - 32
-    const cardH = Math.round((cardW * 4) / 3)
+    // 照片卡：3:4 竖版圆角卡，任意比例照片 cover 居中裁剪
     const imgRatio = img.width / img.height
-    const cardRatio = cardW / cardH
+    const cardRatio = CARD_W / CARD_H
     let sx = 0
     let sy = 0
     let sw = img.width
@@ -134,46 +141,48 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
       sy = (img.height - sh) / 2
     }
     ctx.save()
-    roundRectPath(ctx, cardX, cardY, cardW, cardH, 24)
+    roundRectPath(ctx, CARD_X, CARD_Y, CARD_W, CARD_H, 24)
     ctx.clip()
-    ctx.drawImage(img, sx, sy, sw, sh, cardX, cardY, cardW, cardH)
+    ctx.drawImage(img, sx, sy, sw, sh, CARD_X, CARD_Y, CARD_W, CARD_H)
     // 图片底部黑色渐变遮罩（渐隐融入背景）
-    const gradient = ctx.createLinearGradient(0, cardY + cardH * 0.55, 0, cardY + cardH)
+    const gradient = ctx.createLinearGradient(0, CARD_Y + CARD_H * 0.55, 0, CARD_Y + CARD_H)
     gradient.addColorStop(0, 'rgba(0,0,0,0)')
     gradient.addColorStop(0.6, 'rgba(0,0,0,0.55)')
     gradient.addColorStop(1, 'rgba(0,0,0,1)')
     ctx.fillStyle = gradient
-    ctx.fillRect(cardX, cardY + cardH * 0.55, cardW, cardH * 0.45)
+    ctx.fillRect(CARD_X, CARD_Y + CARD_H * 0.55, CARD_W, CARD_H * 0.45)
     ctx.restore()
 
     ctx.textAlign = 'center'
     const cx = CANVAS_W / 2
+    // 分数基线：上移 SCORE_OVERLAP，使字体顶部略压入照片遮罩（与页面端一致）
+    const scoreY = CARD_Y + CARD_H + 108 - SCORE_OVERLAP
 
-    // 分数：超大极细白字
+    // 分数：超大衬线粗体白字
     ctx.fillStyle = '#ffffff'
-    ctx.font = '100 88px "Helvetica Neue", Helvetica, Arial, sans-serif'
-    ctx.fillText(result.isInvalid ? '--' : String(result.totalScore), cx, cardY + cardH + 108)
+    ctx.font = 'bold 88px Georgia, "Times New Roman", serif'
+    ctx.fillText(result.isInvalid ? '--' : String(result.totalScore), cx, scoreY)
 
     // 等级
     ctx.font = '16px "Helvetica Neue", sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.8)'
-    ctx.fillText(result.level, cx, cardY + cardH + 144)
+    ctx.fillText(result.level, cx, scoreY + 40)
 
     // 风格人格
     ctx.font = '500 22px "Helvetica Neue", sans-serif'
     ctx.fillStyle = '#ffffff'
-    ctx.fillText(result.stylePersonality, cx, cardY + cardH + 184)
+    ctx.fillText(result.stylePersonality, cx, scoreY + 80)
 
     // 毒舌点评（灰色斜体，自动换行）
     ctx.font = 'italic 14px "Helvetica Neue", sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.5)'
     const lines = wrapLines(ctx, `💬 "${result.wittyComment}"`, CANVAS_W - 96, 3)
-    lines.forEach((line, i) => ctx.fillText(line, cx, cardY + cardH + 220 + i * 22))
+    lines.forEach((line, i) => ctx.fillText(line, cx, scoreY + 116 + i * 22))
 
     // 底部品牌小字
     ctx.font = '10px "Helvetica Neue", sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.3)'
-    ctx.fillText('AI 毒舌时尚官', cx, CANVAS_H - 24)
+    ctx.fillText('传学幸运穿搭', cx, CANVAS_H - 24)
   }
 
   return (
@@ -183,14 +192,16 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
         <Text className="block text-xs text-amber-400 text-center mb-4 px-6">{result.imageWarning}</Text>
       )}
 
-      {/* 照片卡：大圆角 + 底部渐隐遮罩 */}
+      {/* 照片卡：固定 3:4 竖版容器，任意比例照片统一居中裁剪 + 底部渐隐遮罩 */}
       <View className="w-full rounded-3xl overflow-hidden border border-white border-opacity-10 relative">
-        <Image src={imageUrl} mode="aspectFill" className="w-full aspect-[3/4] block" />
-        <View className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black via-opacity-55 to-transparent" />
+        <AspectRatio ratio={3 / 4}>
+          <Image src={imageUrl} mode="aspectFill" className="w-full h-full block" />
+        </AspectRatio>
+        <View className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black via-opacity-55 to-transparent pointer-events-none" />
       </View>
 
-      {/* 分数 */}
-      <Text className="block text-8xl font-thin text-white leading-none mt-8">
+      {/* 分数：上移压入遮罩，衬线粗体个性数字 */}
+      <Text className="block text-8xl font-display font-bold text-white leading-none -mt-12 relative z-10">
         {result.isInvalid ? '--' : result.totalScore}
       </Text>
       {/* 等级 */}
@@ -220,7 +231,7 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
             onClick={onRetry}
           >
             <RotateCcw size={16} color="rgba(255,255,255,0.8)" className="mr-2" />
-            <Text>再测一次</Text>
+            <Text>{retryText}</Text>
           </Button>
         )}
       </View>
@@ -232,6 +243,9 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
         <Share2 size={16} color="rgba(255,255,255,0.8)" className="mr-2" />
         <Text>分享给好友</Text>
       </Button>
+
+      {/* 底部品牌落款（与保存图片一致） */}
+      <Text className="block text-xs text-white text-opacity-30 tracking-[0.3em] mt-8">传学幸运穿搭</Text>
 
       {/* 离屏画布：保存卡片用（视觉不可见但保持渲染） */}
       <Canvas

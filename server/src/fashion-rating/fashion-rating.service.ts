@@ -128,6 +128,19 @@ export class FashionRatingService {
     return deleted.length > 0
   }
 
+  /** 分享场景查询单条记录（公开，无需登录；imageUrl 动态换签防过期），不存在返回 null */
+  async getShared(id: string) {
+    const rows = await db.select().from(fashionRatings).where(eq(fashionRatings.id, id)).limit(1)
+    const row = rows[0]
+    if (!row) return null
+    return {
+      id: row.id,
+      imageUrl: await signKey(row.imageUrl),
+      result: row.result as FashionRatingResult,
+      createdAt: row.createdAt,
+    }
+  }
+
   /**
    * 穿搭评分主流程（PRD 6.1）：
    * 文件校验 → 次数校验 → 微信图片安全审核 → TOS 上传 → 多模态 AI 评分 → 存库返回

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import Taro, { useDidShow, useShareAppMessage } from '@tarojs/taro'
+import Taro, { useDidShow, useLoad, useShareAppMessage } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { Plus } from 'lucide-react-taro'
 import { Network } from '@/network'
@@ -44,6 +44,8 @@ export default function FashionRatingPage() {
   const [view, setView] = useState<'upload' | 'result'>('upload')
   const [record, setRecord] = useState<FashionRatingRecord | null>(null)
   const [remaining, setRemaining] = useState(3)
+  /** 是否从分享卡片进入（决定重测按钮文案为「我也要测」） */
+  const [fromShare, setFromShare] = useState(false)
 
   /** 拉取今日剩余次数（未登录时保持默认值，点击上传时会先唤起登录） */
   const fetchRemaining = useCallback(async () => {
@@ -58,11 +60,38 @@ export default function FashionRatingPage() {
     }
   }, [])
 
+  /** 分享落地：根据 shareId 拉取测评记录（公开接口，无需登录），直接展示结果海报 */
+  const fetchShared = useCallback(async (shareId: string) => {
+    try {
+      const res = await Network.request({ url: `/api/fashion-rating/shared/${shareId}` })
+      console.log('[FashionRating] shared response:', res.data)
+      const data = res.data?.data as FashionRatingRecord | null | undefined
+      if (data?.result) {
+        setRecord(data)
+        setView('result')
+      } else {
+        Taro.showToast({ title: '测评记录不存在或已删除', icon: 'none' })
+      }
+    } catch (error) {
+      console.error('[FashionRating] fetch shared failed:', error)
+      Taro.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
+    }
+  }, [])
+
+  useLoad((options) => {
+    const shareId = options?.shareId
+    if (shareId) {
+      setFromShare(true)
+      fetchShared(shareId)
+    }
+  })
+
   useDidShow(() => {
     // 从 loading 页带回的最新测评结果：消费一次并切换到结果态
     const latest = Taro.getStorageSync('fashion_latest_result') as FashionRatingRecord | ''
     if (latest && typeof latest === 'object' && latest.result) {
       Taro.removeStorageSync('fashion_latest_result')
+      setFromShare(false)
       setRecord(latest)
       setView('result')
     }
@@ -97,27 +126,28 @@ export default function FashionRatingPage() {
     }
   }
 
-  /** 再测一次：回到上传态并刷新剩余次数 */
+  /** 再测一次 / 我也要测：回到上传态并刷新剩余次数 */
   const handleRetry = () => {
     setRecord(null)
+    setFromShare(false)
     setView('upload')
     fetchRemaining()
   }
 
-  // 分享：结果态带分数与人格（高分自信版 / 低分自黑版），上传态用默认邀请语
+  // 分享：结果态带 shareId（好友打开直达结果海报），上传态用默认邀请语
   useShareAppMessage(() => {
     if (view === 'result' && record) {
       const { totalScore, stylePersonality, shareTexts } = record.result
       const text = totalScore >= 80 ? shareTexts?.confident : shareTexts?.selfDeprecating
       return {
         title: text || `我的穿搭得了 ${totalScore} 分，被评为"${stylePersonality}"，你敢来挑战吗？`,
-        path: '/pages/fashion-rating/index?referrer=share',
+        path: `/pages/fashion-rating/index?shareId=${record.id}`,
         imageUrl: record.imageUrl,
       }
     }
     return {
       title: 'AI 毒舌时尚官，敢不敢晒出你的穿搭？',
-      path: '/pages/fashion-rating/index?referrer=share',
+      path: '/pages/fashion-rating/index',
     }
   })
 
@@ -125,19 +155,24 @@ export default function FashionRatingPage() {
   if (view === 'result' && record) {
     return (
       <View className="min-h-screen bg-black flex flex-col items-center px-6 pt-8 pb-10">
-        <FashionPoster imageUrl={record.imageUrl} result={record.result} onRetry={handleRetry} />
+        <FashionPoster
+          imageUrl={record.imageUrl}
+          result={record.result}
+          onRetry={handleRetry}
+          retryText={fromShare ? '我也要测' : '再测一次'}
+        />
       </View>
     )
   }
 
-  // ===== 上传态：轻奢风（还原原型 fashion-rating.html） =====
+  // ===== 上传态：轻奢风（仅此页面使用 fashion 专用变量，不影响全局白底风格） =====
   return (
-    <View className="min-h-screen bg-background flex flex-col">
+    <View className="min-h-screen bg-fashion-bg flex flex-col">
       {/* 品牌点缀区：衬线体品牌名 + 金色细分隔线 + 金色英文小字 */}
       <View className="px-4 pt-8 flex flex-col items-center">
-        <Text className="block font-display text-xl font-medium tracking-wide text-foreground">AI 毒舌时尚官</Text>
-        <View className="w-8 h-px bg-primary-container my-2" />
-        <Text className="block text-xs font-semibold tracking-[0.35em] text-primary-container">FASHION RATING</Text>
+        <Text className="block font-display text-xl font-medium tracking-wide text-fashion-foreground">AI 毒舌时尚官</Text>
+        <View className="w-8 h-px bg-fashion-gold my-2" />
+        <Text className="block text-xs font-semibold tracking-[0.35em] text-fashion-gold">FASHION RATING</Text>
       </View>
 
       {/* 上留白：撑开空间，让上传卡落在屏幕纵向视觉重心处 */}
@@ -146,22 +181,22 @@ export default function FashionRatingPage() {
       {/* 上传卡片区：虚线卡片，整卡可点击 */}
       <View className="px-4 flex flex-col items-center">
         <View
-          className={`w-[70%] border-2 border-dashed border-outline-variant border-opacity-60 rounded-2xl bg-card py-14 flex flex-col items-center justify-center gap-3 ${
+          className={`w-[70%] border-2 border-dashed border-fashion-line border-opacity-60 rounded-2xl bg-fashion-card py-14 flex flex-col items-center justify-center gap-3 ${
             remaining <= 0 ? 'opacity-40' : 'active:scale-[0.98]'
           }`}
           onClick={handleUpload}
         >
           <Plus size={32} color="#B9975B" />
-          <Text className="block text-base font-semibold text-foreground">上传穿搭照片</Text>
+          <Text className="block text-base font-semibold text-fashion-foreground">上传穿搭照片</Text>
         </View>
-        <Text className="block mt-4 text-xs text-muted-foreground text-center">拍照或从相册选择</Text>
+        <Text className="block mt-4 text-xs text-fashion-muted text-center">拍照或从相册选择</Text>
       </View>
 
       {/* 下留白：略小于上留白，形成重心偏下的杂志式构图 */}
       <View className="flex-1" />
 
       {/* 底部剩余次数 */}
-      <Text className="block text-xs text-muted-foreground text-center pb-8">
+      <Text className="block text-xs text-fashion-muted text-center pb-8">
         {remaining > 0 ? `今日还可测 ${remaining} 次` : '今日评分次数已用完'}
       </Text>
     </View>

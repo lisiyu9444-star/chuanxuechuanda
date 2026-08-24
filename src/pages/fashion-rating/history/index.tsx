@@ -6,6 +6,7 @@ import { Network } from '@/network'
 import { isLoggedIn } from '@/utils/auth'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AspectRatio } from '@/components/ui/aspect-ratio'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,20 +85,20 @@ export default function FashionRatingHistoryPage() {
     }
   }
 
-  // 分享：重现态分享当前记录，列表态分享邀请语
+  // 分享：重现态分享当前记录（带 shareId，好友打开直达结果海报），列表态分享邀请语
   useShareAppMessage(() => {
     if (selected) {
       const { totalScore, stylePersonality, shareTexts, isInvalid } = selected.result
       const text = totalScore >= 80 ? shareTexts?.confident : shareTexts?.selfDeprecating
       return {
         title: isInvalid ? 'AI 毒舌时尚官，敢不敢晒出你的穿搭？' : text || `我的穿搭得了 ${totalScore} 分，被评为"${stylePersonality}"，你敢来挑战吗？`,
-        path: '/pages/fashion-rating/index?referrer=share',
+        path: `/pages/fashion-rating/index?shareId=${selected.id}`,
         imageUrl: selected.imageUrl,
       }
     }
     return {
       title: 'AI 毒舌时尚官，敢不敢晒出你的穿搭？',
-      path: '/pages/fashion-rating/index?referrer=share',
+      path: '/pages/fashion-rating/index',
     }
   })
 
@@ -116,7 +117,7 @@ export default function FashionRatingHistoryPage() {
     )
   }
 
-  // ===== 列表态 =====
+  // ===== 列表态（白底黑字，与其他页面风格一致） =====
   return (
     <View className="min-h-screen bg-background flex flex-col">
       <View className="flex-1 px-4 pt-4">
@@ -124,8 +125,12 @@ export default function FashionRatingHistoryPage() {
           // 加载骨架屏
           <>
             {[1, 2, 3].map((i) => (
-              <View key={i} className="flex items-center gap-4 bg-card rounded-2xl p-3 mb-3">
-                <Skeleton className="w-16 aspect-[3/4] rounded-xl shrink-0" />
+              <View key={i} className="flex items-center gap-4 bg-white border border-slate-100 rounded-2xl p-3 mb-3">
+                <View className="w-16 shrink-0 rounded-xl overflow-hidden">
+                  <AspectRatio ratio={3 / 4}>
+                    <Skeleton className="w-full h-full" />
+                  </AspectRatio>
+                </View>
                 <View className="flex-1">
                   <Skeleton className="h-6 w-24 rounded" />
                   <Skeleton className="h-4 w-32 rounded mt-2" />
@@ -137,7 +142,7 @@ export default function FashionRatingHistoryPage() {
         ) : records.length === 0 ? (
           // 空态：引导去测评
           <View className="flex flex-col items-center pt-32">
-            <Shirt size={56} color="#CFC7B8" />
+            <Shirt size={56} color="#94a3b8" />
             <Text className="block text-base text-muted-foreground mt-4">还没有测评记录</Text>
             <Text className="block text-xs text-muted-foreground mt-2">上传穿搭照片，让 AI 毒舌点评一下</Text>
             <Button
@@ -153,18 +158,19 @@ export default function FashionRatingHistoryPage() {
             {records.map((record) => (
               <View
                 key={record.id}
-                className="flex items-center gap-4 bg-card rounded-2xl p-3 mb-3 active:opacity-80"
+                className="flex items-center gap-4 bg-white border border-slate-100 rounded-2xl p-3 mb-3 active:opacity-80"
                 onClick={() => setSelected(record)}
                 onLongPress={() => setDeletingId(record.id)}
               >
-                <Image
-                  src={record.imageUrl}
-                  mode="aspectFill"
-                  className="w-16 aspect-[3/4] rounded-xl shrink-0 bg-muted"
-                />
+                {/* 缩略图：固定 3:4 竖版容器，任意比例照片统一裁剪 */}
+                <View className="w-16 shrink-0 rounded-xl overflow-hidden bg-muted">
+                  <AspectRatio ratio={3 / 4}>
+                    <Image src={record.imageUrl} mode="aspectFill" className="w-full h-full block" />
+                  </AspectRatio>
+                </View>
                 <View className="flex-1 min-w-0">
                   <View className="flex items-baseline gap-2">
-                    <Text className="font-display text-3xl font-semibold text-foreground">
+                    <Text className="text-3xl font-bold text-foreground">
                       {record.result.isInvalid ? '--' : record.result.totalScore}
                     </Text>
                     <Text className="text-sm text-muted-foreground">{record.result.level}</Text>

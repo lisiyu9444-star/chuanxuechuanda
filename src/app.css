@@ -11,23 +11,23 @@ page {
 :root,
 page,
 root-portal {
-  --background: #F8F4EC;
-  --foreground: #1B1712;
-  --card: #FCFAF5;
+  /* ===== 全局基础色：白底黑字简约风（其他页面统一使用） ===== */
+  --background: #ffffff;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
   --card-foreground: #1a1a2e;
   --popover: #ffffff;
   --popover-foreground: #1a1a2e;
-  --primary: #101010;
+  --primary: #0f172a;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #1a1a2e;
-  --muted: #F0EADD;
-  --muted-foreground: #7B7164;
+  --muted: #f8fafc;
+  --muted-foreground: #94a3b8;
   --accent: #0f172a;
   --accent-foreground: #ffffff;
-  --destructive: #ef4444;
+  --destructive: lab(48.4493% 77.4328 61.5452);
   --destructive-foreground: lab(96.4152% 3.22586 1.14673);
-  /* 保护既有页面：--border 保持浅灰（原型 outline #8F8578 会使全局边框过深，不迁移该值） */
   --border: #e2e8f0;
   --input: #f1f5f9;
   --ring: #0f172a;
@@ -45,13 +45,13 @@ root-portal {
   --code-number: #94a3b8;
   --selection: #0f172a;
   --selection-foreground: #ffffff;
-  --primary-container: #B9975B;
-  --surface-container-lowest: #FFFFFF;
-  --surface-container-high: #E8E1D2;
-  --surface-container-highest: #DFD7C6;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --outline-variant: #CFC7B8;
+  /* ===== 测评页「轻奢感」专用变量（仅 fashion-rating 测评首页使用，不影响全局） ===== */
+  --fashion-bg: #F8F4EC;
+  --fashion-card: #FCFAF5;
+  --fashion-foreground: #1B1712;
+  --fashion-muted: #7B7164;
+  --fashion-line: #CFC7B8;
+  --fashion-gold: #B9975B;
   --tw-shadow: 0 0 #0000;
   --tw-shadow-color: initial;
   --tw-shadow-alpha: 100%;
@@ -144,29 +144,20 @@ root-portal {
   --color-selection-foreground: var(--selection-foreground);
   --color-code: var(--code);
   --radius-full: 9999px;
-  --color-primary-container: var(--primary-container);
-  --color-on-primary: var(--primary-foreground);
-  --color-surface-container-lowest: var(--surface-container-lowest);
-  --color-surface: var(--card);
-  --color-surface-container: var(--muted);
-  --color-surface-container-high: var(--surface-container-high);
-  --color-surface-container-highest: var(--surface-container-highest);
-  --color-on-surface: var(--foreground);
-  --color-on-surface-variant: var(--muted-foreground);
-  --color-success: var(--success);
-  --color-error: var(--destructive);
-  --color-warning: var(--warning);
-  --color-outline: var(--border);
-  --color-outline-variant: var(--outline-variant);
-  --shadow-card: 0 4px 12px rgba(27,23,18,0.06);
-  --shadow-float: 0 10px 25px rgba(27,23,18,0.08);
-  --shadow-dialog: 0 25px 50px rgba(27,23,18,0.12);
+  /* 测评页「轻奢感」专用色（仅 fashion-rating 测评首页使用） */
+  --color-fashion-bg: var(--fashion-bg);
+  --color-fashion-card: var(--fashion-card);
+  --color-fashion-foreground: var(--fashion-foreground);
+  --color-fashion-muted: var(--fashion-muted);
+  --color-fashion-line: var(--fashion-line);
+  --color-fashion-gold: var(--fashion-gold);
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
   --font-sans: "Noto Sans SC", system-ui, sans-serif;
+  /* 测评页衬线字体（分数、品牌名等点缀使用） */
   --font-display: "Playfair Display", "Noto Serif SC", Georgia, serif;
 
 }

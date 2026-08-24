@@ -5,6 +5,7 @@ import {
   Get,
   Headers,
   HttpCode,
+  NotFoundException,
   Param,
   Post,
   Req,
@@ -12,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
+import { Public } from '@/auth/public.decorator'
 import { FashionRatingService } from './fashion-rating.service'
 
 /** multer 上传文件（memoryStorage 模式必有 buffer） */
@@ -74,6 +76,20 @@ export class FashionRatingController {
     const userId = req.user?.userId as string
     const list = await this.fashionRatingService.list(userId)
     return { data: { list } }
+  }
+
+  /**
+   * 分享场景查询单条测评记录（公开接口，好友打开分享卡片无需登录）。
+   * 返回 { data: { id, imageUrl, result, createdAt } }，不存在时 404。
+   */
+  @Public()
+  @Get('shared/:id')
+  async shared(@Param('id') id: string) {
+    const data = await this.fashionRatingService.getShared(id)
+    if (!data) {
+      throw new NotFoundException('测评记录不存在或已删除')
+    }
+    return { data }
   }
 
   /** 删除我的测评记录：{ data: { success } } */
