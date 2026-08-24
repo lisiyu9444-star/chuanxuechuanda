@@ -192,8 +192,8 @@ export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测�
         <Text className="block text-xs text-amber-400 text-center mb-4 px-6">{result.imageWarning}</Text>
       )}
 
-      {/* 照片卡：固定 3:4 竖版容器，任意比例照片统一居中裁剪 + 底部渐隐遮罩 */}
-      <View className="w-full rounded-3xl overflow-hidden border border-white border-opacity-10 relative">
+      {/* 照片卡：固定 3:4 竖版容器，任意比例照片统一居中裁剪 + 底部渐隐遮罩（不加 border，小程序端会渲染出白色描边） */}
+      <View className="w-full rounded-3xl overflow-hidden relative">
         <AspectRatio ratio={3 / 4}>
           <Image src={imageUrl} mode="aspectFill" className="w-full h-full block" />
         </AspectRatio>
@@ -213,36 +213,36 @@ export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测�
         💬 “{result.wittyComment}”
       </Text>
 
-      {/* 操作区 */}
-      <View className="flex items-center gap-8 mt-10">
+      {/* 操作区：三个行动按钮一行排列，统一 icon + 文案 */}
+      <View className="flex items-center justify-center gap-4 mt-10">
         <Button
           variant="ghost"
-          className="h-auto px-2 py-2 text-white text-opacity-80 tracking-[0.2em] text-sm font-normal"
+          className="h-auto px-1 py-2 text-white text-opacity-80 tracking-[0.1em] text-sm font-normal"
           onClick={handleSave}
           disabled={saving}
         >
-          <Save size={16} color="rgba(255,255,255,0.8)" className="mr-2" />
+          <Save size={16} color="rgba(255,255,255,0.8)" className="mr-1" />
           <Text>{saving ? '保存中...' : '保存卡片'}</Text>
         </Button>
         {onRetry && (
           <Button
             variant="ghost"
-            className="h-auto px-2 py-2 text-white text-opacity-80 tracking-[0.2em] text-sm font-normal"
+            className="h-auto px-1 py-2 text-white text-opacity-80 tracking-[0.1em] text-sm font-normal"
             onClick={onRetry}
           >
-            <RotateCcw size={16} color="rgba(255,255,255,0.8)" className="mr-2" />
+            <RotateCcw size={16} color="rgba(255,255,255,0.8)" className="mr-1" />
             <Text>{retryText}</Text>
           </Button>
         )}
+        <Button
+          variant="ghost"
+          openType="share"
+          className="h-auto px-1 py-2 text-white text-opacity-80 tracking-[0.1em] text-sm font-normal"
+        >
+          <Share2 size={16} color="rgba(255,255,255,0.8)" className="mr-1" />
+          <Text>分享好友</Text>
+        </Button>
       </View>
-      <Button
-        variant="outline"
-        openType="share"
-        className="mt-6 w-[64%] border-white border-opacity-25 bg-transparent text-white text-opacity-80 rounded-full tracking-[0.2em]"
-      >
-        <Share2 size={16} color="rgba(255,255,255,0.8)" className="mr-2" />
-        <Text>分享给好友</Text>
-      </Button>
 
       {/* 底部品牌落款（与保存图片一致） */}
       <Text className="block text-xs text-white text-opacity-30 tracking-[0.3em] mt-8">传学幸运穿搭</Text>

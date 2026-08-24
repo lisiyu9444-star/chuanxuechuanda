@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Taro, { useDidShow, useShareAppMessage } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
 import { ChevronLeft, ChevronRight, Shirt } from 'lucide-react-taro'
@@ -62,6 +62,15 @@ export default function FashionRatingHistoryPage() {
     setLoading(true)
     fetchList()
   })
+
+  // 导航栏配色跟随页面状态：海报重现态黑底白字，列表态白底黑字
+  useEffect(() => {
+    Taro.setNavigationBarColor(
+      selected
+        ? { frontColor: '#ffffff', backgroundColor: '#000000' }
+        : { frontColor: '#000000', backgroundColor: '#ffffff' },
+    )
+  }, [selected])
 
   /** 长按删除：确认后调 DELETE 接口并从列表移除 */
   const handleDelete = async () => {

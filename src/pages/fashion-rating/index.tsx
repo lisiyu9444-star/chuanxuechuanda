@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Taro, { useDidShow, useLoad, useShareAppMessage } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { Plus } from 'lucide-react-taro'
@@ -79,12 +79,24 @@ export default function FashionRatingPage() {
   }, [])
 
   useLoad((options) => {
+    console.log('[FashionRating] useLoad options:', options)
+    // 显式设置标题，避免 tabBar 页面标题被客户端缓存成其他页面文案
+    Taro.setNavigationBarTitle({ title: 'AI 毒舌时尚官' })
     const shareId = options?.shareId
     if (shareId) {
       setFromShare(true)
       fetchShared(shareId)
     }
   })
+
+  // 导航栏配色跟随页面状态：结果态黑底白字，上传态白底黑字
+  useEffect(() => {
+    Taro.setNavigationBarColor(
+      view === 'result'
+        ? { frontColor: '#ffffff', backgroundColor: '#000000' }
+        : { frontColor: '#000000', backgroundColor: '#ffffff' },
+    )
+  }, [view])
 
   useDidShow(() => {
     // 从 loading 页带回的最新测评结果：消费一次并切换到结果态
@@ -165,14 +177,13 @@ export default function FashionRatingPage() {
     )
   }
 
-  // ===== 上传态：轻奢风（仅此页面使用 fashion 专用变量，不影响全局白底风格） =====
+  // ===== 上传态：白底黑字，与其他页面风格一致 =====
   return (
-    <View className="min-h-screen bg-fashion-bg flex flex-col">
-      {/* 品牌点缀区：衬线体品牌名 + 金色细分隔线 + 金色英文小字 */}
+    <View className="min-h-screen bg-background flex flex-col">
+      {/* 标题区 */}
       <View className="px-4 pt-8 flex flex-col items-center">
-        <Text className="block font-display text-xl font-medium tracking-wide text-fashion-foreground">AI 毒舌时尚官</Text>
-        <View className="w-8 h-px bg-fashion-gold my-2" />
-        <Text className="block text-xs font-semibold tracking-[0.35em] text-fashion-gold">FASHION RATING</Text>
+        <Text className="block text-xl font-semibold text-foreground">AI 毒舌时尚官</Text>
+        <Text className="block text-xs text-muted-foreground mt-2">上传穿搭照片，AI 毒舌打分</Text>
       </View>
 
       {/* 上留白：撑开空间，让上传卡落在屏幕纵向视觉重心处 */}
@@ -181,22 +192,22 @@ export default function FashionRatingPage() {
       {/* 上传卡片区：虚线卡片，整卡可点击 */}
       <View className="px-4 flex flex-col items-center">
         <View
-          className={`w-[70%] border-2 border-dashed border-fashion-line border-opacity-60 rounded-2xl bg-fashion-card py-14 flex flex-col items-center justify-center gap-3 ${
+          className={`w-[70%] border-2 border-dashed border-slate-300 rounded-2xl bg-white py-14 flex flex-col items-center justify-center gap-3 ${
             remaining <= 0 ? 'opacity-40' : 'active:scale-[0.98]'
           }`}
           onClick={handleUpload}
         >
-          <Plus size={32} color="#B9975B" />
-          <Text className="block text-base font-semibold text-fashion-foreground">上传穿搭照片</Text>
+          <Plus size={32} color="#0f172a" />
+          <Text className="block text-base font-semibold text-foreground">上传穿搭照片</Text>
         </View>
-        <Text className="block mt-4 text-xs text-fashion-muted text-center">拍照或从相册选择</Text>
+        <Text className="block mt-4 text-xs text-muted-foreground text-center">拍照或从相册选择</Text>
       </View>
 
       {/* 下留白：略小于上留白，形成重心偏下的杂志式构图 */}
       <View className="flex-1" />
 
       {/* 底部剩余次数 */}
-      <Text className="block text-xs text-fashion-muted text-center pb-8">
+      <Text className="block text-xs text-muted-foreground text-center pb-8">
         {remaining > 0 ? `今日还可测 ${remaining} 次` : '今日评分次数已用完'}
       </Text>
     </View>

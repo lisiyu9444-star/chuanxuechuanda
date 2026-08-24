@@ -44,6 +44,15 @@ const LoadingPage = () => {
   // 时尚测评模式：待测评的本地照片路径 + 轮播文案下标
   const [fashionImage, setFashionImage] = useState('')
   const [fashionStep, setFashionStep] = useState(0)
+
+  // 导航栏配色跟随模式：fashion-rating 黑底白字，其他模式白底黑字
+  useEffect(() => {
+    Taro.setNavigationBarColor(
+      mode === 'fashion-rating'
+        ? { frontColor: '#ffffff', backgroundColor: '#000000' }
+        : { frontColor: '#000000', backgroundColor: '#ffffff' },
+    )
+  }, [mode])
   const requestedRef = useRef(false)
   // 请求任务与取消标记：退出页面时中断请求，阻止后续保存与跳转
   const requestTaskRef = useRef<{ abort?: () => void } | null>(null)
