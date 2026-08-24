@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- 字体（Google 字体） -->
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/>
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色（轻奢风：墨黑 CTA + 金色点缀） === */
+      --color-primary:              #101010;
+      --color-primary-container:    #B9975B;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面（暖象牙白 + 中性暖调色阶） === */
+      --color-background:                 #F8F4EC;
+      --color-surface-container-lowest:   #FFFFFF;
+      --color-surface:                    #FCFAF5;
+      --color-surface-container:          #F0EADD;
+      --color-surface-container-high:     #E8E1D2;
+      --color-surface-container-highest:  #DFD7C6;
+      /* === 文字 === */
+      --color-on-surface:           #1B1712;
+      --color-on-surface-variant:   #7B7164;
+      /* === 功能色 === */
+      --color-success:  #22c55e;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      /* === 边框（暖灰，使用需 /10~/30 透明度弱化） === */
+      --color-outline:          #8F8578;
+      --color-outline-variant:  #CFC7B8;
+      /* === 圆角（轻奢克制，小圆角精致感） === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影（暖调柔和） === */
+      --shadow-card:   0 4px 12px rgba(27,23,18,0.06);
+      --shadow-float:  0 10px 25px rgba(27,23,18,0.08);
+      --shadow-dialog: 0 25px 50px rgba(27,23,18,0.12);
+      /* === 字体（正文优雅无衬线；标题用高反差衬线 font-display 局部使用） === */
+      --font-sans: "Noto Sans SC", system-ui, sans-serif;
+      --font-display: "Playfair Display", "Noto Serif SC", Georgia, serif;
+    }
+  </style>
+
+  <style>
+    body {
+      min-height: max(812px, 100dvh);
+      font-family: system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans flex flex-col">
+
+  <!-- @nav:start 导航组件，不需要的页面则不要复制此段（从 @nav:start 到 @nav:end） -->
+  <!-- 一级页 Header：标题居中，轻奢风字距拉开；二级页由子 Agent 改为「返回按钮 + 标题」形态 -->
+  <header class="bg-background sticky top-0 z-40 h-14 flex items-center justify-center px-4">
+    <h1 class="text-base font-semibold tracking-[0.3em] text-on-surface">测 评</h1>
+  </header>
+  <!-- 底部 TabBar：3 个一级页（首页为既有页面，本原型仅测评可点） -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest border-t border-outline-variant/20
+              flex justify-around items-center h-14 pb-[env(safe-area-inset-bottom)]">
+    <a href="#" id="nav-home" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
+                       hover:text-on-surface transition-colors">
+      <i data-lucide="home" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold tracking-wide">首页</span>
+    </a>
+    <a href="fashion-rating.html" id="nav-rating" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-primary"
+       aria-current="page">
+      <i data-lucide="sparkles" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold tracking-wide">测评</span>
+    </a>
+    <a href="#" id="nav-profile" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
+                       hover:text-on-surface transition-colors">
+      <i data-lucide="user" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold tracking-wide">我的</span>
+    </a>
+  </nav>
+  <!-- @nav:end 导航组件，不需要的页面则不要复制此段 -->
+
+  <main class="flex-1 flex flex-col">
+    <!-- @main-content:start -->
+
+    <!-- 品牌点缀区：衬线体品牌名 + 金色细分隔线 + 金色英文小字，克制不喧宾夺主 -->
+    <section id="brand-block" class="px-4 pt-8 flex flex-col items-center">
+      <p class="font-display text-xl font-medium tracking-wide text-on-surface">AI 毒舌时尚官</p>
+      <span class="w-8 h-px bg-primary-container my-2.5"></span>
+      <p class="text-[10px] font-semibold tracking-[0.35em] text-primary-container">FASHION RATING</p>
+    </section>
+
+    <!-- 上留白：撑开空间，让上传卡片落在屏幕纵向约 55%-65% 的视觉重心处 -->
+    <div class="flex-[2]"></div>
+
+    <!-- 上传卡片区：约 70% 宽虚线卡片，整卡可点击 -->
+    <section id="upload-block" class="px-4 flex flex-col items-center">
+      <button id="card-upload" type="button"
+              class="w-[70%] border-2 border-dashed border-outline-variant/60 rounded-2xl
+                     bg-surface-container-lowest py-14 flex flex-col items-center justify-center gap-3
+                     hover:shadow-card active:scale-[0.98] transition-all cursor-pointer">
+        <i data-lucide="plus" class="w-8 h-8 text-primary-container"></i>
+        <span class="text-base font-semibold text-on-surface">上传穿搭照片</span>
+      </button>
+      <p id="text-upload-hint" class="mt-4 text-xs text-on-surface-variant text-center">拍照或从相册选择</p>
+    </section>
+
+    <!-- 下留白：略小于上留白，形成重心偏下的杂志式构图 -->
+    <div class="flex-[1.1]"></div>
+
+    <!-- 底部剩余次数（TabBar 上方） -->
+    <p id="text-remaining"
+       class="text-xs text-on-surface-variant text-center pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.25rem)]">今日还可测 2 次</p>
+
+    <!-- @main-content:end -->
+  </main>
+
+  <script>
+    // ===== 导航辅助函数 =====
+    function navPush(route) {
+      console.log(`[原型演示] PUSH 到: ${route}`);
+      window.location.href = route;
+    }
+    function navReplace(route) {
+      console.log(`[原型演示] REPLACE 为: ${route}`);
+      window.location.replace(route);
+    }
+    function navReset(route) {
+      console.log(`[原型演示] RESET 到: ${route}`);
+      window.location.href = route;
+    }
+    function navBack() {
+      console.log(`[原型演示] BACK 返回上一页`);
+      if (window.history.length > 1) window.history.back();
+    }
+
+    $(function () {
+      // 上传卡片：点击模拟「拍照/从相册选择」完成上传，跳转结果页
+      // 完整行为（后续开发实现）：
+      // 1. 点击后先 requireLogin 登录拦截；次数为 0 时按钮灰显并 toast「今日次数已用完」
+      // 2. 已登录则调起系统拍照/相册选择器
+      // 3. 选图后前端压缩（>2MB 时 canvas 压缩长边≤1024/0.8/jpg），临时路径存 storage
+      // 4. 跳转 loading 页（mode=fashion-rating）发起评分请求，成功后回切结果态
+      // 原型简化：直接跳转 fashion-rating-result.html 展示结果态
+      $('#card-upload').on('click', function () {
+        navPush('fashion-rating-result.html');
+      });
+
+      // TabBar：测评已激活；首页/我的为既有小程序页面，原型中不可点
+      $('#nav-rating').on('click', function (e) {
+        e.preventDefault();
+      });
+      $('#nav-home').on('click', function (e) {
+        e.preventDefault();
+        console.log('[原型演示] 首页为既有页面，本原型不提供跳转');
+      });
+      $('#nav-profile').on('click', function (e) {
+        e.preventDefault();
+        console.log('[原型演示] 我的为既有页面，本原型不提供跳转');
+      });
+    });
+  </script>
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

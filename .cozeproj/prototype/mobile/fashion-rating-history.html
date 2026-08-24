@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- 字体（Google 字体） -->
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/>
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色（轻奢风：墨黑 CTA + 金色点缀） === */
+      --color-primary:              #101010;
+      --color-primary-container:    #B9975B;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面（暖象牙白 + 中性暖调色阶） === */
+      --color-background:                 #F8F4EC;
+      --color-surface-container-lowest:   #FFFFFF;
+      --color-surface:                    #FCFAF5;
+      --color-surface-container:          #F0EADD;
+      --color-surface-container-high:     #E8E1D2;
+      --color-surface-container-highest:  #DFD7C6;
+      /* === 文字 === */
+      --color-on-surface:           #1B1712;
+      --color-on-surface-variant:   #7B7164;
+      /* === 功能色 === */
+      --color-success:  #22c55e;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      /* === 边框（暖灰，使用需 /10~/30 透明度弱化） === */
+      --color-outline:          #8F8578;
+      --color-outline-variant:  #CFC7B8;
+      /* === 圆角（轻奢克制，小圆角精致感） === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影（暖调柔和） === */
+      --shadow-card:   0 4px 12px rgba(27,23,18,0.06);
+      --shadow-float:  0 10px 25px rgba(27,23,18,0.08);
+      --shadow-dialog: 0 25px 50px rgba(27,23,18,0.12);
+      /* === 字体（正文优雅无衬线；标题用高反差衬线 font-display 局部使用） === */
+      --font-sans: "Noto Sans SC", system-ui, sans-serif;
+      --font-display: "Playfair Display", "Noto Serif SC", Georgia, serif;
+    }
+  </style>
+
+  <style>
+    body {
+      min-height: max(812px, 100dvh);
+      font-family: system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 二级页：仅保留 Header（返回按钮 + 居中标题），已删除底部 TabBar -->
+  <header class="bg-background sticky top-0 z-40 h-14 flex items-center justify-between px-4">
+    <button id="btn-back" aria-label="返回"
+            class="w-10 h-10 flex items-center justify-center text-on-surface-variant rounded-full
+                   hover:bg-surface-container active:bg-surface-container-high transition-colors">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </button>
+    <h1 class="text-base font-semibold tracking-[0.3em] text-on-surface">测评记录</h1>
+    <!-- 右侧占位，保持标题视觉居中 -->
+    <div class="w-10 h-10"></div>
+  </header>
+  <!-- @nav:end 二级页无底部 TabBar -->
+
+  <main class="flex-1 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+    <!-- @main-content:start -->
+
+    <!-- 列表顶部统计行 -->
+    <div class="px-4 pt-3 pb-3">
+      <p id="record-stats" class="text-xs text-on-surface-variant flex items-center gap-1.5">
+        <span class="w-1 h-1 rounded-full bg-primary-container"></span>共 4 次测评
+      </p>
+    </div>
+
+    <!-- 测评记录卡片列表 -->
+    <div id="record-list" class="px-4 flex flex-col gap-3">
+
+      <!-- 列表-记录1：82 分 · 时尚达人 · 撞色冒险家 -->
+      <div id="card-record-1" data-id="fr-1"
+           class="record-card bg-surface-container-lowest rounded-xl shadow-card p-3
+                  flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
+        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=200&q=80"
+             alt="穿撞色拼接外套的年轻女性街拍" data-category="服饰时尚"
+             class="w-16 h-16 rounded-lg object-cover shrink-0"/>
+        <div class="flex-1 min-w-0">
+          <p class="flex items-baseline gap-1.5">
+            <span class="font-display text-2xl font-semibold leading-none text-on-surface">82</span>
+            <span class="text-sm text-on-surface">分 · 时尚达人</span>
+          </p>
+          <p class="text-xs text-on-surface-variant mt-1">撞色冒险家</p>
+          <p class="text-xs text-on-surface-variant mt-0.5">2026-08-24</p>
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 shrink-0"></i>
+      </div>
+
+      <!-- 列表-记录2：75 分 · 及格潮人 · 极简主义信徒 -->
+      <div id="card-record-2" data-id="fr-2"
+           class="record-card bg-surface-container-lowest rounded-xl shadow-card p-3
+                  flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
+        <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=200&q=80"
+             alt="手提购物袋穿风衣的年轻女性" data-category="服饰时尚"
+             class="w-16 h-16 rounded-lg object-cover shrink-0"/>
+        <div class="flex-1 min-w-0">
+          <p class="flex items-baseline gap-1.5">
+            <span class="font-display text-2xl font-semibold leading-none text-on-surface">75</span>
+            <span class="text-sm text-on-surface">分 · 及格潮人</span>
+          </p>
+          <p class="text-xs text-on-surface-variant mt-1">极简主义信徒</p>
+          <p class="text-xs text-on-surface-variant mt-0.5">2026-08-23</p>
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 shrink-0"></i>
+      </div>
+
+      <!-- 列表-记录3：91 分 · 穿搭王者 · 法式慵懒派 -->
+      <div id="card-record-3" data-id="fr-3"
+           class="record-card bg-surface-container-lowest rounded-xl shadow-card p-3
+                  flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
+        <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=200&q=80"
+             alt="穿黄色上衣的年轻女性时尚照" data-category="服饰时尚"
+             class="w-16 h-16 rounded-lg object-cover shrink-0"/>
+        <div class="flex-1 min-w-0">
+          <p class="flex items-baseline gap-1.5">
+            <span class="font-display text-2xl font-semibold leading-none text-on-surface">91</span>
+            <span class="text-sm text-on-surface">分 · 穿搭王者</span>
+          </p>
+          <p class="text-xs text-on-surface-variant mt-1">法式慵懒派</p>
+          <p class="text-xs text-on-surface-variant mt-0.5">2026-08-22</p>
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 shrink-0"></i>
+      </div>
+
+      <!-- 列表-记录4：63 分 · 勇敢尝试 · 街头潮流玩家 -->
+      <div id="card-record-4" data-id="fr-4"
+           class="record-card bg-surface-container-lowest rounded-xl shadow-card p-3
+                  flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
+        <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=200&q=80"
+             alt="穿街头潮牌的年轻女性穿搭照" data-category="服饰时尚"
+             class="w-16 h-16 rounded-lg object-cover shrink-0"/>
+        <div class="flex-1 min-w-0">
+          <p class="flex items-baseline gap-1.5">
+            <span class="font-display text-2xl font-semibold leading-none text-on-surface">63</span>
+            <span class="text-sm text-on-surface">分 · 勇敢尝试</span>
+          </p>
+          <p class="text-xs text-on-surface-variant mt-1">街头潮流玩家</p>
+          <p class="text-xs text-on-surface-variant mt-0.5">2026-08-21</p>
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 shrink-0"></i>
+      </div>
+
+    </div>
+    <!-- @main-content:end -->
+  </main>
+
+  <script>lucide.createIcons();</script>
+
+  <script>
+    // ===== 导航辅助函数 =====
+    function navPush(route) {
+      console.log(`[原型演示] PUSH 到: ${route}`);
+      window.location.href = route;
+    }
+    function navReplace(route) {
+      console.log(`[原型演示] REPLACE 为: ${route}`);
+      window.location.replace(route);
+    }
+    function navReset(route) {
+      console.log(`[原型演示] RESET 到: ${route}`);
+      window.location.href = route;
+    }
+    function navBack() {
+      console.log(`[原型演示] BACK 返回上一页`);
+      if (window.history.length > 1) window.history.back();
+    }
+
+    $(function () {
+      // 返回按钮：回到测评首页
+      $('#btn-back').on('click', function () {
+        navReset('fashion-rating.html');
+      });
+
+      // 点击记录卡片：跳转结果海报页，模拟查看该次测评海报（通过 URL 参数传递记录 id）
+      let longPressFired = false;
+      $('#record-list').on('click', '.record-card', function () {
+        if (longPressFired) { longPressFired = false; return; }
+        const id = $(this).data('id');
+        navPush(`fashion-rating-result.html?id=${id}`);
+      });
+
+      // 长按记录卡片（原型无实际功能，仅保留事件入口）。
+      // 完整实现应包含以下行为：
+      // 1. 手指按压超过 500ms 且未移动时，弹出确认弹窗「删除记录」，
+      //    内容提示该次测评的分数与日期（如「确认删除 82 分 · 2026-08-24 的测评记录？」）
+      // 2. 点击「确认删除」：调用 DELETE /api/fashion-rating/:id，
+      //    成功后从列表移除该卡片，并更新顶部「共 N 次测评」统计
+      // 3. 点击「取消」或按压被中断（手指移动 / 提前松手）：不触发删除，关闭弹窗
+      let pressTimer = null;
+      $('#record-list').on('touchstart mousedown', '.record-card', function () {
+        const id = $(this).data('id');
+        pressTimer = setTimeout(function () {
+          longPressFired = true;
+          console.log('[原型演示] 长按记录卡片（删除确认弹窗为占位，未实现）:', id);
+        }, 500);
+      });
+      $('#record-list').on('touchend touchmove touchcancel mouseup mouseleave', '.record-card', function () {
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      });
+    });
+  </script>
+</body>
+
+</html>
