@@ -12,11 +12,11 @@ import { getStorage, signKey, DEFAULT_SIGN_EXPIRE_SECONDS } from './tos-utils'
  * 同步产生的新 key（带新 UUID 后缀）会被 getStaticAssets 自动发现，无需改表。
  */
 const STATIC_ASSET_KEYS: Record<string, string> = {
-  luckyStarHappy: 'IP_compressed_6a323948_c047943d.png',
-  luckyStar1: 'IP_1_compressed_f0d6e24a_7dfb940f.png',
-  luckyStar2: 'IP_2_compressed_a57a6f9c_b7bc3e89.png',
-  luckyStar3: 'IP_3_compressed_87ca7563_071d78b5.png',
-  luckyStar4: 'IP_4_compressed_89c2e4f5_195e56d6.png',
+  luckyStarHappy: 'IP_happy_transparent_eedd1cf7.png',
+  luckyStar1: 'IP_1_transparent_ff53861e.png',
+  luckyStar2: 'IP_2_transparent_c19ea2a6.png',
+  luckyStar3: 'IP_3_transparent_b587c88c.png',
+  luckyStar4: 'IP_4_transparent_1d723c4e.png',
   exampleLuckyStar: 'Xing_Yun_Xing_Kai_Xin_06859ac3_c0ebcca2.png',
   exampleFlat: 'example_flat_compressed_fcb0c028_2340446d.jpg',
   exampleTryOn: 'example_tryon_compressed_2655e65c_38629783.jpg',

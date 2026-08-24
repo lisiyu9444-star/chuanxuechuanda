@@ -21,10 +21,11 @@ export interface RemoteAssets {
 }
 
 /**
- * 缓存版本 v2：v1 仅校验 fallback 是否存在，可能把含空字段的半成品
- * 缓存 7 天导致首页长期空白；v2 强制旧缓存失效并启用全字段校验。
+ * 缓存版本 v3：v1 仅校验 fallback 是否存在，可能把含空字段的半成品
+ * 缓存 7 天导致首页长期空白；v2 强制旧缓存失效并启用全字段校验；
+ * v3 更换透明底幸运星图（旧图为浅灰实色底），强制换签新 URL。
  */
-const STORAGE_KEY = 'remote_assets_v2'
+const STORAGE_KEY = 'remote_assets_v3'
 /** 本地缓存 7 天（URL 本身 30 天有效，提前换签留足余量） */
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 
