@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, varchar, text, bigint, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, bigint, boolean, index, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 
 export const shares = pgTable(
   "shares",
@@ -104,8 +104,25 @@ export const baziRecords = pgTable(
   ]
 );
 
+// 时尚测评记录表（AI 毒舌时尚官：穿搭照片 + AI 评分结果）
+export const fashionRatings = pgTable(
+  "fashion_ratings",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    userId: varchar("user_id", { length: 64 }).notNull().references(() => users.id),
+    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    result: jsonb("result").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    index("fashion_ratings_user_id_idx").on(table.userId),
+    index("fashion_ratings_created_at_idx").on(table.createdAt),
+  ]
+);
+
 export type Share = typeof shares.$inferSelect;
 export type InsertShare = typeof shares.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type BaziRecord = typeof baziRecords.$inferSelect;
+export type FashionRating = typeof fashionRatings.$inferSelect;

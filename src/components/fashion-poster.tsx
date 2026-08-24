@@ -1,0 +1,246 @@
+import { useState } from 'react'
+import Taro from '@tarojs/taro'
+import { View, Text, Image, Canvas } from '@tarojs/components'
+import { Save, RotateCcw, Share2 } from 'lucide-react-taro'
+import { Button } from '@/components/ui/button'
+import type { FashionRatingResult } from '@/types/fashion'
+
+interface FashionPosterProps {
+  /** 穿搭照（TOS 公网 URL） */
+  imageUrl: string
+  /** 评分结果 */
+  result: FashionRatingResult
+  /** 再测一次回调（记录页重现时不传，隐藏该按钮） */
+  onRetry?: () => void
+}
+
+/** 海报画布逻辑尺寸（px，绘制时按 dpr 放大） */
+const CANVAS_W = 375
+const CANVAS_H = 800
+
+/** 圆角矩形路径（兼容无 roundRect 的基础库） */
+function roundRectPath(ctx: any, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
+/** 长文本按宽度断行，最多 maxLines 行 */
+function wrapLines(ctx: any, text: string, maxWidth: number, maxLines: number): string[] {
+  const lines: string[] = []
+  let current = ''
+  for (const ch of text) {
+    if (ctx.measureText(current + ch).width > maxWidth && current) {
+      lines.push(current)
+      current = ch
+      if (lines.length >= maxLines) break
+    } else {
+      current += ch
+    }
+  }
+  if (lines.length < maxLines && current) lines.push(current)
+  return lines
+}
+
+/**
+ * 时尚测评结果海报（黑色高级风）
+ * 还原原型 fashion-rating-result.html：顶部大圆角图卡（底部渐隐）+ 超大极细分数 + 等级 + 风格人格 + 毒舌点评
+ */
+export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps) {
+  const [saving, setSaving] = useState(false)
+
+  /** 将海报绘制到离屏 canvas 并保存到相册（H5 降级为长按截图提示） */
+  const handleSave = async () => {
+    if (Taro.getEnv() === Taro.ENV_TYPE.WEB) {
+      Taro.showToast({ title: '请长按截图保存图片', icon: 'none' })
+      return
+    }
+    if (saving) return
+    setSaving(true)
+    try {
+      // 1. 下载穿搭照到本地（绘制网络图必须先取本地路径）
+      const imgInfo = await Taro.getImageInfo({ src: imageUrl })
+
+      // 2. 获取 canvas 2d 节点
+      const page = Taro.getCurrentInstance().page
+      const nodeRes = await new Promise<any>((resolve, reject) => {
+        Taro.createSelectorQuery()
+          .in(page as any)
+          .select('#fashion-poster-canvas')
+          .fields({ node: true, size: true })
+          .exec((r) => (r?.[0]?.node ? resolve(r[0]) : reject(new Error('canvas node not found'))))
+      })
+      const canvas = nodeRes.node
+      const dpr = (Taro.getWindowInfo?.().pixelRatio as number) || 2
+      canvas.width = CANVAS_W * dpr
+      canvas.height = CANVAS_H * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      // 3. 加载图片
+      const img = canvas.createImage()
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('image load failed'))
+        img.src = imgInfo.path
+      })
+
+      // 4. 绘制
+      drawPoster(ctx, img)
+
+      // 5. 导出并保存相册
+      const temp = await Taro.canvasToTempFilePath({ canvas, canvasId: 'fashion-poster-canvas' })
+      await Taro.saveImageToPhotosAlbum({ filePath: temp.tempFilePath })
+      Taro.showToast({ title: '已保存到相册', icon: 'success' })
+    } catch (error: any) {
+      console.error('[FashionPoster] save failed:', error)
+      const msg = String(error?.errMsg || '')
+      if (msg.includes('auth') || msg.includes('authorize') || msg.includes('deny')) {
+        Taro.showToast({ title: '请授权相册权限后重试', icon: 'none' })
+      } else {
+        Taro.showToast({ title: '保存失败，请重试', icon: 'none' })
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  /** 实际绘制逻辑（375x800 逻辑坐标系） */
+  const drawPoster = (ctx: any, img: any) => {
+    // 黑底
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
+
+    // 照片卡：x=16 y=16 w=343 h=457（3:4），圆角 24，cover 裁剪
+    const cardX = 16
+    const cardY = 16
+    const cardW = CANVAS_W - 32
+    const cardH = Math.round((cardW * 4) / 3)
+    const imgRatio = img.width / img.height
+    const cardRatio = cardW / cardH
+    let sx = 0
+    let sy = 0
+    let sw = img.width
+    let sh = img.height
+    if (imgRatio > cardRatio) {
+      sw = img.height * cardRatio
+      sx = (img.width - sw) / 2
+    } else {
+      sh = img.width / cardRatio
+      sy = (img.height - sh) / 2
+    }
+    ctx.save()
+    roundRectPath(ctx, cardX, cardY, cardW, cardH, 24)
+    ctx.clip()
+    ctx.drawImage(img, sx, sy, sw, sh, cardX, cardY, cardW, cardH)
+    // 图片底部黑色渐变遮罩（渐隐融入背景）
+    const gradient = ctx.createLinearGradient(0, cardY + cardH * 0.55, 0, cardY + cardH)
+    gradient.addColorStop(0, 'rgba(0,0,0,0)')
+    gradient.addColorStop(0.6, 'rgba(0,0,0,0.55)')
+    gradient.addColorStop(1, 'rgba(0,0,0,1)')
+    ctx.fillStyle = gradient
+    ctx.fillRect(cardX, cardY + cardH * 0.55, cardW, cardH * 0.45)
+    ctx.restore()
+
+    ctx.textAlign = 'center'
+    const cx = CANVAS_W / 2
+
+    // 分数：超大极细白字
+    ctx.fillStyle = '#ffffff'
+    ctx.font = '100 88px "Helvetica Neue", Helvetica, Arial, sans-serif'
+    ctx.fillText(result.isInvalid ? '--' : String(result.totalScore), cx, cardY + cardH + 108)
+
+    // 等级
+    ctx.font = '16px "Helvetica Neue", sans-serif'
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'
+    ctx.fillText(result.level, cx, cardY + cardH + 144)
+
+    // 风格人格
+    ctx.font = '500 22px "Helvetica Neue", sans-serif'
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(result.stylePersonality, cx, cardY + cardH + 184)
+
+    // 毒舌点评（灰色斜体，自动换行）
+    ctx.font = 'italic 14px "Helvetica Neue", sans-serif'
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'
+    const lines = wrapLines(ctx, `💬 "${result.wittyComment}"`, CANVAS_W - 96, 3)
+    lines.forEach((line, i) => ctx.fillText(line, cx, cardY + cardH + 220 + i * 22))
+
+    // 底部品牌小字
+    ctx.font = '10px "Helvetica Neue", sans-serif'
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'
+    ctx.fillText('AI 毒舌时尚官', cx, CANVAS_H - 24)
+  }
+
+  return (
+    <View className="w-full flex flex-col items-center">
+      {/* 图片质量提示（模糊/光线差） */}
+      {result.imageWarning && (
+        <Text className="block text-xs text-amber-400 text-center mb-4 px-6">{result.imageWarning}</Text>
+      )}
+
+      {/* 照片卡：大圆角 + 底部渐隐遮罩 */}
+      <View className="w-full rounded-3xl overflow-hidden border border-white border-opacity-10 relative">
+        <Image src={imageUrl} mode="aspectFill" className="w-full aspect-[3/4] block" />
+        <View className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black via-opacity-55 to-transparent" />
+      </View>
+
+      {/* 分数 */}
+      <Text className="block text-8xl font-thin text-white leading-none mt-8">
+        {result.isInvalid ? '--' : result.totalScore}
+      </Text>
+      {/* 等级 */}
+      <Text className="block text-lg text-white text-opacity-80 mt-3">{result.level}</Text>
+      {/* 风格人格 */}
+      <Text className="block text-xl font-medium text-white mt-2">{result.stylePersonality}</Text>
+      {/* 毒舌点评 */}
+      <Text className="block text-sm italic text-white text-opacity-50 text-center mt-4 max-w-72 leading-relaxed">
+        💬 “{result.wittyComment}”
+      </Text>
+
+      {/* 操作区 */}
+      <View className="flex items-center gap-8 mt-10">
+        <Button
+          variant="ghost"
+          className="h-auto px-2 py-2 text-white text-opacity-80 tracking-[0.2em] text-sm font-normal"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          <Save size={16} color="rgba(255,255,255,0.8)" className="mr-2" />
+          <Text>{saving ? '保存中...' : '保存卡片'}</Text>
+        </Button>
+        {onRetry && (
+          <Button
+            variant="ghost"
+            className="h-auto px-2 py-2 text-white text-opacity-80 tracking-[0.2em] text-sm font-normal"
+            onClick={onRetry}
+          >
+            <RotateCcw size={16} color="rgba(255,255,255,0.8)" className="mr-2" />
+            <Text>再测一次</Text>
+          </Button>
+        )}
+      </View>
+      <Button
+        variant="outline"
+        openType="share"
+        className="mt-6 w-[64%] border-white border-opacity-25 bg-transparent text-white text-opacity-80 rounded-full tracking-[0.2em]"
+      >
+        <Share2 size={16} color="rgba(255,255,255,0.8)" className="mr-2" />
+        <Text>分享给好友</Text>
+      </Button>
+
+      {/* 离屏画布：保存卡片用（视觉不可见但保持渲染） */}
+      <Canvas
+        type="2d"
+        id="fashion-poster-canvas"
+        canvasId="fashion-poster-canvas"
+        className="fixed top-0 left-0 pointer-events-none opacity-0"
+        style={{ width: `${CANVAS_W}px`, height: `${CANVAS_H}px`, transform: 'translateX(-200%)' }}
+      />
+    </View>
+  )
+}

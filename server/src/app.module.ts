@@ -14,6 +14,7 @@ import { AdminController } from '@/admin/admin.controller'
 import { AuthModule } from '@/auth/auth.module'
 import { ProfileModule } from '@/profile/profile.module'
 import { HistoryModule } from '@/history/history.module'
+import { FashionRatingModule } from '@/fashion-rating/fashion-rating.module'
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { HistoryModule } from '@/history/history.module'
     AuthModule,
     ProfileModule,
     HistoryModule,
+    FashionRatingModule,
   ],
   controllers: [AppController, BaziController, ConfigController, ShareController, LogController, AssetsController, AdminController],
   providers: [

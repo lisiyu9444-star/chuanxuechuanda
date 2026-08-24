@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { ChevronRight, FolderOpen, Clock, ShieldCheck, LogOut, UserRound } from 'lucide-react-taro'
+import { ChevronRight, FolderOpen, Clock, ShieldCheck, LogOut, UserRound, Shirt } from 'lucide-react-taro'
 import { getCurrentArchive, getArchives, type Archive } from '@/utils/archiveStorage'
 import { AUTH_EVENTS, getAuthUser, isLoggedIn, isWeappEnv, logout, requireLogin, type AuthUser } from '@/utils/auth'
 import { LoginSheet } from '@/components/login-sheet'
@@ -55,6 +55,12 @@ export default function ProfilePage() {
     // 历史记录需登录：未登录时唤起全局登录引导，登录后再次点击进入
     if (!(await requireLogin())) return
     Taro.navigateTo({ url: '/pages/history/index' })
+  }
+
+  const handleViewFashionHistory = async () => {
+    // 测评记录需登录：未登录时唤起全局登录引导，登录后再次点击进入
+    if (!(await requireLogin())) return
+    Taro.navigateTo({ url: '/pages/fashion-rating/history/index' })
   }
 
   const handleViewPrivacy = () => {
@@ -191,6 +197,23 @@ export default function ProfilePage() {
                 <View className="text-left">
                   <Text className="block text-base font-medium text-slate-900">历史记录</Text>
                   <Text className="block text-xs text-slate-500 mt-1">查看过往穿搭</Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color="#9ca3af" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full h-auto px-4 py-4 justify-between rounded-none border-b border-slate-100 active:bg-slate-50"
+              onClick={handleViewFashionHistory}
+            >
+              <View className="flex items-center gap-3">
+                <View className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Shirt size={20} color="#1f2937" />
+                </View>
+                <View className="text-left">
+                  <Text className="block text-base font-medium text-slate-900">测评记录</Text>
+                  <Text className="block text-xs text-slate-500 mt-1">查看 AI 穿搭评分历史</Text>
                 </View>
               </View>
               <ChevronRight size={18} color="#9ca3af" />

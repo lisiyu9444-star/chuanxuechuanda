@@ -1,0 +1,22 @@
+/* AI 毒舌时尚官：照片扫描光带动画（fashion-rating 模式专用） */
+@keyframes fashion-scan-y {
+  0% {
+    top: -25%;
+  }
+  50% {
+    top: 105%;
+  }
+  100% {
+    top: -25%;
+  }
+}
+
+.fashion-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 33%;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.22), transparent);
+  animation: fashion-scan-y 2.2s ease-in-out infinite;
+  pointer-events: none;
+}

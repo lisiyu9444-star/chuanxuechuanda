@@ -3,6 +3,8 @@ export default defineAppConfig({
     'pages/index/index',
     'pages/loading/index',
     'pages/result/index',
+    'pages/fashion-rating/index',
+    'pages/fashion-rating/history/index',
     'pages/profile/index',
     'pages/archive/list/index',
     'pages/archive/form/index',
@@ -27,6 +29,12 @@ export default defineAppConfig({
         text: '首页',
         iconPath: './assets/tabbar/house.png',
         selectedIconPath: './assets/tabbar/house-active.png'
+      },
+      {
+        pagePath: 'pages/fashion-rating/index',
+        text: '测评',
+        iconPath: './assets/tabbar/shirt.png',
+        selectedIconPath: './assets/tabbar/shirt-active.png'
       },
       {
         pagePath: 'pages/profile/index',

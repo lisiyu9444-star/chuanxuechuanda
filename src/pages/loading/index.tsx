@@ -1,10 +1,10 @@
-import { View, Text } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow, useUnload } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { CloudOff, RefreshCw } from 'lucide-react-taro'
+import { CloudOff, RefreshCw, X } from 'lucide-react-taro'
 import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
 import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, markDailyGenerateCancelled, clearDailyGenerateFailed, consumePreviousArchiveId, revertToArchiveId, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
@@ -12,12 +12,25 @@ import { buildHistoryRecord, saveHistoryFromDailyResult, saveHistoryFromNativeRe
 import { syncArchiveToServer, syncHistoryToServer } from '@/utils/serverSync'
 import { isLoggedIn, isWeappEnv } from '@/utils/auth'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
+import './index.css'
 
 const getLoadingSteps = (mode: 'daily' | 'native') => [
   '正在排列四柱...',
   '正在推演旺缺...',
   '正在分析喜用神...',
   mode === 'native' ? '正在生成本命穿搭方案...' : '正在生成今日推荐穿搭...',
+]
+
+/** AI 毒舌时尚官：分析中轮播文案（PRD 4.2，每 2.5s 切换） */
+const FASHION_LOADING_TEXTS = [
+  '正在用毒辣眼光审视你的穿搭...',
+  '时尚雷达扫描中...',
+  '评审官正在皱眉...',
+  '正在分析你的色彩搭配...',
+  '计算你的时尚指数...',
+  '这件单品的版型...嗯...',
+  '让我看看你的个性表达...',
+  '时尚评分即将出炉...',
 ]
 
 const LoadingPage = () => {
@@ -27,7 +40,10 @@ const LoadingPage = () => {
   const [archive, setArchive] = useState<{ nickname: string; gender: string; birthDate: string; birthTime: string; location: string; stylePreference?: string } | null>(null)
   const [trustCount] = useState(128456 + Math.floor(Math.random() * 1000))
   const [isAccelerated, setIsAccelerated] = useState(false)
-  const [mode, setMode] = useState<'daily' | 'native'>('daily')
+  const [mode, setMode] = useState<'daily' | 'native' | 'fashion-rating'>('daily')
+  // 时尚测评模式：待测评的本地照片路径 + 轮播文案下标
+  const [fashionImage, setFashionImage] = useState('')
+  const [fashionStep, setFashionStep] = useState(0)
   const requestedRef = useRef(false)
   // 请求任务与取消标记：退出页面时中断请求，阻止后续保存与跳转
   const requestTaskRef = useRef<{ abort?: () => void } | null>(null)
@@ -57,7 +73,8 @@ const LoadingPage = () => {
     }).catch((e) => console.warn('[Loading] cancel notify failed:', e))
   }
   const fromRef = useRef<string>('')
-  const loadingSteps = getLoadingSteps(mode)
+  // fashion-rating 模式不渲染八字步骤文案，此处仅对 daily/native 取值
+  const loadingSteps = getLoadingSteps(mode === 'native' ? 'native' : 'daily')
 
   const loadData = async (archiveId: string, pageMode: 'daily' | 'native' = 'daily') => {
     if (requestedRef.current) return
@@ -288,6 +305,76 @@ const LoadingPage = () => {
     }
   }
 
+  // ===== AI 毒舌时尚官：上传照片并请求评分 =====
+  const startFashionRating = async () => {
+    if (requestedRef.current) return
+    requestedRef.current = true
+    const seq = ++requestSeqRef.current
+
+    try {
+      const filePath = Taro.getStorageSync('fashion_pending_image') as string
+      if (!filePath) {
+        Taro.showToast({ title: '请先选择穿搭照片', icon: 'none' })
+        setTimeout(() => Taro.navigateBack(), 1200)
+        return
+      }
+
+      console.log('[Loading] fashion-rating upload:', filePath)
+      const task = Network.uploadFile({
+        url: '/api/fashion-rating/rate',
+        filePath,
+        name: 'image',
+        timeout: 120000,
+      })
+      requestTaskRef.current = task as unknown as { abort?: () => void }
+      const res = await task
+      requestTaskRef.current = null
+      if (cancelledRef.current || seq !== requestSeqRef.current) return
+      console.log('[Loading] fashion-rating response:', res.statusCode, res.data)
+
+      // uploadFile 的 data 为字符串 JSON；非 200 视为失败（400 不合规/格式、429 次数用完、500 服务异常）
+      let body: { data?: { result?: unknown }; message?: string } = {}
+      try {
+        body = typeof res.data === 'string' ? JSON.parse(res.data) : res.data || {}
+      } catch {
+        body = {}
+      }
+      if (res.statusCode !== 200) {
+        throw new Error(body?.message || `评分失败(${res.statusCode || '网络异常'})`)
+      }
+      const record = body?.data
+      if (!record || typeof record !== 'object' || !record.result) {
+        throw new Error('评分结果为空，请重试')
+      }
+
+      Taro.removeStorageSync('fashion_pending_image')
+      // 结果交给测评页展示：存 storage 后返回，测评页 useDidShow 消费并切换结果态
+      Taro.setStorageSync('fashion_latest_result', record)
+      Taro.navigateBack()
+    } catch (error) {
+      if (cancelledRef.current || seq !== requestSeqRef.current) return
+      requestTaskRef.current = null
+      console.error('[Loading] fashion-rating failed:', error)
+      Taro.removeStorageSync('fashion_pending_image')
+      const message = error instanceof Error ? error.message : '评分失败，请重试'
+      Taro.showToast({ title: message.slice(0, 24), icon: 'none', duration: 2000 })
+      setTimeout(() => {
+        if (!cancelledRef.current) Taro.navigateBack()
+      }, 1600)
+    }
+  }
+
+  // 时尚测评：右上角取消——中断上传请求并返回测评页
+  const handleCancelFashion = () => {
+    cancelledRef.current = true
+    requestTaskRef.current?.abort?.()
+    requestTaskRef.current = null
+    requestSeqRef.current += 1
+    Taro.removeStorageSync('fashion_pending_image')
+    Taro.navigateBack()
+    Taro.showToast({ title: '生成已取消', icon: 'none', duration: 1500 })
+  }
+
   useDidShow(() => {
     // 防御：AI 生成与登录状态绑定（正常入口已门禁，此处拦截直接分享/扫码进入的场景）
     if (isWeappEnv() && !isLoggedIn()) {
@@ -298,7 +385,7 @@ const LoadingPage = () => {
 
     const params = Taro.getCurrentInstance().router?.params
     const archiveId = params?.archiveId
-    const pageMode = (params?.mode as 'daily' | 'native') || 'daily'
+    const pageMode = (params?.mode as 'daily' | 'native' | 'fashion-rating') || 'daily'
     const action = (params?.action as string) || ''
     fromRef.current = (params?.from as string) || ''
 
@@ -318,15 +405,21 @@ const LoadingPage = () => {
     setIsAccelerated(false)
     startTimeRef.current = Date.now()
 
-    lastRequestRef.current = archiveId ? { archiveId: archiveId as string, pageMode, action } : null
+    lastRequestRef.current = archiveId ? { archiveId: archiveId as string, pageMode: pageMode === 'native' ? 'native' : 'daily', action } : null
     // 快照切换前的档案并消费存储（一次性）：本次生成若被用户取消，回退到该档案
     prevArchiveIdRef.current = consumePreviousArchiveId()
 
-    if (archiveId) {
+    if (pageMode === 'fashion-rating') {
+      // 时尚测评：取测评页存入的待评分照片，发起上传评分请求
+      setFashionImage(Taro.getStorageSync('fashion_pending_image') || '')
+      startFashionRating()
+    } else if (archiveId) {
+      // 八字生成模式（fashion-rating 已在上方分支处理，此处收敛为 daily | native）
+      const archivePageMode: 'daily' | 'native' = pageMode === 'native' ? 'native' : 'daily'
       if (action === 'redesign') {
-        redesignData(archiveId as string, pageMode)
+        redesignData(archiveId as string, archivePageMode)
       } else {
-        loadData(archiveId as string, pageMode)
+        loadData(archiveId as string, archivePageMode)
       }
     } else {
       Taro.showToast({ title: '缺少档案信息', icon: 'none' })
@@ -381,6 +474,15 @@ const LoadingPage = () => {
       return () => clearTimeout(timer)
     }
   }, [currentStep])
+
+  // 时尚测评：8 条毒舌文案 2.5s 轮播
+  useEffect(() => {
+    if (mode !== 'fashion-rating') return
+    const timer = setInterval(() => {
+      setFashionStep((prev) => (prev + 1) % FASHION_LOADING_TEXTS.length)
+    }, 2500)
+    return () => clearInterval(timer)
+  }, [mode])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -442,6 +544,39 @@ const LoadingPage = () => {
             <Text className="text-sm">{fromRef.current === 'result' ? '返回结果页' : '返回首页'}</Text>
           </Button>
         </View>
+      </View>
+    )
+  }
+
+  // ===== AI 毒舌时尚官：黑底分析中界面（还原原型 fashion-rating-loading.html） =====
+  if (mode === 'fashion-rating') {
+    return (
+      <View className="min-h-full bg-black flex flex-col items-center px-6">
+        {/* 右上角取消 */}
+        <View
+          className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center z-10"
+          onClick={handleCancelFashion}
+        >
+          <X size={22} color="rgba(255,255,255,0.6)" />
+        </View>
+
+        {/* 照片卡：金色微光 + 扫描光带 */}
+        <View
+          className="w-44 aspect-[3/4] rounded-2xl overflow-hidden mt-24 relative"
+          style={{ boxShadow: '0 0 60px rgba(185,151,91,0.18)' }}
+        >
+          {fashionImage && <Image src={fashionImage} mode="aspectFill" className="w-full h-full" />}
+          <View className="fashion-scan-line" />
+        </View>
+
+        {/* 细环 spinner（透明度用近似实色，规避小程序 opacity 类丢失问题） */}
+        <View className="w-10 h-10 rounded-full border-2 border-neutral-800 border-t-neutral-400 animate-spin mt-10" />
+
+        {/* 轮播文案（2.5s 切换） */}
+        <Text className="block text-sm text-white text-opacity-70 mt-5 text-center px-4">
+          {FASHION_LOADING_TEXTS[fashionStep]}
+        </Text>
+        <Text className="block text-xs text-white text-opacity-40 mt-3">AI 点评生成中，约需 5-15 秒</Text>
       </View>
     )
   }
