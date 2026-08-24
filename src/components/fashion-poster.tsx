@@ -147,13 +147,13 @@ export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测�
     roundRectPath(ctx, CARD_X, CARD_Y, CARD_W, CARD_H, 24)
     ctx.clip()
     ctx.drawImage(img, sx, sy, sw, sh, CARD_X, CARD_Y, CARD_W, CARD_H)
-    // 图片底部黑色渐变遮罩（渐隐融入背景）
-    const gradient = ctx.createLinearGradient(0, CARD_Y + CARD_H * 0.55, 0, CARD_Y + CARD_H)
+    // 图片底部黑色渐变遮罩（与页面端一致：60% 高度渐隐融入背景）
+    const gradient = ctx.createLinearGradient(0, CARD_Y + CARD_H * 0.4, 0, CARD_Y + CARD_H)
     gradient.addColorStop(0, 'rgba(0,0,0,0)')
-    gradient.addColorStop(0.6, 'rgba(0,0,0,0.55)')
+    gradient.addColorStop(0.6, 'rgba(0,0,0,0.6)')
     gradient.addColorStop(1, 'rgba(0,0,0,1)')
     ctx.fillStyle = gradient
-    ctx.fillRect(CARD_X, CARD_Y + CARD_H * 0.55, CARD_W, CARD_H * 0.45)
+    ctx.fillRect(CARD_X, CARD_Y + CARD_H * 0.4, CARD_W, CARD_H * 0.6)
     ctx.restore()
 
     ctx.textAlign = 'center'
@@ -195,10 +195,15 @@ export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测�
         <Text className="block text-xs text-amber-400 text-center mb-4 px-6">{result.imageWarning}</Text>
       )}
 
-      {/* 照片卡：固定 3:4 竖版容器（计算高度），任意比例照片统一居中裁剪 + 底部渐隐遮罩（不加 border，小程序端会渲染出白色描边） */}
-      <View className="w-full rounded-3xl overflow-hidden relative" style={{ height: `${cardHeight}px` }}>
+      {/* 照片卡：固定 3:4 竖版容器（计算高度），任意比例照片统一居中裁剪 + 底部渐隐遮罩。
+          容器垫 bg-black：小程序端原生 image 圆角裁剪有缝隙，露出底色时用黑色填充而非白色 */}
+      <View className="w-full rounded-3xl overflow-hidden relative bg-black" style={{ height: `${cardHeight}px` }}>
         <Image src={imageUrl} mode="aspectFill" className="w-full h-full block" />
-        <View className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black via-opacity-55 to-transparent pointer-events-none" />
+        {/* 底部渐隐遮罩：60% 高度。透明度渐变用内联样式（小程序端 Tailwind 颜色透明度简写 opacity 会丢失，与 canvas 绘制保持一致） */}
+        <View
+          className="absolute inset-x-0 bottom-0 h-3/5 pointer-events-none"
+          style={{ backgroundImage: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.6) 60%, transparent 100%)' }}
+        />
       </View>
 
       {/* 分数：上移压入遮罩，衬线粗体个性数字 */}

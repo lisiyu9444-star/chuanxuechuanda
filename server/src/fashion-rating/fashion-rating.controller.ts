@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { Public } from '@/auth/public.decorator'
-import { FashionRatingService } from './fashion-rating.service'
+import { DAILY_LIMIT, FashionRatingService } from './fashion-rating.service'
 
 /** multer 上传文件（memoryStorage 模式必有 buffer） */
 interface UploadedImageFile {
@@ -67,7 +67,7 @@ export class FashionRatingController {
   async remaining(@Req() req: any) {
     const userId = req.user?.userId as string
     const remaining = await this.fashionRatingService.getRemaining(userId)
-    return { data: { remaining, limit: 3 } }
+    return { data: { remaining, limit: DAILY_LIMIT } }
   }
 
   /** 我的测评记录（倒序）：{ data: { list } } */

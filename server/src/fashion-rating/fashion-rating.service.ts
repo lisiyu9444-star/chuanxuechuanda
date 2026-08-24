@@ -8,8 +8,8 @@ import { getStorage, signKey } from '@/assets/tos-utils'
 
 /** 多模态评分模型（与 stylist 同一可用模型，支持图片输入） */
 const FASHION_MODEL = 'doubao-seed-2-0-pro-260215'
-/** 每日评分次数上限（PRD：登录用户 3 次/天） */
-const DAILY_LIMIT = 3
+/** 每日评分次数上限：默认 99 便于测试；正式环境通过环境变量 FASHION_RATING_DAILY_LIMIT 调整为 3（PRD：登录用户 3 次/天） */
+export const DAILY_LIMIT = Number(process.env.FASHION_RATING_DAILY_LIMIT) || 99
 /** 单张图片大小上限 10MB（PRD 6.1） */
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp'])

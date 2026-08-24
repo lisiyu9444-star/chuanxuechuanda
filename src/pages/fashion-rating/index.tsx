@@ -44,7 +44,7 @@ async function compressIfNeeded(filePath: string, fileSize?: number): Promise<st
 export default function FashionRatingPage() {
   const [view, setView] = useState<'upload' | 'result'>('upload')
   const [record, setRecord] = useState<FashionRatingRecord | null>(null)
-  const [remaining, setRemaining] = useState(3)
+  const [remaining, setRemaining] = useState(99)
   /** 是否从分享卡片进入（决定重测按钮文案为「我也要测」） */
   const [fromShare, setFromShare] = useState(false)
 
@@ -177,7 +177,8 @@ export default function FashionRatingPage() {
   // ===== 结果态：黑色海报 =====
   if (view === 'result' && record) {
     return (
-      <View className="min-h-screen bg-black flex flex-col items-center px-6 pt-8 pb-10">
+      // pb-32 留出 tabBar 高度，避免底部点评/操作按钮被原生 tabBar 遮挡
+      <View className="min-h-screen bg-black flex flex-col items-center px-6 pt-8 pb-32">
         <FashionPoster
           imageUrl={record.imageUrl}
           result={record.result}
