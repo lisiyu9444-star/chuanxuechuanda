@@ -3,7 +3,6 @@ import Taro from '@tarojs/taro'
 import { View, Text, Image, Canvas } from '@tarojs/components'
 import { Save, RotateCcw, Share2 } from 'lucide-react-taro'
 import { Button } from '@/components/ui/button'
-import { AspectRatio } from '@/components/ui/aspect-ratio'
 import type { FashionRatingResult } from '@/types/fashion'
 
 interface FashionPosterProps {
@@ -63,6 +62,10 @@ function wrapLines(ctx: any, text: string, maxWidth: number, maxLines: number): 
  */
 export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测一次' }: FashionPosterProps) {
   const [saving, setSaving] = useState(false)
+  // 照片卡固定 3:4 竖版：屏宽减去页面两侧 px-6 边距后按比例计算高度
+  // （跨端兼容修正：小程序端 padding 百分比/宽高比类不可靠，用计算值固定容器高度）
+  const windowWidth = Taro.getWindowInfo?.().windowWidth || 375
+  const cardHeight = Math.round(((windowWidth - 48) * 4) / 3)
 
   /** 将海报绘制到离屏 canvas 并保存到相册（H5 降级为长按截图提示） */
   const handleSave = async () => {
@@ -192,11 +195,9 @@ export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测�
         <Text className="block text-xs text-amber-400 text-center mb-4 px-6">{result.imageWarning}</Text>
       )}
 
-      {/* 照片卡：固定 3:4 竖版容器，任意比例照片统一居中裁剪 + 底部渐隐遮罩（不加 border，小程序端会渲染出白色描边） */}
-      <View className="w-full rounded-3xl overflow-hidden relative">
-        <AspectRatio ratio={3 / 4}>
-          <Image src={imageUrl} mode="aspectFill" className="w-full h-full block" />
-        </AspectRatio>
+      {/* 照片卡：固定 3:4 竖版容器（计算高度），任意比例照片统一居中裁剪 + 底部渐隐遮罩（不加 border，小程序端会渲染出白色描边） */}
+      <View className="w-full rounded-3xl overflow-hidden relative" style={{ height: `${cardHeight}px` }}>
+        <Image src={imageUrl} mode="aspectFill" className="w-full h-full block" />
         <View className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black via-opacity-55 to-transparent pointer-events-none" />
       </View>
 

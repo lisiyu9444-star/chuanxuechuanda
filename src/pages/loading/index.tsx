@@ -47,11 +47,16 @@ const LoadingPage = () => {
 
   // 导航栏配色跟随模式：fashion-rating 黑底白字，其他模式白底黑字
   useEffect(() => {
-    Taro.setNavigationBarColor(
-      mode === 'fashion-rating'
-        ? { frontColor: '#ffffff', backgroundColor: '#000000' }
-        : { frontColor: '#000000', backgroundColor: '#ffffff' },
-    )
+    // nextTick 确保页面 root view 就绪，避免 removeTextView:fail 报错
+    Taro.nextTick(() => {
+      Taro.setNavigationBarColor(
+        mode === 'fashion-rating'
+          ? { frontColor: '#ffffff', backgroundColor: '#000000' }
+          : { frontColor: '#000000', backgroundColor: '#ffffff' },
+      ).catch((e) => {
+        console.warn('[Loading] setNavigationBarColor failed:', e)
+      })
+    })
   }, [mode])
   const requestedRef = useRef(false)
   // 请求任务与取消标记：退出页面时中断请求，阻止后续保存与跳转

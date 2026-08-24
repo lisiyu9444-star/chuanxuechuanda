@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { isLoggedIn, requireLogin } from '@/utils/auth'
 import { FashionPoster } from '@/components/fashion-poster'
+import { LoginSheet } from '@/components/login-sheet'
 import type { FashionRatingRecord } from '@/types/fashion'
 
 /** 超过该体积（2MB）时压缩图片：长边 ≤1024、jpeg 质量 0.8（PRD 6.1） */
@@ -80,8 +81,13 @@ export default function FashionRatingPage() {
 
   useLoad((options) => {
     console.log('[FashionRating] useLoad options:', options)
-    // 显式设置标题，避免 tabBar 页面标题被客户端缓存成其他页面文案
-    Taro.setNavigationBarTitle({ title: 'AI 毒舌时尚官' })
+    // 显式设置标题，避免 tabBar 页面标题被客户端缓存成其他页面文案；
+    // nextTick 延后到页面 root view 就绪后再调，否则会报 removeTextView:fail no root view
+    Taro.nextTick(() => {
+      Taro.setNavigationBarTitle({ title: 'AI 毒舌时尚官' }).catch((e) => {
+        console.warn('[FashionRating] setNavigationBarTitle failed:', e)
+      })
+    })
     const shareId = options?.shareId
     if (shareId) {
       setFromShare(true)
@@ -91,11 +97,16 @@ export default function FashionRatingPage() {
 
   // 导航栏配色跟随页面状态：结果态黑底白字，上传态白底黑字
   useEffect(() => {
-    Taro.setNavigationBarColor(
-      view === 'result'
-        ? { frontColor: '#ffffff', backgroundColor: '#000000' }
-        : { frontColor: '#000000', backgroundColor: '#ffffff' },
-    )
+    // nextTick 确保页面 root view 就绪，避免 removeTextView:fail 报错
+    Taro.nextTick(() => {
+      Taro.setNavigationBarColor(
+        view === 'result'
+          ? { frontColor: '#ffffff', backgroundColor: '#000000' }
+          : { frontColor: '#000000', backgroundColor: '#ffffff' },
+      ).catch((e) => {
+        console.warn('[FashionRating] setNavigationBarColor failed:', e)
+      })
+    })
   }, [view])
 
   useDidShow(() => {
@@ -210,6 +221,9 @@ export default function FashionRatingPage() {
       <Text className="block text-xs text-muted-foreground text-center pb-8">
         {remaining > 0 ? `今日还可测 ${remaining} 次` : '今日评分次数已用完'}
       </Text>
+
+      {/* 全局登录弹层（requireLogin 唤起，各页面需自行挂载实例） */}
+      <LoginSheet />
     </View>
   )
 }

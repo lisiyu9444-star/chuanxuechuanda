@@ -6,7 +6,6 @@ import { Network } from '@/network'
 import { isLoggedIn } from '@/utils/auth'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AspectRatio } from '@/components/ui/aspect-ratio'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,11 +64,16 @@ export default function FashionRatingHistoryPage() {
 
   // 导航栏配色跟随页面状态：海报重现态黑底白字，列表态白底黑字
   useEffect(() => {
-    Taro.setNavigationBarColor(
-      selected
-        ? { frontColor: '#ffffff', backgroundColor: '#000000' }
-        : { frontColor: '#000000', backgroundColor: '#ffffff' },
-    )
+    // nextTick 确保页面 root view 就绪，避免 removeTextView:fail 报错
+    Taro.nextTick(() => {
+      Taro.setNavigationBarColor(
+        selected
+          ? { frontColor: '#ffffff', backgroundColor: '#000000' }
+          : { frontColor: '#000000', backgroundColor: '#ffffff' },
+      ).catch((e) => {
+        console.warn('[FashionHistory] setNavigationBarColor failed:', e)
+      })
+    })
   }, [selected])
 
   /** 长按删除：确认后调 DELETE 接口并从列表移除 */
@@ -135,10 +139,8 @@ export default function FashionRatingHistoryPage() {
           <>
             {[1, 2, 3].map((i) => (
               <View key={i} className="flex items-center gap-4 bg-white border border-slate-100 rounded-2xl p-3 mb-3">
-                <View className="w-16 shrink-0 rounded-xl overflow-hidden">
-                  <AspectRatio ratio={3 / 4}>
-                    <Skeleton className="w-full h-full" />
-                  </AspectRatio>
+                <View className="w-16 shrink-0 rounded-xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                  <Skeleton className="w-full h-full" />
                 </View>
                 <View className="flex-1">
                   <Skeleton className="h-6 w-24 rounded" />
@@ -171,11 +173,9 @@ export default function FashionRatingHistoryPage() {
                 onClick={() => setSelected(record)}
                 onLongPress={() => setDeletingId(record.id)}
               >
-                {/* 缩略图：固定 3:4 竖版容器，任意比例照片统一裁剪 */}
-                <View className="w-16 shrink-0 rounded-xl overflow-hidden bg-muted">
-                  <AspectRatio ratio={3 / 4}>
-                    <Image src={record.imageUrl} mode="aspectFill" className="w-full h-full block" />
-                  </AspectRatio>
+                {/* 缩略图：固定 3:4 竖版容器（aspect-ratio 样式，跨端兼容修正），任意比例照片统一裁剪 */}
+                <View className="w-16 shrink-0 rounded-xl overflow-hidden bg-muted" style={{ aspectRatio: '3/4' }}>
+                  <Image src={record.imageUrl} mode="aspectFill" className="w-full h-full block" />
                 </View>
                 <View className="flex-1 min-w-0">
                   <View className="flex items-baseline gap-2">
