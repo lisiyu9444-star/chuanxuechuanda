@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <!-- 字体（Google 字体） -->
   <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/>
@@ -57,6 +57,16 @@
       min-height: max(812px, 100dvh);
       font-family: system-ui, sans-serif;
     }
+    /* 照片扫描光带：自上而下循环扫过，营造「AI 审视中」感 */
+    #scan-line {
+      top: -25%;
+      animation: scanY 2.2s ease-in-out infinite;
+    }
+    @keyframes scanY {
+      0%   { top: -25%; }
+      50%  { top: 105%; }
+      100% { top: -25%; }
+    }
   </style>
 
   <!-- 图片兜底 -->
@@ -78,40 +88,103 @@
   </script>
 </head>
 
-<body class="bg-background text-on-surface font-sans">
+<body class="bg-black text-white font-sans">
 
-  <!-- @nav:start 导航组件，不需要的页面则不要复制此段（从 @nav:start 到 @nav:end） -->
-  <!-- 一级页 Header：标题居中，轻奢风字距拉开；二级页由子 Agent 改为「返回按钮 + 标题」形态 -->
-  <header class="bg-background sticky top-0 z-40 h-14 flex items-center justify-center px-4">
-    <h1 class="text-base font-semibold tracking-[0.3em] text-on-surface">测 评</h1>
-  </header>
-  <!-- 底部 TabBar：3 个一级页（首页为既有页面，本原型仅测评可点） -->
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest border-t border-outline-variant/20
-              flex justify-around items-center h-14 pb-[env(safe-area-inset-bottom)]">
-    <a href="#" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
-                       hover:text-on-surface transition-colors">
-      <i data-lucide="home" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">首页</span>
-    </a>
-    <a href="fashion-rating.html" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-primary"
-       aria-current="page">
-      <i data-lucide="shirt" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">测评</span>
-    </a>
-    <a href="#" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
-                       hover:text-on-surface transition-colors">
-      <i data-lucide="user" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">我的</span>
-    </a>
-  </nav>
-  <!-- @nav:end 导航组件，不需要的页面则不要复制此段 -->
+  <!-- 全屏深色 Loading：与结果海报同色系衔接；右上角取消，无 Header/TabBar -->
+  <button id="btn-cancel" type="button" aria-label="取消"
+          class="absolute top-4 right-4 z-40 w-12 h-12 flex items-center justify-center text-white/60
+                 hover:text-white transition-colors">
+    <i data-lucide="x" class="w-5 h-5"></i>
+  </button>
 
-  <main class="flex-1">
+  <main class="min-h-[100dvh] flex flex-col items-center justify-center px-8">
     <!-- @main-content:start -->
+
+    <!-- 上传照片：金色微光环绕 + 扫描光带循环 -->
+    <div id="loading-photo"
+         class="relative w-44 rounded-2xl overflow-hidden border border-white/10
+                shadow-[0_0_60px_rgba(185,151,91,0.18)]">
+      <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f"
+           alt="年轻女性时尚街拍穿搭照" data-category="服饰时尚"
+           class="w-full aspect-[3/4] object-cover"/>
+      <div id="scan-line"
+           class="absolute inset-x-0 h-14 bg-gradient-to-b from-transparent via-white/25 to-transparent"></div>
+    </div>
+
+    <!-- 加载指示：细环旋转 -->
+    <div class="mt-9 w-5 h-5 rounded-full border border-white/15 border-t-white/70 animate-spin"></div>
+
+    <!-- 毒舌文案轮播：PRD 8 条，每 2.5 秒淡入淡出切换 -->
+    <p id="loading-text" class="mt-4 h-6 text-sm text-white/80 text-center">
+      正在用毒辣眼光审视你的穿搭...
+    </p>
+
     <!-- @main-content:end -->
   </main>
 
+  <!-- 底部提示 -->
+  <p class="fixed bottom-10 inset-x-0 text-center text-xs text-white/30">
+    AI 点评生成中，约需 5-15 秒
+  </p>
+
   <script>lucide.createIcons();</script>
+
+  <script>
+    // ===== 导航辅助函数 =====
+    function navPush(route) {
+      console.log(`[原型演示] PUSH 到: ${route}`);
+      window.location.href = route;
+    }
+    function navReplace(route) {
+      console.log(`[原型演示] REPLACE 为: ${route}`);
+      window.location.replace(route);
+    }
+    function navReset(route) {
+      console.log(`[原型演示] RESET 到: ${route}`);
+      window.location.href = route;
+    }
+    function navBack() {
+      console.log(`[原型演示] BACK 返回上一页，中断本次评分请求`);
+      if (window.history.length > 1) window.history.back();
+    }
+
+    // PRD 4.2 毒舌官人设文案：每 2.5 秒切换一条，淡入淡出
+    var LOADING_TEXTS = [
+      '正在用毒辣眼光审视你的穿搭...',
+      '时尚雷达扫描中...',
+      '评审官正在皱眉...',
+      '正在分析你的色彩搭配...',
+      '计算你的时尚指数...',
+      '这件单品的版型...嗯...',
+      '让我看看你的个性表达...',
+      '时尚评分即将出炉...'
+    ];
+
+    $(function () {
+      var idx = 0;
+      var $text = $('#loading-text');
+      setInterval(function () {
+        $text.fadeOut(250, function () {
+          idx = (idx + 1) % LOADING_TEXTS.length;
+          $text.text(LOADING_TEXTS[idx]).fadeIn(250);
+        });
+      }, 2500);
+
+      // 原型演示：约 7.5 秒（轮播 3 条）后自动出结果
+      // 完整实现（后续开发）：上传 fashion_pending_image 发起评分请求，
+      // 成功写入 fashion_latest_result 后 navigateBack 回测评页切结果态；
+      // 取消时 abort 请求并 toast「已取消」。
+      setTimeout(function () {
+        navReplace('fashion-rating-result.html');
+      }, 7600);
+
+      // 取消：返回测评页上传态
+      $('#btn-cancel').on('click', function () {
+        navBack();
+      });
+    });
+  </script>
+
 </body>
 
 </html>

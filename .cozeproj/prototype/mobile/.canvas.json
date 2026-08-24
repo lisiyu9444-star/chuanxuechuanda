@@ -11,6 +11,14 @@
     {
       "type": "html",
       "options": {
+        "path": ".cozeproj/prototype/mobile/fashion-rating-loading.html"
+      },
+      "title": "AI 分析中",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
         "path": ".cozeproj/prototype/mobile/fashion-rating-result.html"
       },
       "title": "评分结果",

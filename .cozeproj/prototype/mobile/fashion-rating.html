@@ -95,7 +95,7 @@
     </a>
     <a href="fashion-rating.html" id="nav-rating" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-primary"
        aria-current="page">
-      <i data-lucide="sparkles" class="w-5 h-5"></i>
+      <i data-lucide="shirt" class="w-5 h-5"></i>
       <span class="text-[10px] font-bold tracking-wide">测评</span>
     </a>
     <a href="#" id="nav-profile" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
@@ -167,9 +167,9 @@
       // 2. 已登录则调起系统拍照/相册选择器
       // 3. 选图后前端压缩（>2MB 时 canvas 压缩长边≤1024/0.8/jpg），临时路径存 storage
       // 4. 跳转 loading 页（mode=fashion-rating）发起评分请求，成功后回切结果态
-      // 原型简化：直接跳转 fashion-rating-result.html 展示结果态
+      // 原型流程：上传完成 → Loading 页（毒舌文案轮播）→ 自动跳转结果页
       $('#card-upload').on('click', function () {
-        navPush('fashion-rating-result.html');
+        navPush('fashion-rating-loading.html');
       });
 
       // TabBar：测评已激活；首页/我的为既有小程序页面，原型中不可点

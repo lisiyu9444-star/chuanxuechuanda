@@ -78,28 +78,28 @@
   </script>
 </head>
 
-<body class="bg-background text-on-surface font-sans flex flex-col">
+<body class="bg-black text-white font-sans flex flex-col">
 
   <!-- @nav:start 导航组件，不需要的页面则不要复制此段（从 @nav:start 到 @nav:end） -->
-  <!-- 一级页 Header：标题居中，轻奢风字距拉开；二级页由子 Agent 改为「返回按钮 + 标题」形态 -->
-  <header class="bg-background sticky top-0 z-40 h-14 flex items-center justify-center px-4">
-    <h1 class="text-base font-semibold tracking-[0.3em] text-on-surface">测 评</h1>
+  <!-- 结果页为测评 Tab 的全屏深色海报态：Header 与 TabBar 随页面一体黑化 -->
+  <header class="bg-black sticky top-0 z-40 h-14 flex items-center justify-center px-4">
+    <h1 class="text-base font-semibold tracking-[0.3em] text-white">测 评</h1>
   </header>
-  <!-- 底部 TabBar：3 个一级页（首页为既有页面，本原型仅测评可点） -->
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest border-t border-outline-variant/20
+  <!-- 底部 TabBar（深色态）：激活项纯白，未激活项 white/40 -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-black border-t border-white/10
               flex justify-around items-center h-14 pb-[env(safe-area-inset-bottom)]">
-    <a href="#" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
-                       hover:text-on-surface transition-colors">
+    <a href="#" id="nav-home" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-white/40
+                       hover:text-white transition-colors">
       <i data-lucide="home" class="w-5 h-5"></i>
       <span class="text-[10px] font-bold tracking-wide">首页</span>
     </a>
-    <a href="fashion-rating.html" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-primary"
+    <a href="fashion-rating.html" id="nav-rating" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-white"
        aria-current="page">
-      <i data-lucide="sparkles" class="w-5 h-5"></i>
+      <i data-lucide="shirt" class="w-5 h-5"></i>
       <span class="text-[10px] font-bold tracking-wide">测评</span>
     </a>
-    <a href="#" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
-                       hover:text-on-surface transition-colors">
+    <a href="#" id="nav-profile" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-white/40
+                       hover:text-white transition-colors">
       <i data-lucide="user" class="w-5 h-5"></i>
       <span class="text-[10px] font-bold tracking-wide">我的</span>
     </a>
@@ -109,72 +109,60 @@
   <main class="flex-1 overflow-y-auto pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
     <!-- @main-content:start -->
 
-    <!-- 杂志风结果海报：大量留白 + 居中大图 + 超大分数 + 等级人格 + 毒舌点评 -->
-    <section class="px-4 pt-10 pb-12 flex flex-col items-center">
+    <!-- 高级感黑色海报：大图底部渐隐 + 极细超大分数 + 等级人格 + 毒舌点评 -->
+    <section class="px-5 pt-4 pb-12 flex flex-col items-center">
 
-      <!-- 海报照片区：竖版 3:4 大图（宽约 62%），右下角覆盖超大分数圆衬 -->
-      <div id="poster-photo-wrap" class="relative w-[62%]">
+      <!-- 海报照片：通宽大圆角竖图，底部黑色渐变遮罩渐隐融入背景 -->
+      <div id="poster-photo-wrap" class="relative w-full rounded-3xl overflow-hidden border border-white/10">
         <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f"
              alt="年轻女性时尚街拍穿搭照" data-category="服饰时尚"
-             class="w-full aspect-[3/4] object-cover rounded-xl shadow-float"/>
-        <!-- 超大分数：象牙色圆形底衬，半边压图半边在图外 -->
-        <div id="poster-score"
-             class="absolute -bottom-7 -right-7 w-24 h-24 rounded-full bg-surface shadow-float
-                    flex flex-col items-center justify-center">
-          <span class="font-display text-5xl leading-none text-on-surface">82</span>
-          <span class="text-[10px] tracking-[0.2em] text-on-surface-variant mt-1">分</span>
-        </div>
+             class="w-full aspect-[3/4] object-cover"/>
+        <div class="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black/55 to-transparent"></div>
       </div>
 
-      <!-- 等级 · 副标题 -->
-      <p id="poster-level" class="mt-14 text-base font-semibold text-on-surface text-center">
-        时尚达人 · 街拍潜力股
+      <!-- 超大分数：极细无衬线白字，海报视觉中心 -->
+      <p id="poster-score" class="mt-7 text-8xl font-thin leading-none tracking-tight text-white">82</p>
+
+      <!-- 等级 -->
+      <p id="poster-level" class="mt-5 text-lg text-white text-center">
+        时尚达人
       </p>
 
-      <!-- 风格人格：衬线大标题 + 两侧金色短线装饰 -->
-      <div id="poster-personality" class="mt-3 flex items-center justify-center gap-3">
-        <span class="w-6 h-px bg-primary-container"></span>
-        <span class="font-display text-2xl text-on-surface">撞色冒险家</span>
-        <span class="w-6 h-px bg-primary-container"></span>
-      </div>
+      <!-- 风格人格：emoji 前缀 + 中等字重 -->
+      <p id="poster-personality" class="mt-2.5 text-xl font-medium text-white text-center">
+        🎨 撞色冒险家
+      </p>
 
-      <!-- 毒舌点评：斜体居中，限两行宽度 -->
+      <!-- 毒舌点评：灰色斜体引用，限宽居中 -->
       <p id="poster-comment"
-         class="mt-4 text-sm italic text-on-surface-variant text-center leading-relaxed max-w-[16rem]">
-        “鞋子出卖了你——换个乐福鞋，你就是这条街最靓的仔。”
+         class="mt-5 text-sm italic text-white/50 text-center leading-relaxed max-w-[18rem]">
+        💬 “换个乐福鞋，你就是这条街最靓的仔！”
       </p>
-
-      <!-- 极简分隔线：暖灰细线 + 中间金色小菱形 -->
-      <div id="poster-divider" class="mt-8 flex items-center justify-center gap-2">
-        <span class="w-16 h-px bg-outline-variant/40"></span>
-        <span class="w-1.5 h-1.5 rotate-45 bg-primary-container"></span>
-        <span class="w-16 h-px bg-outline-variant/40"></span>
-      </div>
 
       <!-- 操作区：两个纯文字链接，字间距拉开 -->
-      <div id="poster-actions" class="mt-8 flex items-center justify-center gap-12">
+      <div id="poster-actions" class="mt-10 flex items-center justify-center gap-12">
         <button id="btn-save-card" type="button"
-                class="min-w-12 min-h-12 flex items-center justify-center text-sm tracking-[0.2em] text-on-surface
-                       hover:text-primary-container transition-colors">保存卡片</button>
+                class="min-w-12 min-h-12 flex items-center justify-center text-sm tracking-[0.2em] text-white/80
+                       hover:text-white transition-colors">保存卡片</button>
         <button id="btn-retry" type="button"
-                class="min-w-12 min-h-12 flex items-center justify-center text-sm tracking-[0.2em] text-on-surface
-                       hover:text-primary-container transition-colors">再测一次</button>
+                class="min-w-12 min-h-12 flex items-center justify-center text-sm tracking-[0.2em] text-white/80
+                       hover:text-white transition-colors">再测一次</button>
       </div>
 
-      <!-- 主 CTA：细线边框胶囊按钮（轻奢感，宽度约 60%） -->
+      <!-- 主 CTA：白色细线边框胶囊按钮（宽约 64%） -->
       <button id="btn-share" type="button"
-              class="mt-8 w-[60%] rounded-full border border-on-surface/30 bg-transparent
-                     py-3 text-sm tracking-[0.2em] text-on-surface
-                     hover:border-on-surface/60 active:scale-[0.98] transition-all">
+              class="mt-6 w-[64%] rounded-full border border-white/25 bg-transparent
+                     py-3 text-sm tracking-[0.2em] text-white
+                     hover:border-white/60 active:scale-[0.98] transition-all">
         分享好友，挑战 TA
       </button>
 
     </section>
 
-    <!-- Toast 提示（保存卡片反馈） -->
-    <div id="toast-save"
+    <!-- Toast 提示（深色页反转为白底黑字） -->
+    <div id="toast"
          class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 hidden
-                bg-on-surface/90 text-on-primary text-sm px-5 py-2.5 rounded-full shadow-dialog">
+                bg-white/90 text-black text-sm px-5 py-2.5 rounded-full">
       已保存到相册
     </div>
 
@@ -202,31 +190,48 @@
       if (window.history.length > 1) window.history.back();
     }
 
+    // 通用 Toast：设置文案后短暂展示
+    function showToast(text) {
+      const $toast = $('#toast');
+      $toast.text(text).stop(true, true).removeClass('hidden').hide()
+            .fadeIn(200).delay(1500).fadeOut(300);
+    }
+
     $(function () {
       // 再测一次：回到测评页上传态（Tab 内流程切换，用 RESET 归位）
       $('#btn-retry').on('click', function () {
         navReset('fashion-rating.html');
       });
 
-      // 保存卡片：显示短暂 Toast「已保存到相册」
+      // 保存卡片：Toast 反馈
       // 完整实现说明（后续开发）：
-      // 1. 小程序端：canvas 2d 绘制结果海报（照片 + 分数 + 等级 + 风格人格 + 毒舌点评），
+      // 1. 小程序端：canvas 2d 绘制黑色结果海报（照片 + 底部渐隐 + 分数 + 等级 + 风格人格 + 毒舌点评），
       //    canvasToTempFilePath（2x）后 saveImageToPhotosAlbum 存入相册；
       // 2. 失败降级 toast「请长按截图保存」；H5 端直接提示长按截图。
       $('#btn-save-card').on('click', function () {
-        const $toast = $('#toast-save');
-        $toast.stop(true, true).removeClass('hidden').hide().fadeIn(200)
-              .delay(1500).fadeOut(300);
+        showToast('已保存到相册');
       });
 
-      // 分享好友：原型无跳转；完整实现为唤起微信转发
-      // 1. 小程序端：Taro.useShareAppMessage，title 拼「82 分 · 撞色冒险家」，path 带 referrer 参数；
-      // 2. H5 端隐藏该按钮。
+      // 分享好友：小程序内通过右上角胶囊/按钮触发 useShareAppMessage，原型以 Toast 提示
       $('#btn-share').on('click', function () {
-        console.log('需要调用微信转发能力：标题含分数+风格人格，path 带 referrer');
+        showToast('小程序内点击右上角分享给好友');
+      });
+
+      // TabBar：测评已激活；首页/我的为既有小程序页面，原型中不可点
+      $('#nav-rating').on('click', function (e) {
+        e.preventDefault();
+      });
+      $('#nav-home').on('click', function (e) {
+        e.preventDefault();
+        console.log('[原型演示] 首页为既有页面，本原型不提供跳转');
+      });
+      $('#nav-profile').on('click', function (e) {
+        e.preventDefault();
+        console.log('[原型演示] 我的为既有页面，本原型不提供跳转');
       });
     });
   </script>
+
 </body>
 
 </html>
