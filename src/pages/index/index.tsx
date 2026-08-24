@@ -322,10 +322,11 @@ export default function Index() {
 
   const { luckyScore, llmPlan, baziResult } = dailyResult
   const themeColor = llmPlan.luckyColors?.primaryHex || '#1E3A5F'
-  // 幸运星图：示例档案固定展示图，其他档案从幸运星库按档案 ID 稳定选取（同一档案始终同一张）
+  // 幸运星图：示例档案固定展示图；其他档案按「档案 ID + 当天日期」选取，
+  // 同一档案每天轮换一张、同一天内展示稳定（不会因重渲染跳图）
   const luckyStarKey: keyof RemoteAssets = currentArchive?.isDefault
     ? 'exampleLuckyStar'
-    : pickLuckyStarIconName(currentArchive?.id ?? 'default')
+    : pickLuckyStarIconName(`${currentArchive?.id ?? 'default'}:${todayStr}`)
   const luckyStarUrl = assets?.[luckyStarKey] || assets?.exampleLuckyStar || ''
 
   return (
