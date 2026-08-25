@@ -238,13 +238,19 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
             <RotateCcw size={22} color="rgba(255,255,255,0.8)" />
           </Button>
         )}
-        <Button
-          variant="ghost"
-          openType="share"
-          className="h-auto w-auto p-2 bg-transparent border-none shadow-none after:hidden"
-        >
+        {/* 分享按钮：微信原生 button 编译为 taro-button-core 自定义组件，其内部 ::after 边框
+            受样式隔离影响外部 CSS 无法选中。用透明 button 覆盖 icon 的方案：视觉是 icon，
+            点击由全透明（边框也随之不可见）的分享 button 接收 */}
+        <View className="relative p-2">
           <Share2 size={22} color="rgba(255,255,255,0.8)" />
-        </Button>
+          <Button
+            variant="ghost"
+            openType="share"
+            className="absolute inset-0 w-full h-full opacity-0 bg-transparent border-none shadow-none"
+          >
+            <Text>分享</Text>
+          </Button>
+        </View>
       </View>
 
       {/* 底部品牌落款（与保存图片一致） */}
