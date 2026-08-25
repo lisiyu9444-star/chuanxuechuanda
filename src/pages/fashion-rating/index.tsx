@@ -110,14 +110,11 @@ export default function FashionRatingPage() {
   }, [view])
 
   useDidShow(() => {
-    // 从 loading 页/分享中间页带回的最新测评结果：消费一次并切换到结果态
+    // 从 loading 页带回的最新测评结果：消费一次并切换到结果态
     const latest = Taro.getStorageSync('fashion_latest_result') as FashionRatingRecord | ''
     if (latest && typeof latest === 'object' && latest.result) {
       Taro.removeStorageSync('fashion_latest_result')
-      // 分享落地标记：来自分享卡片时重测按钮文案为「我也要测」
-      const fromShareFlag = Taro.getStorageSync('fashion_latest_from_share')
-      if (fromShareFlag) Taro.removeStorageSync('fashion_latest_from_share')
-      setFromShare(fromShareFlag === '1')
+      setFromShare(false)
       setRecord(latest)
       setView('result')
     }
