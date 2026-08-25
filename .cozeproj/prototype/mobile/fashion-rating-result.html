@@ -57,14 +57,6 @@
       min-height: max(812px, 100dvh);
       font-family: system-ui, sans-serif;
     }
-    /* 印章做旧：feTurbulence 噪声 mask 模拟印泥斑驳缺角（真实盖章质感）。
-       开发落地时小程序端用 canvas 噪点擦除等效实现，页面展示与海报保存共用同一张生成图 */
-    .stamp-grunge {
-      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.12' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 2.2 -0.55'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23g)'/%3E%3C/svg%3E");
-      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.12' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 2.2 -0.55'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23g)'/%3E%3C/svg%3E");
-      -webkit-mask-size: 100% 100%;
-      mask-size: 100% 100%;
-    }
   </style>
 
   <!-- 图片兜底 -->
@@ -126,27 +118,31 @@
              alt="年轻女性时尚街拍穿搭照" data-category="服饰时尚"
              class="w-full aspect-[3/4] object-cover"/>
         <div class="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black/55 to-transparent"></div>
+
+        <!-- 等级印章：圆形朱文印（回纹环 + 内圈 + 2×2 四字），除印章线条外全透明，
+             盖在照片右上角，-12° 模拟盖章角度。回纹环由 JS 程序生成（见页面底部脚本），
+             开发落地时同一算法可在小程序 canvas 复用绘制。
+             印色按分数段分级：≥90 鎏金 / 70-89 朱砂红 / 50-69 橙红 / <50 瓦灰。
+             本例 82 分 → 朱砂红「衣品能打」 -->
+        <svg id="poster-level-stamp" viewBox="0 0 120 120"
+             class="absolute top-3 right-3 w-24 h-24 -rotate-12">
+          <circle cx="60" cy="60" r="58" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+          <path class="greek-ring" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="60" cy="60" r="42" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                fill="#dc2626" font-family="'Noto Serif SC', serif">衣品</text>
+          <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                fill="#dc2626" font-family="'Noto Serif SC', serif">能打</text>
+        </svg>
       </div>
 
       <!-- 超大分数：极细无衬线白字，海报视觉中心 -->
       <p id="poster-score" class="mt-7 text-8xl font-thin leading-none tracking-tight text-white">82</p>
 
-      <!-- 等级印章：真实白文（阴文）印 —— 正方形印面 + 红底白字 2×2 四字 + 白色内边框，
-           stamp-grunge 噪声 mask 模拟印泥斑驳，整体 -3° 旋转模拟盖章角度。
-           印面内容固定 4 字；印色按分数段分级：≥90 鎏金 / 70-89 朱砂红 / 50-69 橙红 / <50 灰。
-           本例 82 分 → 朱砂红「衣品能打」 -->
-      <div id="poster-level-stamp"
-           class="stamp-grunge relative mt-6 w-24 h-24 bg-[#dc2626] rounded -rotate-3 shadow-[0_2px_14px_rgba(220,38,38,0.4)]">
-        <div class="absolute inset-1.5 border border-white/80 rounded-[2px]"></div>
-        <div class="absolute inset-1.5 grid grid-cols-2 grid-rows-2 place-items-center
-                    font-display font-black text-white text-2xl leading-none">
-          <span>衣</span><span>品</span>
-          <span>能</span><span>打</span>
-        </div>
-      </div>
+      <!-- 等级印章已移至照片右上角（见照片卡内 svg#poster-level-stamp） -->
 
       <!-- 风格人格：emoji 前缀 + 中等字重 -->
-      <p id="poster-personality" class="mt-2.5 text-xl font-medium text-white text-center">
+      <p id="poster-personality" class="mt-4 text-xl font-medium text-white text-center">
         🎨 撞色冒险家
       </p>
 
@@ -178,15 +174,17 @@
       <div id="stamp-variant-preview" class="mt-14 w-full border-t border-white/10 pt-8">
         <p class="text-xs tracking-[0.3em] text-white/40 text-center">印章色阶 · 设计预览</p>
         <div class="mt-6 flex flex-col items-center gap-6">
-          <!-- 鎏金印：≥90 顶级（金底深棕字，区别于朱砂） -->
+          <!-- 鎏金印：≥90 顶级 -->
           <div class="flex items-center gap-4">
-            <div class="stamp-grunge relative w-20 h-20 bg-[#fbbf24] rounded -rotate-3 shadow-[0_2px_12px_rgba(251,191,36,0.35)]">
-              <div class="absolute inset-1 border border-[#92400e]/80 rounded-[2px]"></div>
-              <div class="absolute inset-1 grid grid-cols-2 grid-rows-2 place-items-center
-                          font-display font-black text-[#92400e] text-xl leading-none">
-                <span>行</span><span>走</span><span>秀</span><span>场</span>
-              </div>
-            </div>
+            <svg viewBox="0 0 120 120" class="w-20 h-20 -rotate-12">
+              <circle cx="60" cy="60" r="58" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+              <path class="greek-ring" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="60" cy="60" r="42" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+              <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                    fill="#fbbf24" font-family="'Noto Serif SC', serif">行走</text>
+              <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                    fill="#fbbf24" font-family="'Noto Serif SC', serif">秀场</text>
+            </svg>
             <div class="w-24">
               <p class="text-xs text-white/60">行走秀场</p>
               <p class="text-xs text-white/40 mt-0.5">95+ · 鎏金</p>
@@ -194,13 +192,15 @@
           </div>
           <!-- 朱砂红印：70-89 中坚 -->
           <div class="flex items-center gap-4">
-            <div class="stamp-grunge relative w-20 h-20 bg-[#dc2626] rounded -rotate-3 shadow-[0_2px_12px_rgba(220,38,38,0.35)]">
-              <div class="absolute inset-1 border border-white/80 rounded-[2px]"></div>
-              <div class="absolute inset-1 grid grid-cols-2 grid-rows-2 place-items-center
-                          font-display font-black text-white text-xl leading-none">
-                <span>追</span><span>拍</span><span>焦</span><span>点</span>
-              </div>
-            </div>
+            <svg viewBox="0 0 120 120" class="w-20 h-20 -rotate-12">
+              <circle cx="60" cy="60" r="58" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+              <path class="greek-ring" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="60" cy="60" r="42" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+              <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                    fill="#dc2626" font-family="'Noto Serif SC', serif">追拍</text>
+              <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                    fill="#dc2626" font-family="'Noto Serif SC', serif">焦点</text>
+            </svg>
             <div class="w-24">
               <p class="text-xs text-white/60">追拍焦点</p>
               <p class="text-xs text-white/40 mt-0.5">85-89 · 朱砂红</p>
@@ -208,27 +208,31 @@
           </div>
           <!-- 橙红印：50-69 实验 -->
           <div class="flex items-center gap-4">
-            <div class="stamp-grunge relative w-20 h-20 bg-[#ea580c] rounded -rotate-3 shadow-[0_2px_12px_rgba(234,88,12,0.35)]">
-              <div class="absolute inset-1 border border-white/80 rounded-[2px]"></div>
-              <div class="absolute inset-1 grid grid-cols-2 grid-rows-2 place-items-center
-                          font-display font-black text-white text-xl leading-none">
-                <span>勇</span><span>气</span><span>可</span><span>嘉</span>
-              </div>
-            </div>
+            <svg viewBox="0 0 120 120" class="w-20 h-20 -rotate-12">
+              <circle cx="60" cy="60" r="58" fill="none" stroke="#ea580c" stroke-width="1.5"/>
+              <path class="greek-ring" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="60" cy="60" r="42" fill="none" stroke="#ea580c" stroke-width="1.5"/>
+              <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                    fill="#ea580c" font-family="'Noto Serif SC', serif">勇气</text>
+              <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                    fill="#ea580c" font-family="'Noto Serif SC', serif">可嘉</text>
+            </svg>
             <div class="w-24">
               <p class="text-xs text-white/60">勇气可嘉</p>
               <p class="text-xs text-white/40 mt-0.5">50-59 · 橙红</p>
             </div>
           </div>
-          <!-- 灰印：<50 翻车 -->
+          <!-- 瓦灰印：<50 翻车 -->
           <div class="flex items-center gap-4">
-            <div class="stamp-grunge relative w-20 h-20 bg-[#6b7280] rounded -rotate-3 shadow-[0_2px_12px_rgba(107,114,128,0.35)]">
-              <div class="absolute inset-1 border border-white/70 rounded-[2px]"></div>
-              <div class="absolute inset-1 grid grid-cols-2 grid-rows-2 place-items-center
-                          font-display font-black text-white text-xl leading-none">
-                <span>回</span><span>炉</span><span>重</span><span>造</span>
-              </div>
-            </div>
+            <svg viewBox="0 0 120 120" class="w-20 h-20 -rotate-12">
+              <circle cx="60" cy="60" r="58" fill="none" stroke="#6b7280" stroke-width="1.5"/>
+              <path class="greek-ring" fill="none" stroke="#6b7280" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="60" cy="60" r="42" fill="none" stroke="#6b7280" stroke-width="1.5"/>
+              <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                    fill="#6b7280" font-family="'Noto Serif SC', serif">回炉</text>
+              <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
+                    fill="#6b7280" font-family="'Noto Serif SC', serif">重造</text>
+            </svg>
             <div class="w-24">
               <p class="text-xs text-white/60">回炉重造</p>
               <p class="text-xs text-white/40 mt-0.5">&lt;50 · 瓦灰</p>
@@ -277,7 +281,34 @@
             .fadeIn(200).delay(1500).fadeOut(300);
     }
 
+    // ===== 回纹（雷纹）圆环生成 =====
+    // 连续 Greek key 单元沿圆周等角排列，映射到极坐标生成 path；
+    // 所有 .greek-ring 共用同一几何（120 viewBox / R50 / 带宽 14 / 20 单元）。
+    // 开发落地：同一算法可在小程序 canvas 上以折线段复用绘制。
+    function buildGreekRing(cx, cy, R, band, units) {
+      const motif = [
+        [0, 0.5], [0.8, 0.5], [0.8, 0.15], [0.25, 0.15], [0.25, 0.65],
+        [0.55, 0.65], [0.55, 0.35], [0.4, 0.35], [0.4, 0.5], [1, 0.5]
+      ];
+      const step = (Math.PI * 2) / units;
+      let d = '';
+      for (let u = 0; u < units; u++) {
+        motif.forEach(function (pt, i) {
+          const ang = (u + pt[0]) * step - Math.PI / 2;
+          const r = R + (pt[1] - 0.5) * band;
+          const x = (cx + r * Math.cos(ang)).toFixed(2);
+          const y = (cy + r * Math.sin(ang)).toFixed(2);
+          d += (u === 0 && i === 0 ? 'M' : 'L') + x + ' ' + y;
+        });
+      }
+      return d + 'Z';
+    }
+    const greekRingD = buildGreekRing(60, 60, 50, 14, 20);
+
     $(function () {
+      // 填充全部印章的回纹环（主海报 1 枚 + 色阶预览 4 枚）
+      $('.greek-ring').attr('d', greekRingD);
+
       // 再测一次：回到测评页上传态（Tab 内流程切换，用 RESET 归位）
       $('#btn-retry').on('click', function () {
         navReset('fashion-rating.html');
