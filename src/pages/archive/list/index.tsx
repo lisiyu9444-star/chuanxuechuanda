@@ -7,11 +7,11 @@ import { Venus, Mars, Pencil, Trash2, Plus, LogIn } from 'lucide-react-taro'
 import {
   getArchives,
   deleteArchive,
-  saveArchive,
   setCurrentArchiveId,
   getCurrentArchiveId,
 } from '@/utils/archiveStorage'
-import { deleteArchiveOnServer, fetchServerArchives, syncAllArchivesToServer } from '@/utils/serverSync'
+import { deleteArchiveOnServer } from '@/utils/serverSync'
+import { restoreFromCloud } from '@/utils/cloudRestore'
 import { AUTH_EVENTS, isLoggedIn, isWeappEnv, requireLogin } from '@/utils/auth'
 import { LoginSheet } from '@/components/login-sheet'
 import type { Archive } from '@/types/archive'
@@ -24,36 +24,12 @@ const ArchiveListPage = () => {
   // 是否可查看用户档案：非微信端（dev bypass）或已登录；未登录时用户档案隐藏（数据与登录状态绑定）
   const [canViewArchives, setCanViewArchives] = useState(true)
 
-  // 登录后：先把本地档案全量同步到服务端（老用户补传），再把服务端有而本地缺失的档案合并回来（云端恢复）
+  // 登录后：本地档案全量补传服务端 + 云端数据合并回本地（档案/选中态/每日运势缓存，详见 cloudRestore）
   const syncAndRestore = async () => {
-    const local = getArchives()
-    syncAllArchivesToServer(local)
-    const serverProfiles = await fetchServerArchives()
-    if (!serverProfiles) return
-    const localIds = new Set(local.map(a => a.id))
-    let restored = 0
-    const now = Date.now()
-    for (const p of serverProfiles) {
-      if (localIds.has(p.id)) continue
-      saveArchive({
-        id: p.id,
-        nickname: p.nickname || '未命名',
-        gender: (p.gender === 'female' ? 'female' : 'male') as Archive['gender'],
-        birthDate: p.birthDate || '',
-        birthTime: p.birthTime || '',
-        location: p.location || '',
-        calendarType: (p.calendarType === 'lunar' ? 'lunar' : 'solar') as Archive['calendarType'],
-        age: p.age ? parseInt(p.age, 10) || 0 : 0,
-        stylePreference: p.stylePreference || '',
-        isDefault: false,
-        createdAt: now,
-        updatedAt: now,
-      })
-      restored++
-    }
-    if (restored > 0) {
-      console.log('[Archive] 从服务端恢复档案:', restored)
+    const stats = await restoreFromCloud()
+    if (stats && (stats.restoredArchives > 0 || stats.currentArchiveFixed)) {
       setArchives(getArchives())
+      setCurrentId(getCurrentArchiveId())
     }
   }
 

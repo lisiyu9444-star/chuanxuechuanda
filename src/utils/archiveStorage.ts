@@ -1,6 +1,12 @@
 import Taro from '@tarojs/taro'
 import type { Archive, DailyResult, NativeResult, ImageUnlockState } from '@/types/archive'
 import { normalizeLuckyScore } from '@/types/archive'
+import {
+  syncCurrentArchiveIdToServer,
+  syncDailyResultToServer,
+  deleteDailyResultOnServer,
+  deleteDailyResultsByArchiveOnServer,
+} from '@/utils/serverSync'
 
 const ARCHIVES_KEY = 'outfit_archives'
 const CURRENT_ARCHIVE_ID_KEY = 'current_archive_id'
@@ -90,13 +96,23 @@ export function getCurrentArchiveId(): string {
   return safeGet<string>(CURRENT_ARCHIVE_ID_KEY, DEFAULT_ARCHIVE.id)
 }
 
-export function setCurrentArchiveId(id: string): void {
+/**
+ * 读取原始当前档案 id（无 fallback）：空串表示本地从未设置过。
+ * 云端恢复据此区分「全新设备（采用云端值）」与「用户主动切到示例档案（尊重本地选择）」。
+ */
+export function getRawCurrentArchiveId(): string {
+  return safeGet<string>(CURRENT_ARCHIVE_ID_KEY, '')
+}
+
+export function setCurrentArchiveId(id: string, opts?: { skipCloudSync?: boolean }): void {
   const current = getCurrentArchiveId()
   // 真实切换时记录旧档案，供「取消生成」场景回退（一次性消费，见 loading 页 useDidShow）
   if (current && current !== id) {
     safeSet(PREVIOUS_ARCHIVE_ID_KEY, current)
   }
   safeSet(CURRENT_ARCHIVE_ID_KEY, id)
+  // 云端同步（重装/换机后可恢复选中态）；云端恢复回写时跳过，避免无谓回推
+  if (!opts?.skipCloudSync) syncCurrentArchiveIdToServer(id)
 }
 
 // 读取并清除切换前的档案 id（一次性消费）。loading 页进入时快照，用户取消生成时据此回退；
@@ -118,6 +134,8 @@ export function revertToArchiveId(id: string): boolean {
   if (!id || id === getCurrentArchiveId()) return false
   if (!getArchiveById(id)) return false
   safeSet(CURRENT_ARCHIVE_ID_KEY, id)
+  // 回退同样是用户的选中态变更，同步云端保持一致
+  syncCurrentArchiveIdToServer(id)
   return true
 }
 
@@ -149,16 +167,19 @@ export function getDailyResult(archiveId: string, date: string = getToday()): Da
   return { ...result, luckyScore: normalizeLuckyScore(result.luckyScore) }
 }
 
-export function saveDailyResult(result: DailyResult): void {
+export function saveDailyResult(result: DailyResult, opts?: { skipCloudSync?: boolean }): void {
   const map = getDailyResults()
   map[getDailyResultKey(result.archiveId, result.date)] = result
   safeSet(DAILY_RESULTS_KEY, map)
+  // 云端同步（DAILY_RESULTS_KEY 上云）；云端恢复回写时跳过，避免无谓回推
+  if (!opts?.skipCloudSync) syncDailyResultToServer(result)
 }
 
 export function clearDailyResult(archiveId: string, date: string = getToday()): void {
   const map = getDailyResults()
   delete map[getDailyResultKey(archiveId, date)]
   safeSet(DAILY_RESULTS_KEY, map)
+  deleteDailyResultOnServer(archiveId, date)
 }
 
 export function clearDailyResultsByArchive(archiveId: string): void {
@@ -169,6 +190,7 @@ export function clearDailyResultsByArchive(archiveId: string): void {
     }
   })
   safeSet(DAILY_RESULTS_KEY, map)
+  deleteDailyResultsByArchiveOnServer(archiveId)
 }
 
 // Native results

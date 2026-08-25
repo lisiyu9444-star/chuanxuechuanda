@@ -1,6 +1,6 @@
 import { Network } from '@/network'
 import { getToken, isWeappEnv } from '@/utils/auth'
-import type { Archive } from '@/types/archive'
+import type { Archive, DailyResult } from '@/types/archive'
 import type { HistoryRecord } from '@/types/bazi'
 
 /**
@@ -229,6 +229,106 @@ export function parseServerHistoryRecord(row: ServerHistoryRecord): HistoryRecor
     if (row.tryOnUrl) record.tryOnUrl = row.tryOnUrl
     return record
   } catch {
+    return null
+  }
+}
+
+// ==================== 当前选中档案 id 同步 ====================
+
+/** 同步当前选中档案 id 到服务端（fire-and-forget，对应 setCurrentArchiveId/revertToArchiveId） */
+export function syncCurrentArchiveIdToServer(archiveId: string): void {
+  if (!canSync()) return
+  Network.request({
+    url: '/api/profile/current-archive',
+    method: 'PUT',
+    data: { archiveId },
+    timeout: 10000,
+  }).catch(e => {
+    console.warn('[Sync] current archive id sync failed:', e)
+    reportSyncFailure('current archive id sync', e)
+  })
+}
+
+/** 拉取服务端当前选中档案 id（未设置/失败均返回 null，调用方自行区分） */
+export async function fetchServerCurrentArchiveId(): Promise<string | null> {
+  if (!canSync()) return null
+  try {
+    const res = await Network.request({ url: '/api/profile/current-archive', method: 'GET', timeout: 10000 })
+    if (res.statusCode === 200) {
+      const id = res.data?.data?.archiveId
+      return typeof id === 'string' && id ? id : null
+    }
+    return null
+  } catch (e) {
+    console.warn('[Sync] fetch current archive id failed:', e)
+    reportSyncFailure('fetch current archive id', e)
+    return null
+  }
+}
+
+// ==================== 每日运势缓存同步（DAILY_RESULTS_KEY） ====================
+
+/** 同步一条每日运势缓存到服务端（fire-and-forget，幂等 upsert） */
+export function syncDailyResultToServer(result: DailyResult): void {
+  if (!canSync() || !result?.archiveId || !result?.date) return
+  Network.request({
+    url: '/api/daily-results/save',
+    method: 'POST',
+    data: { archiveId: result.archiveId, date: result.date, result },
+    timeout: 10000,
+  }).catch(e => {
+    console.warn('[Sync] daily result sync failed:', e)
+    reportSyncFailure('daily result sync', e)
+  })
+}
+
+/** 删除服务端某档案下全部每日缓存（对应 clearDailyResultsByArchive） */
+export function deleteDailyResultsByArchiveOnServer(archiveId: string): void {
+  if (!canSync()) return
+  Network.request({
+    url: `/api/daily-results/archive/${encodeURIComponent(archiveId)}`,
+    method: 'DELETE',
+    timeout: 10000,
+  }).catch(e => {
+    console.warn('[Sync] daily results delete by archive failed:', e)
+    reportSyncFailure('daily results delete by archive', e)
+  })
+}
+
+/** 删除服务端单条每日缓存（对应 clearDailyResult） */
+export function deleteDailyResultOnServer(archiveId: string, date: string): void {
+  if (!canSync()) return
+  Network.request({
+    url: `/api/daily-results/${encodeURIComponent(archiveId)}/${encodeURIComponent(date)}`,
+    method: 'DELETE',
+    timeout: 10000,
+  }).catch(e => {
+    console.warn('[Sync] daily result delete failed:', e)
+    reportSyncFailure('daily result delete', e)
+  })
+}
+
+export interface ServerDailyResult {
+  id: string
+  archiveId: string
+  date: string
+  /** 完整 DailyResult 对象 */
+  result: DailyResult
+  updatedAt: number
+}
+
+/** 拉取服务端每日运势缓存（云端恢复用），失败返回 null */
+export async function fetchServerDailyResults(): Promise<ServerDailyResult[] | null> {
+  if (!canSync()) return null
+  try {
+    const res = await Network.request({ url: '/api/daily-results/list', method: 'GET', timeout: 15000 })
+    if (res.statusCode === 200 && Array.isArray(res.data?.data)) {
+      return res.data.data as ServerDailyResult[]
+    }
+    return null
+  } catch (e) {
+    console.warn('[Sync] fetch daily results failed:', e)
+    reportSyncFailure('fetch daily results', e)
     return null
   }
 }

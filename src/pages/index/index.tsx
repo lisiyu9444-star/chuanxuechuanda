@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Image } from '@tarojs/components'
 import { ChevronRight, CloudOff, Plus, RefreshCw, Shirt, Sparkles, Users, WandSparkles } from 'lucide-react-taro'
@@ -27,7 +27,8 @@ import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets
 import { ELEMENT_COLORS } from '@/constants/element-colors'
 import { pickLuckyStarIconName } from '@/constants/lucky-icons'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
-import { ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isWeappEnv, requireLogin } from '@/utils/auth'
+import { AUTH_EVENTS, ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isLoggedIn, isWeappEnv, requireLogin } from '@/utils/auth'
+import { restoreFromCloud } from '@/utils/cloudRestore'
 import { LoginSheet } from '@/components/login-sheet'
 
 // 静态图（幸运星/示例图/兜底图）URL 由 remote-assets 动态签发，禁止硬编码签名 URL（会过期）
@@ -183,7 +184,27 @@ export default function Index() {
 
   useDidShow(() => {
     loadData()
+    // 登录状态下执行云端恢复（重装/换机后回补档案、选中态、每日运势缓存）；有实际恢复内容时刷新视图
+    if (isLoggedIn()) {
+      void restoreFromCloud().then((stats) => {
+        if (stats && (stats.restoredArchives > 0 || stats.restoredDailyResults > 0 || stats.currentArchiveFixed)) {
+          loadData()
+        }
+      })
+    }
   })
+
+  // 登录成功后立即云端恢复并刷新（登录弹层在页面内完成，不会触发 useDidShow）
+  useEffect(() => {
+    const onLoginSuccess = () => {
+      void restoreFromCloud().then(() => loadData())
+    }
+    Taro.eventCenter.on(AUTH_EVENTS.LOGIN_SUCCESS, onLoginSuccess)
+    return () => {
+      Taro.eventCenter.off(AUTH_EVENTS.LOGIN_SUCCESS, onLoginSuccess)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSwitchArchive = useCallback(() => {
     Taro.navigateTo({ url: '/pages/archive/list/index' })

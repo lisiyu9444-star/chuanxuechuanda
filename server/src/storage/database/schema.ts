@@ -35,6 +35,8 @@ export const users = pgTable(
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
     lastLoginAt: bigint("last_login_at", { mode: "number" }),
+    // 当前选中的穿搭档案 id（前端本地档案 id，含示例档案 'default'；跨设备同步用，不做外键约束）
+    currentArchiveId: varchar("current_archive_id", { length: 128 }),
   },
   (table) => [
     index("users_openid_idx").on(table.openid),
@@ -120,9 +122,32 @@ export const fashionRatings = pgTable(
   ]
 );
 
+// 每日运势结果缓存表（前端 DAILY_RESULTS_KEY 的云端副本）
+// 唯一键 (user_id, archive_id, date)：同一档案同一天只保留最新一条，upsert 幂等
+export const dailyResults = pgTable(
+  "daily_results",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    userId: varchar("user_id", { length: 64 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+    // 前端本地档案 id（与 profiles.id 同源，但允许示例档案等任意值，不做外键）
+    archiveId: varchar("archive_id", { length: 128 }).notNull(),
+    // 日期串 YYYY-MM-DD（前端 getToday() 生成，按用户本地时区）
+    date: varchar("date", { length: 10 }).notNull(),
+    // 完整 DailyResult 对象（luckyScore/baziResult/llmPlan/imageUrl 等），恢复时直接回写本地
+    result: jsonb("result").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    index("daily_results_user_id_idx").on(table.userId),
+    uniqueIndex("daily_results_user_archive_date_idx").on(table.userId, table.archiveId, table.date),
+  ]
+);
+
 export type Share = typeof shares.$inferSelect;
 export type InsertShare = typeof shares.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type BaziRecord = typeof baziRecords.$inferSelect;
 export type FashionRating = typeof fashionRatings.$inferSelect;
+export type DailyResultRow = typeof dailyResults.$inferSelect;

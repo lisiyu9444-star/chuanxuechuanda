@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post
 import { and, asc, eq } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/storage/database/db'
-import { profiles } from '@/storage/database/schema'
+import { profiles, users } from '@/storage/database/schema'
 import { ProfileDto, SyncProfilesDto } from './profile.dto'
 
 @Controller('profile')
@@ -40,6 +40,32 @@ export class ProfileController {
       updatedAt: now,
     })
     return { data: { id } }
+  }
+
+  /** 获取当前选中档案 id（云端偏好，跨设备/重装恢复用；未设置返回 null） */
+  @Get('current-archive')
+  async getCurrentArchive(@Req() req: any) {
+    const rows = await db
+      .select({ currentArchiveId: users.currentArchiveId })
+      .from(users)
+      .where(eq(users.id, req.user.userId))
+    return { data: { archiveId: rows[0]?.currentArchiveId ?? null } }
+  }
+
+  /**
+   * 设置当前选中档案 id（幂等；空串清除为 null）。
+   * 注意：必须声明在 @Put(':id') 之前，否则 'current-archive' 会被通配路由当作档案 id。
+   * 不做档案存在性校验：允许示例档案 'default' 等本地 id。
+   */
+  @Put('current-archive')
+  async setCurrentArchive(@Req() req: any, @Body() body: { archiveId?: string }) {
+    const raw = typeof body?.archiveId === 'string' ? body.archiveId.trim() : ''
+    const archiveId = raw || null
+    await db
+      .update(users)
+      .set({ currentArchiveId: archiveId, updatedAt: Date.now() })
+      .where(eq(users.id, req.user.userId))
+    return { data: { success: true, archiveId } }
   }
 
   /** 更新档案（仅允许更新本人档案，不存在或非本人返回 404） */
