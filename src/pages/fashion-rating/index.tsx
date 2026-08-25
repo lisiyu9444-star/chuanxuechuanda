@@ -162,13 +162,17 @@ export default function FashionRatingPage() {
     if (view === 'result' && record) {
       const { totalScore, stylePersonality, shareTexts } = record.result
       const text = totalScore >= 80 ? shareTexts?.confident : shareTexts?.selfDeprecating
+      // 指向分享落地页（非 tabBar 页面）：tabBar 页面分享打开时 query 参数可能丢失
+      const sharePath = `/pages/fashion-share/index?shareId=${record.id}`
+      // 诊断日志：分享时打印实际生成的 path，用于确认客户端版本与分享链路
+      console.log('[FashionRating] share app message:', { view, recordId: record.id, sharePath })
       return {
         title: text || `我的穿搭得了 ${totalScore} 分，被评为"${stylePersonality}"，你敢来挑战吗？`,
-        // 指向分享中间页（非 tabBar 页面）：tabBar 页面分享打开时 query 参数可能丢失
-        path: `/pages/fashion-share/index?shareId=${record.id}`,
+        path: sharePath,
         imageUrl: record.imageUrl,
       }
     }
+    console.log('[FashionRating] share app message: upload view, default path', { view, recordId: record?.id })
     return {
       title: 'AI 毒舌时尚官，敢不敢晒出你的穿搭？',
       path: '/pages/fashion-rating/index',
