@@ -123,10 +123,14 @@
       <!-- 超大分数：极细无衬线白字，海报视觉中心 -->
       <p id="poster-score" class="mt-7 text-8xl font-thin leading-none tracking-tight text-white">82</p>
 
-      <!-- 等级 -->
-      <p id="poster-level" class="mt-5 text-lg text-white text-center">
-        时尚达人
-      </p>
+      <!-- 等级印章：杂志"认证盖章"效果。边框与文字同印章色、底色为印章色 10% 透明、
+           整体 -2° 轻微旋转模拟盖章角度（做旧感）。字间距拉开 + text-indent 补偿保持视觉居中。
+           印章色按分数段分级（与等级文案解耦）：≥90 金色 / 70-89 红色 / 50-69 橙色 / <50 灰色。
+           本例 82 分 → 红色「衣品很能打的」 -->
+      <div id="poster-level-stamp"
+           class="mt-5 px-5 py-2 rounded-md border-2 border-[#dc2626] bg-[#dc2626]/10 -rotate-2">
+        <p class="text-base font-bold text-[#dc2626] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">衣品很能打的</p>
+      </div>
 
       <!-- 风格人格：emoji 前缀 + 中等字重 -->
       <p id="poster-personality" class="mt-2.5 text-xl font-medium text-white text-center">
@@ -156,6 +160,41 @@
                      hover:border-white/60 active:scale-[0.98] transition-all">
         分享好友，挑战 TA
       </button>
+
+      <!-- ── 印章色阶预览（原型演示专用分区，便于一次确认全部分级配色，非页面实际内容） ── -->
+      <div id="stamp-variant-preview" class="mt-14 w-full border-t border-white/10 pt-8">
+        <p class="text-xs tracking-[0.3em] text-white/40 text-center">印章色阶 · 设计预览</p>
+        <div class="mt-6 flex flex-col items-center gap-5">
+          <!-- 金色：≥90 顶级 -->
+          <div class="flex items-center gap-4">
+            <div class="px-5 py-2 rounded-md border-2 border-[#fbbf24] bg-[#fbbf24]/10 -rotate-2">
+              <p class="text-base font-bold text-[#fbbf24] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">行走于秀场的</p>
+            </div>
+            <span class="text-xs text-white/40 w-16">95+</span>
+          </div>
+          <!-- 红色：70-89 中坚（8 字长文案自适应示例） -->
+          <div class="flex items-center gap-4">
+            <div class="px-5 py-2 rounded-md border-2 border-[#dc2626] bg-[#dc2626]/10 -rotate-2">
+              <p class="text-base font-bold text-[#dc2626] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">被摄影师追着拍的</p>
+            </div>
+            <span class="text-xs text-white/40 w-16">85-89</span>
+          </div>
+          <!-- 橙色：50-69 实验 -->
+          <div class="flex items-center gap-4">
+            <div class="px-5 py-2 rounded-md border-2 border-[#f97316] bg-[#f97316]/10 -rotate-2">
+              <p class="text-base font-bold text-[#f97316] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">勇气可嘉型的</p>
+            </div>
+            <span class="text-xs text-white/40 w-16">50-59</span>
+          </div>
+          <!-- 灰色：<50 翻车（中英混排最长文案示例） -->
+          <div class="flex items-center gap-4">
+            <div class="px-5 py-2 rounded-md border-2 border-[#6b7280] bg-[#6b7280]/10 -rotate-2">
+              <p class="text-base font-bold text-[#6b7280] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">Luo奔都比这强的</p>
+            </div>
+            <span class="text-xs text-white/40 w-16">&lt;50</span>
+          </div>
+        </div>
+      </div>
 
     </section>
 
