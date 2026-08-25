@@ -241,7 +241,8 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
         {/* 分享按钮：微信原生 button 编译为 taro-button-core 自定义组件，其内部 ::after 边框
             受样式隔离影响外部 CSS 无法选中。用透明 button 覆盖 icon 的方案：视觉是 icon，
             点击由全透明（边框也随之不可见）的分享 button 接收 */}
-        <View className="relative p-2">
+        {/* flex 居中容器：与另两个按钮（inline-flex）渲染一致，避免 inline icon 基线间隙导致视觉偏高 */}
+        <View className="relative p-2 flex items-center justify-center">
           <Share2 size={22} color="rgba(255,255,255,0.8)" />
           <Button
             variant="ghost"
