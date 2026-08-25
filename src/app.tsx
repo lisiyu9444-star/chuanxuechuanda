@@ -1,5 +1,5 @@
 import { PropsWithChildren } from 'react';
-import Taro, { useDidHide, useLaunch } from '@tarojs/taro';
+import Taro, { useDidHide, useDidShow, useLaunch } from '@tarojs/taro';
 import { LucideTaroProvider } from 'lucide-react-taro';
 import '@/app.css';
 import { Toaster } from '@/components/ui/toast';
@@ -25,6 +25,19 @@ const App = ({ children }: PropsWithChildren) => {
   // 监听应用级别的 onHide，并转发到 eventCenter
   useDidHide(() => {
     Taro.eventCenter.trigger('onHide')
+  })
+
+  // 分享参数兜底：微信通过分享卡片打开 tabBar 页面时，页面 onLoad 的 query 会被丢弃，
+  // 但 App 级 onShow 的 options.query 完整保留启动参数，这里捕获 shareId 存 storage，
+  // 由测评页 useDidShow 消费（同时兼容旧版本生成的指向 tabBar 页的分享卡片）。
+  useDidShow((options) => {
+    const query = (options?.query || {}) as { shareId?: string };
+    const path = options?.path || '';
+    console.log('[App] onShow options:', { path, shareId: query.shareId, scene: options?.scene });
+    if (query.shareId && path.includes('fashion-rating')) {
+      Taro.setStorageSync('fashion_pending_share_id', query.shareId);
+      console.log('[App] captured pending shareId from App.onShow:', query.shareId);
+    }
   })
 
   return (

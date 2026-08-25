@@ -80,7 +80,13 @@ export default function FashionRatingPage() {
   }, [])
 
   useLoad((options) => {
-    console.log('[FashionRating] useLoad options:', options)
+    console.log('[FashionRating] useLoad options:', options, '| build: sharefix-2')
+    // 分享时生成的 path 已持久化（点卡片触发 autoReLaunch 会清空 vConsole），此处回放用于诊断
+    const lastSharePath = Taro.getStorageSync('debug_last_share_path') as string
+    if (lastSharePath) {
+      Taro.removeStorageSync('debug_last_share_path')
+      console.log('[FashionRating] last generated share path was:', lastSharePath)
+    }
     // 显式设置标题，避免 tabBar 页面标题被客户端缓存成其他页面文案；
     // nextTick 延后到页面 root view 就绪后再调，否则会报 removeTextView:fail no root view
     Taro.nextTick(() => {
@@ -110,6 +116,15 @@ export default function FashionRatingPage() {
   }, [view])
 
   useDidShow(() => {
+    // App.onShow 兜底捕获的分享 shareId：微信打开 tabBar 页面时会丢弃页面 onLoad 的 query，
+    // 但 App 级 onShow options.query 保留完整参数，app.tsx 已将其存入 storage，这里消费
+    const pendingShareId = Taro.getStorageSync('fashion_pending_share_id') as string
+    if (pendingShareId) {
+      Taro.removeStorageSync('fashion_pending_share_id')
+      console.log('[FashionRating] consume pending shareId from App.onShow:', pendingShareId)
+      setFromShare(true)
+      fetchShared(pendingShareId)
+    }
     // 从 loading 页带回的最新测评结果：消费一次并切换到结果态
     const latest = Taro.getStorageSync('fashion_latest_result') as FashionRatingRecord | ''
     if (latest && typeof latest === 'object' && latest.result) {
@@ -166,6 +181,8 @@ export default function FashionRatingPage() {
       const sharePath = `/pages/fashion-share/index?shareId=${record.id}`
       // 诊断日志：分享时打印实际生成的 path，用于确认客户端版本与分享链路
       console.log('[FashionRating] share app message:', { view, recordId: record.id, sharePath })
+      // 持久化：点卡片触发 autoReLaunch 会清空 vConsole，下次 useLoad 时回放该值
+      Taro.setStorageSync('debug_last_share_path', sharePath)
       return {
         title: text || `我的穿搭得了 ${totalScore} 分，被评为"${stylePersonality}"，你敢来挑战吗？`,
         path: sharePath,
@@ -173,6 +190,7 @@ export default function FashionRatingPage() {
       }
     }
     console.log('[FashionRating] share app message: upload view, default path', { view, recordId: record?.id })
+    Taro.setStorageSync('debug_last_share_path', '/pages/fashion-rating/index (upload view)')
     return {
       title: 'AI 毒舌时尚官，敢不敢晒出你的穿搭？',
       path: '/pages/fashion-rating/index',
