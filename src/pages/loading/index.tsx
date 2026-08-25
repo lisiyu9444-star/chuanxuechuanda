@@ -175,7 +175,9 @@ const LoadingPage = () => {
         generatedAt: Date.now(),
       }
       saveDailyResult(dailyResult)
-      // 本地历史记录由结果页统一保存（含图片补丁合并）；
+      // 生成成功即刻写入本地历史记录（不依赖进入结果页；
+      // 结果页后续解锁图片走补丁合并更新，id 幂等不会产生重复记录）
+      saveHistoryFromDailyResult(dailyResult, currentArchive)
       // 服务端历史记录由 daily 接口自动保存（幂等键一致），此处仅档案兜底同步
       syncArchiveToServer(currentArchive)
       clearDailyGenerateFailed(archiveId, dateStr)

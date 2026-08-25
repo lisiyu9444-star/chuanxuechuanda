@@ -6,6 +6,8 @@ import { extractTosKeyFromUrl } from '@/constants/remote-assets'
 export type HistoryRecordItem = HistoryRecord
 
 const OUTFIT_HISTORY_KEY = 'outfit_history'
+// 单 key storage 上限 1MB（微信）：限制最大条数，超出淘汰最旧（数组头部为最新）
+const MAX_HISTORY_RECORDS = 100
 
 export function buildHistoryRecord(
   result: DailyResult | NativeResult,
@@ -78,11 +80,20 @@ export function getHistoryRecords(): HistoryRecord[] {
 }
 
 function saveHistoryRecords(records: HistoryRecord[]) {
-  try {
-    Taro.setStorageSync(OUTFIT_HISTORY_KEY, records)
-  } catch (e) {
-    console.error('save history records failed', e)
+  // 容量保护：先按条数上限裁剪；写入仍失败（单条过大/总容量不足）时逐轮淘汰最旧 10 条重试，
+  // 保证「最新记录一定能写入」，避免 setStorageSync 超限异常被静默吞掉导致新记录丢失
+  let list = records.length > MAX_HISTORY_RECORDS ? records.slice(0, MAX_HISTORY_RECORDS) : records
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      Taro.setStorageSync(OUTFIT_HISTORY_KEY, list)
+      return
+    } catch (e) {
+      console.error(`[History] save failed (attempt ${attempt + 1}, ${list.length} records):`, e)
+      if (list.length <= 10) break
+      list = list.slice(0, list.length - 10)
+    }
   }
+  console.error('[History] save failed permanently after eviction retries')
 }
 
 export function saveHistoryRecord(record: HistoryRecord) {
