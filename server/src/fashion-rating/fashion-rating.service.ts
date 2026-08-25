@@ -8,6 +8,16 @@ import { getStorage, signKey } from '@/assets/tos-utils'
 
 /** 多模态评分模型（与 stylist 同一可用模型，支持图片输入） */
 const FASHION_MODEL = 'doubao-seed-2-0-pro-260215'
+
+/** 等级称号表（65-89 逐分细分；≥90 与 <65 见 levelOf）。
+    level 由服务端按分数强制映射输出，prompt 中等级表仅作 AI 点评语气参考，避免模型在 30 级细分中选错 */
+const LEVEL_TITLES: Record<number, string> = {
+  89: '穿搭担当', 88: '搭配老手', 87: '纯细节控', 86: '审美在线', 85: '品味靠谱',
+  84: '心机叠满', 83: '搭配有料', 82: '穿搭有型', 81: '眼前一亮', 80: '值得种草',
+  79: '渐入佳境', 78: '小有巧思', 77: '还在摸索', 76: '穿搭小白', 75: '勉强能看',
+  74: '勉强及格', 73: '翻车边缘', 72: '白费努力', 71: '眼睛被辣', 70: '迷之搭配',
+  69: '行为艺术', 68: '视觉冲击', 67: '灾难现场', 66: '精神污染', 65: '裸奔更佳',
+}
 /** 每日评分次数上限：默认 99 便于测试；正式环境通过环境变量 FASHION_RATING_DAILY_LIMIT 调整为 3（PRD：登录用户 3 次/天） */
 export const DAILY_LIMIT = Number(process.env.FASHION_RATING_DAILY_LIMIT) || 99
 /** 单张图片大小上限 10MB（PRD 6.1） */
@@ -360,17 +370,19 @@ export class FashionRatingService {
 
     const isInvalid = parsed.isInvalid === true
     const score = this.clampScore(parseInt(String(parsed.totalScore), 10) || 0)
+    // level 强制按分数由服务端 30 级表映射，AI 输出的 level 仅作参考不采用（细分称号防模型错配）
+    const level = this.levelOf(score)
     const shareTexts = (parsed.shareTexts || {}) as { confident?: unknown; selfDeprecating?: unknown }
     const defaults = this.defaultShareTexts(score)
     return {
       totalScore: isInvalid ? 0 : score,
-      level: isInvalid ? '无法评分' : String(parsed.level || this.levelOf(score)),
+      level: isInvalid ? '无法评分' : level,
       stylePersonality: isInvalid ? '🙅 非穿搭照片' : String(parsed.stylePersonality || '神秘时尚客'),
       // 兜底截断：prompt 已要求 ≤54 字（展示 3 行 × 每行约 19 字，扣除前后引号），AI 仍可能超长
       wittyComment: String(parsed.wittyComment || '评审官陷入了沉思……').slice(0, 54),
       shareTexts: {
-        confident: String(shareTexts.confident || defaults.confident),
-        selfDeprecating: String(shareTexts.selfDeprecating || defaults.selfDeprecating),
+        confident: this.bindLevelToShareText(String(shareTexts.confident || defaults.confident), level, isInvalid),
+        selfDeprecating: this.bindLevelToShareText(String(shareTexts.selfDeprecating || defaults.selfDeprecating), level, isInvalid),
       },
       isInvalid,
       ...(parsed.imageWarning ? { imageWarning: String(parsed.imageWarning) } : {}),
@@ -382,18 +394,18 @@ export class FashionRatingService {
     return Math.min(100, Math.max(0, score))
   }
 
-  /** 分数 → 等级兜底映射（与 prompt【评分等级】10 级表保持一致） */
+  /** 分数 → 等级称号映射（30 级细分：≥95 时尚馆藏 / ≥93 穿搭王者 / ≥90 时尚达人 / 65-89 查 LEVEL_TITLES / <65 统一兜底「不如不穿」） */
   private levelOf(score: number): string {
-    if (score >= 95) return '行走于秀场的'
-    if (score >= 90) return '这就是超模本模的'
-    if (score >= 85) return '被摄影师追着拍的'
-    if (score >= 80) return '衣品很能打的'
-    if (score >= 75) return '审美在线的'
-    if (score >= 70) return '搭配有巧思的'
-    if (score >= 65) return '挺有实验精神的'
-    if (score >= 60) return '穿出去胆儿挺肥的'
-    if (score >= 50) return '勇气可嘉型的'
-    return 'Luo奔都比这强的'
+    if (score >= 95) return '时尚馆藏'
+    if (score >= 93) return '穿搭王者'
+    if (score >= 90) return '时尚达人'
+    return LEVEL_TITLES[score] || '不如不穿'
+  }
+
+  /** 分享文案中「」包裹的称号引用统一替换为服务端映射等级（AI 按 prompt 示例生成的称号与最终 level 解耦后保持一致） */
+  private bindLevelToShareText(text: string, level: string, isInvalid: boolean): string {
+    if (isInvalid || !text.includes('「')) return text
+    return text.replace(/「[^」]*」/g, `「${level}」`)
   }
 
   private defaultShareTexts(score: number) {

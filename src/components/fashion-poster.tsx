@@ -15,10 +15,10 @@ interface FashionPosterProps {
 }
 
 /** 海报画布逻辑尺寸（px，绘制时按 dpr 放大）。
-    高度 736：点评 3 行末行基线 672 + 品牌字基线 712（间距 40）+ 底边距 24，
-    避免点评与底部品牌字之间出现大段空白 */
+    高度 700：点评 3 行末行基线 636 + 品牌字基线 676（间距 40）+ 底边距 24，
+    避免点评与底部品牌字之间出现大段空白（等级印章移至照片右上角后布局收紧） */
 const CANVAS_W = 375
-const CANVAS_H = 736
+const CANVAS_H = 700
 /** 照片卡：与页面端一致的边距与 3:4 竖版比例 */
 const CARD_X = 24
 const CARD_Y = 16
@@ -26,6 +26,46 @@ const CARD_W = CANVAS_W - CARD_X * 2
 const CARD_H = Math.round((CARD_W * 4) / 3)
 /** 分数相对照片上移距离（页面端 -mt-12 对应 48px，压入底部渐隐遮罩） */
 const SCORE_OVERLAP = 48
+
+/** 分数 → 印章印色（≥90 鎏金 / 70-89 朱砂红 / 65-69 橙红 / <65 瓦灰） */
+function stampColorOf(score: number): string {
+  if (score >= 90) return '#fbbf24'
+  if (score >= 70) return '#dc2626'
+  if (score >= 65) return '#ea580c'
+  return '#6b7280'
+}
+
+/** 回纹（雷纹）单元模板：连续 Greek key 折线（归一化坐标，x 沿弧向 0..1、y 沿径向 0..1） */
+const GREEK_MOTIF: Array<[number, number]> = [
+  [0, 0.5], [0.8, 0.5], [0.8, 0.15], [0.25, 0.15], [0.25, 0.65],
+  [0.55, 0.65], [0.55, 0.35], [0.4, 0.35], [0.4, 0.5], [1, 0.5],
+]
+const GREEK_UNITS = 20
+
+/** 回纹环极坐标映射：单元 u 内模板点 (tx, ty) → 画布坐标 */
+function greekPoint(cx: number, cy: number, ringR: number, band: number, angle: number, ty: number): [number, number] {
+  const r = ringR + (ty - 0.5) * band
+  return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)]
+}
+
+/** 页面端印章环 SVG（回纹环 + 内外细圈，除线条外全透明）→ data-uri（与 canvas 绘制同算法） */
+function buildStampRingUri(color: string): string {
+  const step = (Math.PI * 2) / GREEK_UNITS
+  let d = ''
+  for (let u = 0; u < GREEK_UNITS; u++) {
+    GREEK_MOTIF.forEach(([tx, ty], i) => {
+      const [x, y] = greekPoint(60, 60, 50, 14, (u + tx) * step - Math.PI / 2, ty)
+      d += `${u === 0 && i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`
+    })
+  }
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">` +
+    `<circle cx="60" cy="60" r="58" fill="none" stroke="${color}" stroke-width="1.5"/>` +
+    `<path d="${d}Z" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    `<circle cx="60" cy="60" r="42" fill="none" stroke="${color}" stroke-width="1.5"/>` +
+    `</svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
 
 /** 圆角矩形路径（兼容无 roundRect 的基础库） */
 function roundRectPath(ctx: any, x: number, y: number, w: number, h: number, r: number) {
@@ -66,6 +106,9 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
   // （跨端兼容修正：小程序端 padding 百分比/宽高比类不可靠，用计算值固定容器高度）
   const windowWidth = Taro.getWindowInfo?.().windowWidth || 375
   const cardHeight = Math.round(((windowWidth - 48) * 4) / 3)
+  // 印章：印色（按分数段分级）与回纹环 data-uri（与 canvas 绘制同算法）
+  const stampColor = stampColorOf(result.totalScore)
+  const stampRingUri = buildStampRingUri(stampColor)
 
   /** 将海报绘制到离屏 canvas 并保存到相册（H5 降级为长按截图提示） */
   const handleSave = async () => {
@@ -123,7 +166,7 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
     }
   }
 
-  /** 实际绘制逻辑（375x800 逻辑坐标系，与页面端布局保持一致） */
+  /** 实际绘制逻辑（375x700 逻辑坐标系，与页面端布局保持一致） */
   const drawPoster = (ctx: any, img: any) => {
     // 黑底
     ctx.fillStyle = '#000000'
@@ -156,6 +199,47 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
     ctx.fillRect(CARD_X, CARD_Y + CARD_H * 0.4, CARD_W, CARD_H * 0.6)
     ctx.restore()
 
+    // 等级印章：圆形朱文印盖在照片右上角（回纹环 + 内外细圈 + 2×2 四字，与页面端同算法同位置）
+    if (!result.isInvalid) {
+      const R = 48
+      ctx.save()
+      ctx.translate(CARD_X + CARD_W - R - 12, CARD_Y + R + 12)
+      ctx.rotate((-12 * Math.PI) / 180)
+      ctx.strokeStyle = stampColor
+      // 外细圈
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.arc(0, 0, R * (58 / 60), 0, Math.PI * 2)
+      ctx.stroke()
+      // 回纹环
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      const step = (Math.PI * 2) / GREEK_UNITS
+      for (let u = 0; u < GREEK_UNITS; u++) {
+        GREEK_MOTIF.forEach(([tx, ty], i) => {
+          const [x, y] = greekPoint(0, 0, R * (50 / 60), R * (14 / 60), (u + tx) * step - Math.PI / 2, ty)
+          if (u === 0 && i === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        })
+      }
+      ctx.closePath()
+      ctx.stroke()
+      // 内细圈
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.arc(0, 0, R * (42 / 60), 0, Math.PI * 2)
+      ctx.stroke()
+      // 2×2 四字（衬线粗体）
+      ctx.fillStyle = stampColor
+      ctx.font = 'bold 19px "Noto Serif SC", serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(result.level.slice(0, 2), 0, -10)
+      ctx.fillText(result.level.slice(2, 4), 0, 12)
+      ctx.restore()
+      ctx.textBaseline = 'alphabetic'
+    }
+
     ctx.textAlign = 'center'
     const cx = CANVAS_W / 2
     // 分数基线：上移 SCORE_OVERLAP，使字体顶部略压入照片遮罩（与页面端一致）
@@ -166,21 +250,16 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
     ctx.font = 'bold 88px Georgia, "Times New Roman", serif'
     ctx.fillText(result.isInvalid ? '--' : String(result.totalScore), cx, scoreY)
 
-    // 等级
-    ctx.font = '16px "Helvetica Neue", sans-serif'
-    ctx.fillStyle = 'rgba(255,255,255,0.8)'
-    ctx.fillText(result.level, cx, scoreY + 40)
-
-    // 风格人格
+    // 风格人格（等级印章移至照片右上角后，间距收紧与页面端一致）
     ctx.font = '500 22px "Helvetica Neue", sans-serif'
     ctx.fillStyle = '#ffffff'
-    ctx.fillText(result.stylePersonality, cx, scoreY + 80)
+    ctx.fillText(result.stylePersonality, cx, scoreY + 44)
 
     // 毒舌点评（灰色斜体，自动换行，最多 3 行；服务端已限制 wittyComment ≤54 字，3 行可完整展示）
     ctx.font = 'italic 14px "Helvetica Neue", sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.5)'
     const lines = wrapLines(ctx, `“${result.wittyComment}”`, CANVAS_W - 96, 3)
-    lines.forEach((line, i) => ctx.fillText(line, cx, scoreY + 116 + i * 22))
+    lines.forEach((line, i) => ctx.fillText(line, cx, scoreY + 80 + i * 22))
 
     // 底部品牌小字
     ctx.font = '10px "Helvetica Neue", sans-serif'
@@ -204,16 +283,26 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
           className="absolute inset-x-0 bottom-0 h-3/5 pointer-events-none"
           style={{ backgroundImage: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.6) 60%, transparent 100%)' }}
         />
+        {/* 等级印章：圆形朱文印盖在照片右上角（-12° 盖章角度）。环体为程序生成的回纹 SVG（data-uri），
+            2×2 四字用原生 Text 叠加保证衬线粗体渲染，除线条与字外全透明 */}
+        {!result.isInvalid && (
+          <View className="absolute top-3 right-3 w-24 h-24 -rotate-12 pointer-events-none">
+            <Image src={stampRingUri} className="w-full h-full" mode="aspectFit" />
+            <View className="absolute inset-0 flex flex-col items-center justify-center">
+              <Text className="block font-display font-black text-2xl leading-none tracking-[0.25em] pl-[0.25em]" style={{ color: stampColor }}>{result.level.slice(0, 2)}</Text>
+              <Text className="block font-display font-black text-2xl leading-none tracking-[0.25em] pl-[0.25em] mt-2" style={{ color: stampColor }}>{result.level.slice(2, 4)}</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* 分数：上移压入遮罩，衬线粗体个性数字 */}
       <Text className="block text-8xl font-display font-bold text-white leading-none -mt-12 relative z-10">
         {result.isInvalid ? '--' : result.totalScore}
       </Text>
-      {/* 等级 */}
-      <Text className="block text-lg text-white text-opacity-80 mt-3">{result.level}</Text>
+      {/* 等级印章已移至照片右上角（见照片卡内叠加层） */}
       {/* 风格人格 */}
-      <Text className="block text-xl font-medium text-white mt-2">{result.stylePersonality}</Text>
+      <Text className="block text-xl font-medium text-white mt-4">{result.stylePersonality}</Text>
       {/* 毒舌点评 */}
       <Text className="block text-sm italic text-white text-opacity-50 text-center mt-4 max-w-72 leading-relaxed">
         “{result.wittyComment}”
