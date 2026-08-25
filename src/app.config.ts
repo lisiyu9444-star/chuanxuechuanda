@@ -5,6 +5,7 @@ export default defineAppConfig({
     'pages/result/index',
     'pages/fashion-rating/index',
     'pages/fashion-rating/history/index',
+    'pages/fashion-share/index',
     'pages/profile/index',
     'pages/archive/list/index',
     'pages/archive/form/index',

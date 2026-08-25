@@ -105,7 +105,8 @@ export default function FashionRatingHistoryPage() {
       const text = totalScore >= 80 ? shareTexts?.confident : shareTexts?.selfDeprecating
       return {
         title: isInvalid ? 'AI 毒舌时尚官，敢不敢晒出你的穿搭？' : text || `我的穿搭得了 ${totalScore} 分，被评为"${stylePersonality}"，你敢来挑战吗？`,
-        path: `/pages/fashion-rating/index?shareId=${selected.id}`,
+        // 指向分享中间页（非 tabBar 页面）：tabBar 页面分享打开时 query 参数可能丢失
+        path: `/pages/fashion-share/index?shareId=${selected.id}`,
         imageUrl: selected.imageUrl,
       }
     }

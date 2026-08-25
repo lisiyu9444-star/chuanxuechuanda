@@ -110,11 +110,14 @@ export default function FashionRatingPage() {
   }, [view])
 
   useDidShow(() => {
-    // 从 loading 页带回的最新测评结果：消费一次并切换到结果态
+    // 从 loading 页/分享中间页带回的最新测评结果：消费一次并切换到结果态
     const latest = Taro.getStorageSync('fashion_latest_result') as FashionRatingRecord | ''
     if (latest && typeof latest === 'object' && latest.result) {
       Taro.removeStorageSync('fashion_latest_result')
-      setFromShare(false)
+      // 分享落地标记：来自分享卡片时重测按钮文案为「我也要测」
+      const fromShareFlag = Taro.getStorageSync('fashion_latest_from_share')
+      if (fromShareFlag) Taro.removeStorageSync('fashion_latest_from_share')
+      setFromShare(fromShareFlag === '1')
       setRecord(latest)
       setView('result')
     }
@@ -164,7 +167,8 @@ export default function FashionRatingPage() {
       const text = totalScore >= 80 ? shareTexts?.confident : shareTexts?.selfDeprecating
       return {
         title: text || `我的穿搭得了 ${totalScore} 分，被评为"${stylePersonality}"，你敢来挑战吗？`,
-        path: `/pages/fashion-rating/index?shareId=${record.id}`,
+        // 指向分享中间页（非 tabBar 页面）：tabBar 页面分享打开时 query 参数可能丢失
+        path: `/pages/fashion-share/index?shareId=${record.id}`,
         imageUrl: record.imageUrl,
       }
     }

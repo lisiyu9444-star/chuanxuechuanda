@@ -24,6 +24,7 @@ import {
   consumePreviousArchiveId,
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
+import { ELEMENT_COLORS } from '@/constants/element-colors'
 import { pickLuckyStarIconName } from '@/constants/lucky-icons'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 import { ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isWeappEnv, requireLogin } from '@/utils/auth'
@@ -321,7 +322,11 @@ export default function Index() {
   }
 
   const { luckyScore, llmPlan, baziResult } = dailyResult
-  const themeColor = llmPlan.luckyColors?.primaryHex || '#1E3A5F'
+  // 主题色与结果页保持一致：优先用今日用神对应的预定义五行色
+  // （LLM 生成的 primaryHex 可能是极浅色，叠加透明度后在白底上几乎不可见）
+  const themeColor = dailyResult.dailyYongShen
+    ? ELEMENT_COLORS[dailyResult.dailyYongShen] || '#0f172a'
+    : llmPlan.luckyColors?.primaryHex || '#1E3A5F'
   // 幸运星图：示例档案固定展示图；其他档案按「档案 ID + 当天日期」选取，
   // 同一档案每天轮换一张、同一天内展示稳定（不会因重渲染跳图）
   const luckyStarKey: keyof RemoteAssets = currentArchive?.isDefault
