@@ -122,17 +122,17 @@
         <!-- 等级印章：圆形朱文印（回纹环 + 内圈 + 2×2 四字），除印章线条外全透明，
              盖在照片右上角，-12° 模拟盖章角度。回纹环由 JS 程序生成（见页面底部脚本），
              开发落地时同一算法可在小程序 canvas 复用绘制。
-             印色按分数段分级：≥90 鎏金 / 70-89 朱砂红 / 50-69 橙红 / <50 瓦灰。
-             本例 82 分 → 朱砂红「衣品能打」 -->
+             印色按分数段分级：≥90 鎏金 / 70-89 朱砂红 / 65-69 橙红 / <65 瓦灰。
+             本例 82 分 → 朱砂红「穿搭有型」 -->
         <svg id="poster-level-stamp" viewBox="0 0 120 120"
              class="absolute top-3 right-3 w-24 h-24 -rotate-12">
           <circle cx="60" cy="60" r="58" fill="none" stroke="#dc2626" stroke-width="1.5"/>
           <path class="greek-ring" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round"/>
           <circle cx="60" cy="60" r="42" fill="none" stroke="#dc2626" stroke-width="1.5"/>
           <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                fill="#dc2626" font-family="'Noto Serif SC', serif">衣品</text>
+                fill="#dc2626" font-family="'Noto Serif SC', serif">穿搭</text>
           <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                fill="#dc2626" font-family="'Noto Serif SC', serif">能打</text>
+                fill="#dc2626" font-family="'Noto Serif SC', serif">有型</text>
         </svg>
       </div>
 
@@ -181,12 +181,12 @@
               <path class="greek-ring" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linejoin="round"/>
               <circle cx="60" cy="60" r="42" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
               <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#fbbf24" font-family="'Noto Serif SC', serif">行走</text>
+                    fill="#fbbf24" font-family="'Noto Serif SC', serif">时尚</text>
               <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#fbbf24" font-family="'Noto Serif SC', serif">秀场</text>
+                    fill="#fbbf24" font-family="'Noto Serif SC', serif">馆藏</text>
             </svg>
             <div class="w-24">
-              <p class="text-xs text-white/60">行走秀场</p>
+              <p class="text-xs text-white/60">时尚馆藏</p>
               <p class="text-xs text-white/40 mt-0.5">95+ · 鎏金</p>
             </div>
           </div>
@@ -197,13 +197,13 @@
               <path class="greek-ring" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round"/>
               <circle cx="60" cy="60" r="42" fill="none" stroke="#dc2626" stroke-width="1.5"/>
               <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#dc2626" font-family="'Noto Serif SC', serif">追拍</text>
+                    fill="#dc2626" font-family="'Noto Serif SC', serif">穿搭</text>
               <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#dc2626" font-family="'Noto Serif SC', serif">焦点</text>
+                    fill="#dc2626" font-family="'Noto Serif SC', serif">担当</text>
             </svg>
             <div class="w-24">
-              <p class="text-xs text-white/60">追拍焦点</p>
-              <p class="text-xs text-white/40 mt-0.5">85-89 · 朱砂红</p>
+              <p class="text-xs text-white/60">穿搭担当</p>
+              <p class="text-xs text-white/40 mt-0.5">70-89 · 朱砂红</p>
             </div>
           </div>
           <!-- 橙红印：50-69 实验 -->
@@ -213,13 +213,13 @@
               <path class="greek-ring" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linejoin="round"/>
               <circle cx="60" cy="60" r="42" fill="none" stroke="#ea580c" stroke-width="1.5"/>
               <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#ea580c" font-family="'Noto Serif SC', serif">勇气</text>
+                    fill="#ea580c" font-family="'Noto Serif SC', serif">行为</text>
               <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#ea580c" font-family="'Noto Serif SC', serif">可嘉</text>
+                    fill="#ea580c" font-family="'Noto Serif SC', serif">艺术</text>
             </svg>
             <div class="w-24">
-              <p class="text-xs text-white/60">勇气可嘉</p>
-              <p class="text-xs text-white/40 mt-0.5">50-59 · 橙红</p>
+              <p class="text-xs text-white/60">行为艺术</p>
+              <p class="text-xs text-white/40 mt-0.5">65-69 · 橙红</p>
             </div>
           </div>
           <!-- 瓦灰印：<50 翻车 -->
@@ -229,13 +229,13 @@
               <path class="greek-ring" fill="none" stroke="#6b7280" stroke-width="2.5" stroke-linejoin="round"/>
               <circle cx="60" cy="60" r="42" fill="none" stroke="#6b7280" stroke-width="1.5"/>
               <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#6b7280" font-family="'Noto Serif SC', serif">回炉</text>
+                    fill="#6b7280" font-family="'Noto Serif SC', serif">不如</text>
               <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#6b7280" font-family="'Noto Serif SC', serif">重造</text>
+                    fill="#6b7280" font-family="'Noto Serif SC', serif">不穿</text>
             </svg>
             <div class="w-24">
-              <p class="text-xs text-white/60">回炉重造</p>
-              <p class="text-xs text-white/40 mt-0.5">&lt;50 · 瓦灰</p>
+              <p class="text-xs text-white/60">不如不穿</p>
+              <p class="text-xs text-white/40 mt-0.5">&lt;65 · 瓦灰</p>
             </div>
           </div>
         </div>
