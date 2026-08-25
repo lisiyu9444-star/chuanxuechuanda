@@ -68,7 +68,8 @@ const SYSTEM_PROMPT = `你是一位兼具专业眼光和幽默感的时尚穿搭
 - 仅基于图片内容分析
 - 点评保持友善，即使低分也用建设性语气，绝不人身攻击
 - 每次评分保持一致性（同一张图分数波动不超过 ±5 分）
-- 趣味点评要有记忆点，适合朋友圈文案`
+- 趣味点评要有记忆点，适合朋友圈文案
+- wittyComment 必须严格控制在 54 个汉字以内（含标点）：展示区域最多 3 行、每行约 19 个汉字，超长会导致文案被截断。写完务必数字数，超出则精简到 54 字以内，且必须是一句完整的话`
 
 /** 评分结果结构（与前端 src/types/fashion.ts 对应） */
 export interface FashionRatingResult {
@@ -361,7 +362,8 @@ export class FashionRatingService {
       totalScore: isInvalid ? 0 : score,
       level: isInvalid ? '无法评分' : String(parsed.level || this.levelOf(score)),
       stylePersonality: isInvalid ? '🙅 非穿搭照片' : String(parsed.stylePersonality || '神秘时尚客'),
-      wittyComment: String(parsed.wittyComment || '评审官陷入了沉思……'),
+      // 兜底截断：prompt 已要求 ≤54 字（展示 3 行 × 每行约 19 字，扣除前后引号），AI 仍可能超长
+      wittyComment: String(parsed.wittyComment || '评审官陷入了沉思……').slice(0, 54),
       shareTexts: {
         confident: String(shareTexts.confident || defaults.confident),
         selfDeprecating: String(shareTexts.selfDeprecating || defaults.selfDeprecating),

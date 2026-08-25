@@ -75,7 +75,6 @@ export default function FashionSharePage() {
           imageUrl={record.imageUrl}
           result={record.result}
           onRetry={handleGotoRating}
-          retryText="我也要测"
         />
       </View>
     )

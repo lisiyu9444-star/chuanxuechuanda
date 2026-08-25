@@ -46,7 +46,6 @@ export default function FashionRatingPage() {
   const [record, setRecord] = useState<FashionRatingRecord | null>(null)
   const [remaining, setRemaining] = useState(99)
   /** 是否从分享卡片进入（决定重测按钮文案为「我也要测」） */
-  const [fromShare, setFromShare] = useState(false)
 
   /** 拉取今日剩余次数（未登录时保持默认值，点击上传时会先唤起登录） */
   const fetchRemaining = useCallback(async () => {
@@ -96,7 +95,6 @@ export default function FashionRatingPage() {
     })
     const shareId = options?.shareId
     if (shareId) {
-      setFromShare(true)
       fetchShared(shareId)
     }
   })
@@ -122,14 +120,12 @@ export default function FashionRatingPage() {
     if (pendingShareId) {
       Taro.removeStorageSync('fashion_pending_share_id')
       console.log('[FashionRating] consume pending shareId from App.onShow:', pendingShareId)
-      setFromShare(true)
       fetchShared(pendingShareId)
     }
     // 从 loading 页带回的最新测评结果：消费一次并切换到结果态
     const latest = Taro.getStorageSync('fashion_latest_result') as FashionRatingRecord | ''
     if (latest && typeof latest === 'object' && latest.result) {
       Taro.removeStorageSync('fashion_latest_result')
-      setFromShare(false)
       setRecord(latest)
       setView('result')
     }
@@ -164,10 +160,9 @@ export default function FashionRatingPage() {
     }
   }
 
-  /** 再测一次 / 我也要测：回到上传态并刷新剩余次数 */
+  /** 再测一次：回到上传态并刷新剩余次数 */
   const handleRetry = () => {
     setRecord(null)
-    setFromShare(false)
     setView('upload')
     fetchRemaining()
   }
@@ -206,7 +201,6 @@ export default function FashionRatingPage() {
           imageUrl={record.imageUrl}
           result={record.result}
           onRetry={handleRetry}
-          retryText={fromShare ? '我也要测' : '再测一次'}
         />
       </View>
     )

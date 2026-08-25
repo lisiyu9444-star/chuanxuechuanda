@@ -12,13 +12,13 @@ interface FashionPosterProps {
   result: FashionRatingResult
   /** 再测一次回调（记录页重现时不传，隐藏该按钮） */
   onRetry?: () => void
-  /** 重测按钮文案（分享落地场景传「我也要测」） */
-  retryText?: string
 }
 
-/** 海报画布逻辑尺寸（px，绘制时按 dpr 放大） */
+/** 海报画布逻辑尺寸（px，绘制时按 dpr 放大）。
+    高度 736：点评 3 行末行基线 672 + 品牌字基线 712（间距 40）+ 底边距 24，
+    避免点评与底部品牌字之间出现大段空白 */
 const CANVAS_W = 375
-const CANVAS_H = 800
+const CANVAS_H = 736
 /** 照片卡：与页面端一致的边距与 3:4 竖版比例 */
 const CARD_X = 24
 const CARD_Y = 16
@@ -60,7 +60,7 @@ function wrapLines(ctx: any, text: string, maxWidth: number, maxLines: number): 
  * 照片卡固定 3:4 竖版（手机拍照比例），任意比例照片统一居中裁剪；
  * 页面端与保存图片共用同一布局：大图渐隐 + 分数上压遮罩 + 衬线粗体分数 + 等级 + 人格 + 毒舌点评。
  */
-export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测一次' }: FashionPosterProps) {
+export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps) {
   const [saving, setSaving] = useState(false)
   // 照片卡固定 3:4 竖版：屏宽减去页面两侧 px-6 边距后按比例计算高度
   // （跨端兼容修正：小程序端 padding 百分比/宽高比类不可靠，用计算值固定容器高度）
@@ -176,10 +176,10 @@ export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测�
     ctx.fillStyle = '#ffffff'
     ctx.fillText(result.stylePersonality, cx, scoreY + 80)
 
-    // 毒舌点评（灰色斜体，自动换行）
+    // 毒舌点评（灰色斜体，自动换行，最多 3 行；服务端已限制 wittyComment ≤54 字，3 行可完整展示）
     ctx.font = 'italic 14px "Helvetica Neue", sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.5)'
-    const lines = wrapLines(ctx, `💬 "${result.wittyComment}"`, CANVAS_W - 96, 3)
+    const lines = wrapLines(ctx, `“${result.wittyComment}”`, CANVAS_W - 96, 3)
     lines.forEach((line, i) => ctx.fillText(line, cx, scoreY + 116 + i * 22))
 
     // 底部品牌小字
@@ -216,37 +216,34 @@ export function FashionPoster({ imageUrl, result, onRetry, retryText = '再测�
       <Text className="block text-xl font-medium text-white mt-2">{result.stylePersonality}</Text>
       {/* 毒舌点评 */}
       <Text className="block text-sm italic text-white text-opacity-50 text-center mt-4 max-w-72 leading-relaxed">
-        💬 “{result.wittyComment}”
+        “{result.wittyComment}”
       </Text>
 
-      {/* 操作区：三个行动按钮一行排列，统一 icon + 文案 */}
-      <View className="flex items-center justify-center gap-4 mt-10">
+      {/* 操作区：三个纯图标按钮一行居中（无文字、无边框） */}
+      <View className="flex items-center justify-center gap-16 mt-10">
         <Button
           variant="ghost"
-          className="h-auto px-1 py-2 text-white text-opacity-80 tracking-[0.1em] text-sm font-normal"
+          className="h-auto w-auto p-2 bg-transparent border-none shadow-none"
           onClick={handleSave}
           disabled={saving}
         >
-          <Save size={16} color="rgba(255,255,255,0.8)" className="mr-1" />
-          <Text>{saving ? '保存中...' : '保存卡片'}</Text>
+          <Save size={22} color="rgba(255,255,255,0.8)" />
         </Button>
         {onRetry && (
           <Button
             variant="ghost"
-            className="h-auto px-1 py-2 text-white text-opacity-80 tracking-[0.1em] text-sm font-normal"
+            className="h-auto w-auto p-2 bg-transparent border-none shadow-none"
             onClick={onRetry}
           >
-            <RotateCcw size={16} color="rgba(255,255,255,0.8)" className="mr-1" />
-            <Text>{retryText}</Text>
+            <RotateCcw size={22} color="rgba(255,255,255,0.8)" />
           </Button>
         )}
         <Button
           variant="ghost"
           openType="share"
-          className="h-auto px-1 py-2 text-white text-opacity-80 tracking-[0.1em] text-sm font-normal"
+          className="h-auto w-auto p-2 bg-transparent border-none shadow-none after:hidden"
         >
-          <Share2 size={16} color="rgba(255,255,255,0.8)" className="mr-1" />
-          <Text>分享好友</Text>
+          <Share2 size={22} color="rgba(255,255,255,0.8)" />
         </Button>
       </View>
 
