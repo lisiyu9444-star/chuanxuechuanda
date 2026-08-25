@@ -37,14 +37,17 @@ const SYSTEM_PROMPT = `你是一位兼具专业眼光和幽默感的时尚穿搭
    - 个人适配（10分）：是否与体型、肤色、发型匹配，是否扬长避短
    - 个性表达（5分）：是否展现独特个性或态度
 
-【评分等级】
-- 95+ ："穿搭天花板"
-- 90-94："穿搭王者"
-- 80-89："时尚达人"
-- 70-79："及格潮人"
-- 60-69："勇敢尝试"
-- 50-59："穿搭实验区"
-- <50 ："今日翻车"
+【评分等级】（level 字段必须严格按下表输出，称号均为"……的"式描述短语；shareTexts 中引用称号时用「」包裹）
+- 95+  ："行走于秀场的"
+- 90-94："这就是超模本模的"
+- 85-89："被摄影师追着拍的"
+- 80-84："衣品很能打的"
+- 75-79："审美在线的"
+- 70-74："搭配有巧思的"
+- 65-69："挺有实验精神的"
+- 60-64："穿出去胆儿挺肥的"
+- 50-59："勇气可嘉型的"
+- <50 ："Luo奔都比这强的"
 
 【风格人格标签】
 根据穿搭特征给出一个有创意、有辨识度的标签。从色彩偏好 × 风格倾向 × 大胆程度三个维度综合提炼。
@@ -53,12 +56,12 @@ const SYSTEM_PROMPT = `你是一位兼具专业眼光和幽默感的时尚穿搭
 【输出格式】严格 JSON，不要输出其他内容：
 {
   "totalScore": 82,
-  "level": "时尚达人",
+  "level": "衣品很能打的",
   "stylePersonality": "撞色冒险家",
   "wittyComment": "这身搭配像是从杂志里走出来的，但鞋子出卖了你——换个乐福鞋，你就是这条街最靓的仔！",
   "shareTexts": {
-    "confident": "AI毒舌评审官给我打了82分，说我是「撞色冒险家」，不服来战！ #AI穿搭评分#",
-    "selfDeprecating": "被AI毒舌评审官打了82分...说鞋子出卖了我...你们觉得公平吗？ #AI穿搭评分#"
+    "confident": "AI毒舌评审官给我打了82分，说我「衣品很能打的」！不服来战，让你见识下什么叫能打的衣品 #AI穿搭评分#",
+    "selfDeprecating": "被AI毒舌评审官打了82分...说我「衣品很能打的」...才82分？这评审眼睛是租来的吗 #AI穿搭评分#"
   },
   "isInvalid": false,
   "imageWarning": null
@@ -69,7 +72,8 @@ const SYSTEM_PROMPT = `你是一位兼具专业眼光和幽默感的时尚穿搭
 - 点评保持幽默，如果低分可以更加毒舌一些，但不人身攻击
 - 每次评分保持一致性（同一张图分数波动不超过 ±5 分）
 - 趣味点评要有记忆点，适合朋友圈文案
-- wittyComment 必须严格控制在 54 个汉字以内（含标点），超出则精简到 54 字以内，且必须是一句完整的话`
+- wittyComment 必须严格控制在 54 个汉字以内（含标点），超出则精简到 54 字以内，且必须是一句完整的话
+- shareTexts 两条文案都必须把分数和「等级称号」自然织入，并带让人想转发/评论的钩子：confident 偏炫耀挑衅（高分时气场全开，低分时转为不服输的幽默反击）；selfDeprecating 偏自嘲吐槽（低分时幽默自黑，高分时转为凡尔赛式抱怨）`
 
 /** 评分结果结构（与前端 src/types/fashion.ts 对应） */
 export interface FashionRatingResult {
@@ -378,21 +382,25 @@ export class FashionRatingService {
     return Math.min(100, Math.max(0, score))
   }
 
-  /** 分数 → 等级兜底映射（PRD 评分等级表） */
+  /** 分数 → 等级兜底映射（与 prompt【评分等级】10 级表保持一致） */
   private levelOf(score: number): string {
-    if (score >= 95) return '穿搭天花板'
-    if (score >= 90) return '穿搭王者'
-    if (score >= 80) return '时尚达人'
-    if (score >= 70) return '及格潮人'
-    if (score >= 60) return '勇敢尝试'
-    if (score >= 50) return '穿搭实验区'
-    return '今日翻车'
+    if (score >= 95) return '行走于秀场的'
+    if (score >= 90) return '这就是超模本模的'
+    if (score >= 85) return '被摄影师追着拍的'
+    if (score >= 80) return '衣品很能打的'
+    if (score >= 75) return '审美在线的'
+    if (score >= 70) return '搭配有巧思的'
+    if (score >= 65) return '挺有实验精神的'
+    if (score >= 60) return '穿出去胆儿挺肥的'
+    if (score >= 50) return '勇气可嘉型的'
+    return 'Luo奔都比这强的'
   }
 
   private defaultShareTexts(score: number) {
+    const level = this.levelOf(score)
     return {
-      confident: `AI毒舌评审官给我打了${score}分，不服来战！ #AI穿搭评分#`,
-      selfDeprecating: `被AI毒舌评审官打了${score}分……你们觉得公平吗？ #AI穿搭评分#`,
+      confident: `AI毒舌评审官给我打了${score}分，说我「${level}」！不服来战 #AI穿搭评分#`,
+      selfDeprecating: `被AI毒舌评审官打了${score}分……说我「${level}」……这评审眼睛是租来的吗 #AI穿搭评分#`,
     }
   }
 }
