@@ -57,6 +57,14 @@
       min-height: max(812px, 100dvh);
       font-family: system-ui, sans-serif;
     }
+    /* 印章做旧：feTurbulence 噪声 mask 模拟印泥斑驳缺角（真实盖章质感）。
+       开发落地时小程序端用 canvas 噪点擦除等效实现，页面展示与海报保存共用同一张生成图 */
+    .stamp-grunge {
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.12' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 2.2 -0.55'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23g)'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.12' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 2.2 -0.55'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23g)'/%3E%3C/svg%3E");
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
+    }
   </style>
 
   <!-- 图片兜底 -->
@@ -123,13 +131,18 @@
       <!-- 超大分数：极细无衬线白字，海报视觉中心 -->
       <p id="poster-score" class="mt-7 text-8xl font-thin leading-none tracking-tight text-white">82</p>
 
-      <!-- 等级印章：杂志"认证盖章"效果。边框与文字同印章色、底色为印章色 10% 透明、
-           整体 -2° 轻微旋转模拟盖章角度（做旧感）。字间距拉开 + text-indent 补偿保持视觉居中。
-           印章色按分数段分级（与等级文案解耦）：≥90 金色 / 70-89 红色 / 50-69 橙色 / <50 灰色。
-           本例 82 分 → 红色「衣品很能打的」 -->
+      <!-- 等级印章：真实白文（阴文）印 —— 正方形印面 + 红底白字 2×2 四字 + 白色内边框，
+           stamp-grunge 噪声 mask 模拟印泥斑驳，整体 -3° 旋转模拟盖章角度。
+           印面内容固定 4 字；印色按分数段分级：≥90 鎏金 / 70-89 朱砂红 / 50-69 橙红 / <50 灰。
+           本例 82 分 → 朱砂红「衣品能打」 -->
       <div id="poster-level-stamp"
-           class="mt-5 px-5 py-2 rounded-md border-2 border-[#dc2626] bg-[#dc2626]/10 -rotate-2">
-        <p class="text-base font-bold text-[#dc2626] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">衣品很能打的</p>
+           class="stamp-grunge relative mt-6 w-24 h-24 bg-[#dc2626] rounded -rotate-3 shadow-[0_2px_14px_rgba(220,38,38,0.4)]">
+        <div class="absolute inset-1.5 border border-white/80 rounded-[2px]"></div>
+        <div class="absolute inset-1.5 grid grid-cols-2 grid-rows-2 place-items-center
+                    font-display font-black text-white text-2xl leading-none">
+          <span>衣</span><span>品</span>
+          <span>能</span><span>打</span>
+        </div>
       </div>
 
       <!-- 风格人格：emoji 前缀 + 中等字重 -->
@@ -161,37 +174,65 @@
         分享好友，挑战 TA
       </button>
 
-      <!-- ── 印章色阶预览（原型演示专用分区，便于一次确认全部分级配色，非页面实际内容） ── -->
+      <!-- ── 印章色阶预览（原型演示专用分区，便于一次确认全部分级印色与 4 字文案，非页面实际内容） ── -->
       <div id="stamp-variant-preview" class="mt-14 w-full border-t border-white/10 pt-8">
         <p class="text-xs tracking-[0.3em] text-white/40 text-center">印章色阶 · 设计预览</p>
-        <div class="mt-6 flex flex-col items-center gap-5">
-          <!-- 金色：≥90 顶级 -->
+        <div class="mt-6 flex flex-col items-center gap-6">
+          <!-- 鎏金印：≥90 顶级（金底深棕字，区别于朱砂） -->
           <div class="flex items-center gap-4">
-            <div class="px-5 py-2 rounded-md border-2 border-[#fbbf24] bg-[#fbbf24]/10 -rotate-2">
-              <p class="text-base font-bold text-[#fbbf24] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">行走于秀场的</p>
+            <div class="stamp-grunge relative w-20 h-20 bg-[#fbbf24] rounded -rotate-3 shadow-[0_2px_12px_rgba(251,191,36,0.35)]">
+              <div class="absolute inset-1 border border-[#92400e]/80 rounded-[2px]"></div>
+              <div class="absolute inset-1 grid grid-cols-2 grid-rows-2 place-items-center
+                          font-display font-black text-[#92400e] text-xl leading-none">
+                <span>行</span><span>走</span><span>秀</span><span>场</span>
+              </div>
             </div>
-            <span class="text-xs text-white/40 w-16">95+</span>
+            <div class="w-24">
+              <p class="text-xs text-white/60">行走秀场</p>
+              <p class="text-xs text-white/40 mt-0.5">95+ · 鎏金</p>
+            </div>
           </div>
-          <!-- 红色：70-89 中坚（8 字长文案自适应示例） -->
+          <!-- 朱砂红印：70-89 中坚 -->
           <div class="flex items-center gap-4">
-            <div class="px-5 py-2 rounded-md border-2 border-[#dc2626] bg-[#dc2626]/10 -rotate-2">
-              <p class="text-base font-bold text-[#dc2626] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">被摄影师追着拍的</p>
+            <div class="stamp-grunge relative w-20 h-20 bg-[#dc2626] rounded -rotate-3 shadow-[0_2px_12px_rgba(220,38,38,0.35)]">
+              <div class="absolute inset-1 border border-white/80 rounded-[2px]"></div>
+              <div class="absolute inset-1 grid grid-cols-2 grid-rows-2 place-items-center
+                          font-display font-black text-white text-xl leading-none">
+                <span>追</span><span>拍</span><span>焦</span><span>点</span>
+              </div>
             </div>
-            <span class="text-xs text-white/40 w-16">85-89</span>
+            <div class="w-24">
+              <p class="text-xs text-white/60">追拍焦点</p>
+              <p class="text-xs text-white/40 mt-0.5">85-89 · 朱砂红</p>
+            </div>
           </div>
-          <!-- 橙色：50-69 实验 -->
+          <!-- 橙红印：50-69 实验 -->
           <div class="flex items-center gap-4">
-            <div class="px-5 py-2 rounded-md border-2 border-[#f97316] bg-[#f97316]/10 -rotate-2">
-              <p class="text-base font-bold text-[#f97316] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">勇气可嘉型的</p>
+            <div class="stamp-grunge relative w-20 h-20 bg-[#ea580c] rounded -rotate-3 shadow-[0_2px_12px_rgba(234,88,12,0.35)]">
+              <div class="absolute inset-1 border border-white/80 rounded-[2px]"></div>
+              <div class="absolute inset-1 grid grid-cols-2 grid-rows-2 place-items-center
+                          font-display font-black text-white text-xl leading-none">
+                <span>勇</span><span>气</span><span>可</span><span>嘉</span>
+              </div>
             </div>
-            <span class="text-xs text-white/40 w-16">50-59</span>
+            <div class="w-24">
+              <p class="text-xs text-white/60">勇气可嘉</p>
+              <p class="text-xs text-white/40 mt-0.5">50-59 · 橙红</p>
+            </div>
           </div>
-          <!-- 灰色：<50 翻车（中英混排最长文案示例） -->
+          <!-- 灰印：<50 翻车 -->
           <div class="flex items-center gap-4">
-            <div class="px-5 py-2 rounded-md border-2 border-[#6b7280] bg-[#6b7280]/10 -rotate-2">
-              <p class="text-base font-bold text-[#6b7280] tracking-[0.25em] indent-[0.25em] whitespace-nowrap">Luo奔都比这强的</p>
+            <div class="stamp-grunge relative w-20 h-20 bg-[#6b7280] rounded -rotate-3 shadow-[0_2px_12px_rgba(107,114,128,0.35)]">
+              <div class="absolute inset-1 border border-white/70 rounded-[2px]"></div>
+              <div class="absolute inset-1 grid grid-cols-2 grid-rows-2 place-items-center
+                          font-display font-black text-white text-xl leading-none">
+                <span>回</span><span>炉</span><span>重</span><span>造</span>
+              </div>
             </div>
-            <span class="text-xs text-white/40 w-16">&lt;50</span>
+            <div class="w-24">
+              <p class="text-xs text-white/60">回炉重造</p>
+              <p class="text-xs text-white/40 mt-0.5">&lt;50 · 瓦灰</p>
+            </div>
           </div>
         </div>
       </div>
