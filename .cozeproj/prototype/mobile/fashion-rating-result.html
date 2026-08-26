@@ -119,25 +119,18 @@
              class="w-full aspect-[3/4] object-cover"/>
         <div class="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black via-black/55 to-transparent"></div>
 
-        <!-- 等级印章：圆形朱文印（回纹环 + 内圈 + 2×2 四字），除印章线条外全透明，
-             盖在照片右上角，-12° 模拟盖章角度。回纹环由 JS 程序生成（见页面底部脚本），
-             开发落地时同一算法可在小程序 canvas 复用绘制。
-             印色按分数段分级：≥90 鎏金 / 70-89 朱砂红 / 65-69 橙红 / <65 瓦灰。
-             本例 82 分 → 朱砂红「穿搭有型」 -->
-        <svg id="poster-level-stamp" viewBox="0 0 120 120"
-             class="absolute top-3 right-3 w-24 h-24 -rotate-12">
-          <circle cx="60" cy="60" r="58" fill="none" stroke="#dc2626" stroke-width="1.5"/>
-          <path class="greek-ring" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round"/>
-          <circle cx="60" cy="60" r="42" fill="none" stroke="#dc2626" stroke-width="1.5"/>
-          <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                fill="#dc2626" font-family="'Noto Serif SC', serif">穿搭</text>
-          <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                fill="#dc2626" font-family="'Noto Serif SC', serif">有型</text>
-        </svg>
+        <!-- 等级印章：切图方案——鎏金圆形奖章（双环 + 刻度纹 + 2×2 四字），
+             白底已抠除为透明 PNG（assets/stamp-da-pei-lao-shou.png），
+             盖在照片右上角，-12° 模拟盖章角度。
+             切图按称号逐个提供，开发落地时经 TOS 下发。
+             本例 88 分 → 鎏金「搭配老手」 -->
+        <img id="poster-level-stamp" src="./assets/stamp-da-pei-lao-shou.png"
+             alt="等级印章：搭配老手" data-category="艺术"
+             class="absolute top-3 right-3 w-24 h-24 -rotate-12 pointer-events-none select-none"/>
       </div>
 
       <!-- 超大分数：极细无衬线白字，海报视觉中心 -->
-      <p id="poster-score" class="mt-7 text-8xl font-thin leading-none tracking-tight text-white">82</p>
+      <p id="poster-score" class="mt-7 text-8xl font-thin leading-none tracking-tight text-white">88</p>
 
       <!-- 等级印章已移至照片右上角（见照片卡内 svg#poster-level-stamp） -->
 
@@ -170,75 +163,54 @@
         分享好友，挑战 TA
       </button>
 
-      <!-- ── 印章色阶预览（原型演示专用分区，便于一次确认全部分级印色与 4 字文案，非页面实际内容） ── -->
+      <!-- ── 印章切图预览（原型演示专用分区：确认切图模版效果，其余称号待批量切图，非页面实际内容） ── -->
       <div id="stamp-variant-preview" class="mt-14 w-full border-t border-white/10 pt-8">
-        <p class="text-xs tracking-[0.3em] text-white/40 text-center">印章色阶 · 设计预览</p>
+        <p class="text-xs tracking-[0.3em] text-white/40 text-center">印章切图 · 设计预览</p>
         <div class="mt-6 flex flex-col items-center gap-6">
-          <!-- 鎏金印：≥90 顶级 -->
+          <!-- 切图模版：88 分 · 鎏金「搭配老手」（白底已抠除） -->
           <div class="flex items-center gap-4">
-            <svg viewBox="0 0 120 120" class="w-20 h-20 -rotate-12">
-              <circle cx="60" cy="60" r="58" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
-              <path class="greek-ring" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linejoin="round"/>
-              <circle cx="60" cy="60" r="42" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
-              <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#fbbf24" font-family="'Noto Serif SC', serif">时尚</text>
-              <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#fbbf24" font-family="'Noto Serif SC', serif">馆藏</text>
-            </svg>
-            <div class="w-24">
+            <img src="./assets/stamp-da-pei-lao-shou.png" alt="等级印章：搭配老手" data-category="艺术"
+                 class="w-20 h-20 -rotate-12 select-none"/>
+            <div class="w-28">
+              <p class="text-xs text-white/60">搭配老手 · 模版</p>
+              <p class="text-xs text-white/40 mt-0.5">88 分 · 鎏金 · 已抠底</p>
+            </div>
+          </div>
+          <!-- 以下称号待批量切图，占位示意 -->
+          <div class="flex items-center gap-4 opacity-45">
+            <div class="w-20 h-20 -rotate-12 rounded-full border-2 border-dashed border-white/30
+                        flex items-center justify-center">
+              <span class="text-[10px] tracking-widest text-white/50">时尚馆藏</span>
+            </div>
+            <div class="w-28">
               <p class="text-xs text-white/60">时尚馆藏</p>
-              <p class="text-xs text-white/40 mt-0.5">95+ · 鎏金</p>
+              <p class="text-xs text-white/40 mt-0.5">95+ · 待切图</p>
             </div>
           </div>
-          <!-- 朱砂红印：70-89 中坚 -->
-          <div class="flex items-center gap-4">
-            <svg viewBox="0 0 120 120" class="w-20 h-20 -rotate-12">
-              <circle cx="60" cy="60" r="58" fill="none" stroke="#dc2626" stroke-width="1.5"/>
-              <path class="greek-ring" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round"/>
-              <circle cx="60" cy="60" r="42" fill="none" stroke="#dc2626" stroke-width="1.5"/>
-              <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#dc2626" font-family="'Noto Serif SC', serif">穿搭</text>
-              <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#dc2626" font-family="'Noto Serif SC', serif">担当</text>
-            </svg>
-            <div class="w-24">
-              <p class="text-xs text-white/60">穿搭担当</p>
-              <p class="text-xs text-white/40 mt-0.5">70-89 · 朱砂红</p>
+          <div class="flex items-center gap-4 opacity-45">
+            <div class="w-20 h-20 -rotate-12 rounded-full border-2 border-dashed border-white/30
+                        flex items-center justify-center">
+              <span class="text-[10px] tracking-widest text-white/50">行为艺术</span>
             </div>
-          </div>
-          <!-- 橙红印：50-69 实验 -->
-          <div class="flex items-center gap-4">
-            <svg viewBox="0 0 120 120" class="w-20 h-20 -rotate-12">
-              <circle cx="60" cy="60" r="58" fill="none" stroke="#ea580c" stroke-width="1.5"/>
-              <path class="greek-ring" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linejoin="round"/>
-              <circle cx="60" cy="60" r="42" fill="none" stroke="#ea580c" stroke-width="1.5"/>
-              <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#ea580c" font-family="'Noto Serif SC', serif">行为</text>
-              <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#ea580c" font-family="'Noto Serif SC', serif">艺术</text>
-            </svg>
-            <div class="w-24">
+            <div class="w-28">
               <p class="text-xs text-white/60">行为艺术</p>
-              <p class="text-xs text-white/40 mt-0.5">65-69 · 橙红</p>
+              <p class="text-xs text-white/40 mt-0.5">65-69 · 待切图</p>
             </div>
           </div>
-          <!-- 瓦灰印：<50 翻车 -->
-          <div class="flex items-center gap-4">
-            <svg viewBox="0 0 120 120" class="w-20 h-20 -rotate-12">
-              <circle cx="60" cy="60" r="58" fill="none" stroke="#6b7280" stroke-width="1.5"/>
-              <path class="greek-ring" fill="none" stroke="#6b7280" stroke-width="2.5" stroke-linejoin="round"/>
-              <circle cx="60" cy="60" r="42" fill="none" stroke="#6b7280" stroke-width="1.5"/>
-              <text x="63" y="55" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#6b7280" font-family="'Noto Serif SC', serif">不如</text>
-              <text x="63" y="86" text-anchor="middle" font-size="24" font-weight="900" letter-spacing="6"
-                    fill="#6b7280" font-family="'Noto Serif SC', serif">不穿</text>
-            </svg>
-            <div class="w-24">
+          <div class="flex items-center gap-4 opacity-45">
+            <div class="w-20 h-20 -rotate-12 rounded-full border-2 border-dashed border-white/30
+                        flex items-center justify-center">
+              <span class="text-[10px] tracking-widest text-white/50">不如不穿</span>
+            </div>
+            <div class="w-28">
               <p class="text-xs text-white/60">不如不穿</p>
-              <p class="text-xs text-white/40 mt-0.5">&lt;65 · 瓦灰</p>
+              <p class="text-xs text-white/40 mt-0.5">&lt;65 · 待切图</p>
             </div>
           </div>
         </div>
+        <p class="mt-6 text-center text-[10px] leading-relaxed text-white/30">
+          确认模版效果后，按 30 级称号批量提供同款切图，<br/>开发时统一抠底后按分数映射展示
+        </p>
       </div>
 
     </section>
@@ -281,34 +253,7 @@
             .fadeIn(200).delay(1500).fadeOut(300);
     }
 
-    // ===== 回纹（雷纹）圆环生成 =====
-    // 连续 Greek key 单元沿圆周等角排列，映射到极坐标生成 path；
-    // 所有 .greek-ring 共用同一几何（120 viewBox / R50 / 带宽 14 / 20 单元）。
-    // 开发落地：同一算法可在小程序 canvas 上以折线段复用绘制。
-    function buildGreekRing(cx, cy, R, band, units) {
-      const motif = [
-        [0, 0.5], [0.8, 0.5], [0.8, 0.15], [0.25, 0.15], [0.25, 0.65],
-        [0.55, 0.65], [0.55, 0.35], [0.4, 0.35], [0.4, 0.5], [1, 0.5]
-      ];
-      const step = (Math.PI * 2) / units;
-      let d = '';
-      for (let u = 0; u < units; u++) {
-        motif.forEach(function (pt, i) {
-          const ang = (u + pt[0]) * step - Math.PI / 2;
-          const r = R + (pt[1] - 0.5) * band;
-          const x = (cx + r * Math.cos(ang)).toFixed(2);
-          const y = (cy + r * Math.sin(ang)).toFixed(2);
-          d += (u === 0 && i === 0 ? 'M' : 'L') + x + ' ' + y;
-        });
-      }
-      return d + 'Z';
-    }
-    const greekRingD = buildGreekRing(60, 60, 50, 14, 20);
-
     $(function () {
-      // 填充全部印章的回纹环（主海报 1 枚 + 色阶预览 4 枚）
-      $('.greek-ring').attr('d', greekRingD);
-
       // 再测一次：回到测评页上传态（Tab 内流程切换，用 RESET 归位）
       $('#btn-retry').on('click', function () {
         navReset('fashion-rating.html');
