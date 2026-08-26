@@ -23,7 +23,7 @@ export const isProduction = (): boolean => process.env.NODE_ENV === 'production'
 export const isStrictAuthMode = (): boolean => !!getWxCredentials()
 
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
-export const PRIVACY_VERSION = process.env.PRIVACY_VERSION || '1.0'
+export const PRIVACY_VERSION = process.env.PRIVACY_VERSION || '1.1'
 
 /** 开发模式下未携带 token 时的兜底用户 */
 export const DEV_USER = { userId: 'dev-local-user', openid: 'dev-local-openid' }

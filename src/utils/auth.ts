@@ -26,7 +26,7 @@ const TOKEN_KEY = 'auth_token'
 const USER_KEY = 'auth_user'
 
 /** 当前隐私协议版本，需与服务端 PRIVACY_VERSION 保持一致 */
-export const CURRENT_PRIVACY_VERSION = '1.0'
+export const CURRENT_PRIVACY_VERSION = '1.1'
 const PRIVACY_CONSENT_KEY = 'privacy_consent_version'
 
 export interface AuthUser {

@@ -15,7 +15,7 @@ import { loginSheetStore, useLoginSheetOpen } from '@/utils/login-sheet-store'
  * 全局浮层必须存在于页面组件树内）。各页面实例通过 loginSheetStore 共享开关状态：
  * requireLogin 唤起后仅当前可见页面呈现；关闭/登录成功全局同步，无残留。
  *
- * - 勾选「已阅读并同意隐私政策」后点击「微信快捷登录」完成静默登录
+ * - 勾选「已阅读并同意用户隐私保护指引」后点击「微信快捷登录」完成静默登录
  * - 可取消（遮罩点击 / 右上角关闭）：取消后保持未登录示例视图，不做任何阻断
  */
 export function LoginSheet() {
@@ -39,7 +39,7 @@ export function LoginSheet() {
   const handleLogin = async () => {
     if (submitting) return
     if (!checked) {
-      Taro.showToast({ title: '请先阅读并同意隐私政策', icon: 'none', duration: 2000 })
+      Taro.showToast({ title: '请先阅读并同意《用户隐私保护指引》', icon: 'none', duration: 2000 })
       return
     }
     setSubmitting(true)
@@ -94,7 +94,7 @@ export function LoginSheet() {
                   openPrivacyPage()
                 }}
               >
-                《隐私政策》
+                《用户隐私保护指引》
               </Text>
             </View>
           </View>
