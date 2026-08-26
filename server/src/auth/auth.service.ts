@@ -84,7 +84,7 @@ export class AuthService {
     return { token, userId, isNewUser, nickname, avatarUrl, displayId, privacyVersion: PRIVACY_VERSION }
   }
 
-  /** 严格模式走微信 code2Session；开发模式以 code 派生伪 openid（仅本地开发可用） */
+  /** 严格模式走微信 code2Session；开发模式映射到固定伪身份（仅本地开发可用） */
   private async resolveOpenid(code: string): Promise<{ openid: string; unionid?: string }> {
     const credentials = getWxCredentials()
     if (!credentials) {
@@ -92,7 +92,11 @@ export class AuthService {
       if (!isDevBypassAllowed()) {
         throw new ServiceUnavailableException('登录服务未配置，暂不可用')
       }
-      return { openid: code === 'dev' ? DEV_USER.openid : `dev-${code}` }
+      // 开发放行模式下身份必须稳定：Taro.login() 返回的 code 是微信下发的一次性
+      // 随机码，若用它派生 openid，每次登录都会生成不同 openid、创建新用户，
+      // 导致系统 ID（displayId）漂移。故统一映射到固定开发用户；
+      // 仅显式 'dev-' 前缀的 code 保留确定性多用户模拟（同 code 同身份）。
+      return { openid: code.startsWith('dev-') ? code : DEV_USER.openid }
     }
 
     // 注意：微信 jscode2session 仅支持 query 传参，secret 必须出现在 URL 中（微信 API 设计）。
