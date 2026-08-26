@@ -18,6 +18,31 @@ const LEVEL_TITLES: Record<number, string> = {
   74: '勉强及格', 73: '翻车边缘', 72: '白费努力', 71: '眼睛被辣', 70: '迷之搭配',
   69: '行为艺术', 68: '视觉冲击', 67: '灾难现场', 66: '精神污染', 65: '裸奔更佳',
 }
+/** 等级印章切图 TOS key（分数 → key）。已制作 66-84 逐分 + 88；
+    85-87/89/90+/93+/95+ 与 65/<65 暂无切图（返回 null，前端隐藏印章）。
+    key 永久有效，返回前端时经 signKey 动态换签（30 天有效期） */
+const STAMP_KEYS: Record<number, string> = {
+  66: 'stamps/level-66_a4714b11.png',
+  67: 'stamps/level-67_5a83aac3.png',
+  68: 'stamps/level-68_961eac35.png',
+  69: 'stamps/level-69_ddb11174.png',
+  70: 'stamps/level-70_5fe01c7c.png',
+  71: 'stamps/level-71_c6cef588.png',
+  72: 'stamps/level-72_9b464777.png',
+  73: 'stamps/level-73_c9e61c05.png',
+  74: 'stamps/level-74_4101dbf2.png',
+  75: 'stamps/level-75_c2217fc7.png',
+  76: 'stamps/level-76_34947e96.png',
+  77: 'stamps/level-77_b453421b.png',
+  78: 'stamps/level-78_dbee7cfe.png',
+  79: 'stamps/level-79_19695bdd.png',
+  80: 'stamps/level-80_8377be2e.png',
+  81: 'stamps/level-81_5ab65976.png',
+  82: 'stamps/level-82_02ad9423.png',
+  83: 'stamps/level-83_4eaf31aa.png',
+  84: 'stamps/level-84_ad2df5d3.png',
+  88: 'stamps/level-88_0eea4e96.png',
+}
 /** 每日评分次数上限：默认 99 便于测试；正式环境通过环境变量 FASHION_RATING_DAILY_LIMIT 调整为 3（PRD：登录用户 3 次/天） */
 export const DAILY_LIMIT = Number(process.env.FASHION_RATING_DAILY_LIMIT) || 99
 /** 单张图片大小上限 10MB（PRD 6.1） */
@@ -94,6 +119,8 @@ export interface FashionRatingResult {
   shareTexts: { confident: string; selfDeprecating: string }
   isInvalid: boolean
   imageWarning?: string
+  /** 等级印章切图签名 URL（30 天）。不入库，返回前端时按分数动态换签附加；无切图的分数段为 undefined */
+  stampUrl?: string
 }
 
 /** multer 上传文件（memoryStorage 模式下必有 buffer；path 兼容 diskStorage） */
@@ -128,7 +155,7 @@ export class FashionRatingService {
       rows.map(async (row) => ({
         id: row.id,
         imageUrl: await signKey(row.imageUrl),
-        result: row.result as FashionRatingResult,
+        result: await this.attachStampUrl(row.result as FashionRatingResult),
         createdAt: row.createdAt,
       })),
     )
@@ -151,9 +178,18 @@ export class FashionRatingService {
     return {
       id: row.id,
       imageUrl: await signKey(row.imageUrl),
-      result: row.result as FashionRatingResult,
+      result: await this.attachStampUrl(row.result as FashionRatingResult),
       createdAt: row.createdAt,
     }
+  }
+
+  /** 按分数附加等级印章签名 URL（不入库，每次返回动态换签；无切图分数段/无效图不附加） */
+  private async attachStampUrl(result: FashionRatingResult): Promise<FashionRatingResult> {
+    if (result.isInvalid) return result
+    const key = STAMP_KEYS[result.totalScore]
+    if (!key) return result
+    const stampUrl = await signKey(key)
+    return stampUrl ? { ...result, stampUrl } : result
   }
 
   /**
@@ -207,7 +243,7 @@ export class FashionRatingService {
     const createdAt = Date.now()
     await db.insert(fashionRatings).values({ id, userId, imageUrl: key, result, createdAt })
 
-    return { id, imageUrl: publicUrl, result, createdAt }
+    return { id, imageUrl: publicUrl, result: await this.attachStampUrl(result), createdAt }
   }
 
   /** 当日已评分次数（按 UTC+8 自然日统计） */

@@ -20,6 +20,8 @@ export interface FashionRatingResult {
   isInvalid: boolean
   /** 图片质量提示（模糊/光线差等），可选 */
   imageWarning?: string
+  /** 等级印章切图签名 URL（服务端按分数动态换签返回；无切图的分数段不返回，前端隐藏印章） */
+  stampUrl?: string
 }
 
 /** 测评记录（rate / list 接口返回的单条数据） */

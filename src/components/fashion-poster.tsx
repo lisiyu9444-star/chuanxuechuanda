@@ -27,46 +27,6 @@ const CARD_H = Math.round((CARD_W * 4) / 3)
 /** 分数相对照片上移距离（页面端 -mt-12 对应 48px，压入底部渐隐遮罩） */
 const SCORE_OVERLAP = 48
 
-/** 分数 → 印章印色（≥90 鎏金 / 70-89 朱砂红 / 65-69 橙红 / <65 瓦灰） */
-function stampColorOf(score: number): string {
-  if (score >= 90) return '#fbbf24'
-  if (score >= 70) return '#dc2626'
-  if (score >= 65) return '#ea580c'
-  return '#6b7280'
-}
-
-/** 回纹（雷纹）单元模板：连续 Greek key 折线（归一化坐标，x 沿弧向 0..1、y 沿径向 0..1） */
-const GREEK_MOTIF: Array<[number, number]> = [
-  [0, 0.5], [0.8, 0.5], [0.8, 0.15], [0.25, 0.15], [0.25, 0.65],
-  [0.55, 0.65], [0.55, 0.35], [0.4, 0.35], [0.4, 0.5], [1, 0.5],
-]
-const GREEK_UNITS = 20
-
-/** 回纹环极坐标映射：单元 u 内模板点 (tx, ty) → 画布坐标 */
-function greekPoint(cx: number, cy: number, ringR: number, band: number, angle: number, ty: number): [number, number] {
-  const r = ringR + (ty - 0.5) * band
-  return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)]
-}
-
-/** 页面端印章环 SVG（回纹环 + 内外细圈，除线条外全透明）→ data-uri（与 canvas 绘制同算法） */
-function buildStampRingUri(color: string): string {
-  const step = (Math.PI * 2) / GREEK_UNITS
-  let d = ''
-  for (let u = 0; u < GREEK_UNITS; u++) {
-    GREEK_MOTIF.forEach(([tx, ty], i) => {
-      const [x, y] = greekPoint(60, 60, 50, 14, (u + tx) * step - Math.PI / 2, ty)
-      d += `${u === 0 && i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`
-    })
-  }
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">` +
-    `<circle cx="60" cy="60" r="58" fill="none" stroke="${color}" stroke-width="1.5"/>` +
-    `<path d="${d}Z" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/>` +
-    `<circle cx="60" cy="60" r="42" fill="none" stroke="${color}" stroke-width="1.5"/>` +
-    `</svg>`
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
-}
-
 /** 圆角矩形路径（兼容无 roundRect 的基础库） */
 function roundRectPath(ctx: any, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
@@ -106,9 +66,8 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
   // （跨端兼容修正：小程序端 padding 百分比/宽高比类不可靠，用计算值固定容器高度）
   const windowWidth = Taro.getWindowInfo?.().windowWidth || 375
   const cardHeight = Math.round(((windowWidth - 48) * 4) / 3)
-  // 印章：印色（按分数段分级）与回纹环 data-uri（与 canvas 绘制同算法）
-  const stampColor = stampColorOf(result.totalScore)
-  const stampRingUri = buildStampRingUri(stampColor)
+  // 等级印章：服务端按分数返回的切图签名 URL（无切图分数段 undefined，隐藏印章）
+  const stampUrl = result.isInvalid ? undefined : result.stampUrl
 
   /** 将海报绘制到离屏 canvas 并保存到相册（H5 降级为长按截图提示） */
   const handleSave = async () => {
@@ -146,8 +105,25 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
         img.src = imgInfo.path
       })
 
+      // 3.5 加载等级印章切图（可选；加载失败降级跳过印章，不阻断海报保存）
+      let stampImg: any = null
+      if (stampUrl) {
+        try {
+          const stampInfo = await Taro.getImageInfo({ src: stampUrl })
+          const si = canvas.createImage()
+          await new Promise<void>((resolve, reject) => {
+            si.onload = () => resolve()
+            si.onerror = () => reject(new Error('stamp load failed'))
+            si.src = stampInfo.path
+          })
+          stampImg = si
+        } catch (e) {
+          console.warn('[FashionPoster] stamp load failed, draw without stamp:', e)
+        }
+      }
+
       // 4. 绘制
-      drawPoster(ctx, img)
+      drawPoster(ctx, img, stampImg)
 
       // 5. 导出并保存相册
       const temp = await Taro.canvasToTempFilePath({ canvas, canvasId: 'fashion-poster-canvas' })
@@ -166,8 +142,8 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
     }
   }
 
-  /** 实际绘制逻辑（375x700 逻辑坐标系，与页面端布局保持一致） */
-  const drawPoster = (ctx: any, img: any) => {
+  /** 实际绘制逻辑（375x700 逻辑坐标系，与页面端布局保持一致）。stampImg 为空时不绘制印章 */
+  const drawPoster = (ctx: any, img: any, stampImg?: any) => {
     // 黑底
     ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
@@ -199,45 +175,14 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
     ctx.fillRect(CARD_X, CARD_Y + CARD_H * 0.4, CARD_W, CARD_H * 0.6)
     ctx.restore()
 
-    // 等级印章：圆形朱文印盖在照片右上角（回纹环 + 内外细圈 + 2×2 四字，与页面端同算法同位置）
-    if (!result.isInvalid) {
+    // 等级印章：切图（服务端按分数返回）盖在照片右上角，-12° 盖章角度，与页面端同位置同尺寸
+    if (stampImg) {
       const R = 48
       ctx.save()
       ctx.translate(CARD_X + CARD_W - R - 12, CARD_Y + R + 12)
       ctx.rotate((-12 * Math.PI) / 180)
-      ctx.strokeStyle = stampColor
-      // 外细圈
-      ctx.lineWidth = 1.5
-      ctx.beginPath()
-      ctx.arc(0, 0, R * (58 / 60), 0, Math.PI * 2)
-      ctx.stroke()
-      // 回纹环
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      const step = (Math.PI * 2) / GREEK_UNITS
-      for (let u = 0; u < GREEK_UNITS; u++) {
-        GREEK_MOTIF.forEach(([tx, ty], i) => {
-          const [x, y] = greekPoint(0, 0, R * (50 / 60), R * (14 / 60), (u + tx) * step - Math.PI / 2, ty)
-          if (u === 0 && i === 0) ctx.moveTo(x, y)
-          else ctx.lineTo(x, y)
-        })
-      }
-      ctx.closePath()
-      ctx.stroke()
-      // 内细圈
-      ctx.lineWidth = 1.5
-      ctx.beginPath()
-      ctx.arc(0, 0, R * (42 / 60), 0, Math.PI * 2)
-      ctx.stroke()
-      // 2×2 四字（衬线粗体）
-      ctx.fillStyle = stampColor
-      ctx.font = 'bold 19px "Noto Serif SC", serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(result.level.slice(0, 2), 0, -10)
-      ctx.fillText(result.level.slice(2, 4), 0, 12)
+      ctx.drawImage(stampImg, -R, -R, R * 2, R * 2)
       ctx.restore()
-      ctx.textBaseline = 'alphabetic'
     }
 
     ctx.textAlign = 'center'
@@ -283,16 +228,14 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
           className="absolute inset-x-0 bottom-0 h-3/5 pointer-events-none"
           style={{ backgroundImage: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.6) 60%, transparent 100%)' }}
         />
-        {/* 等级印章：圆形朱文印盖在照片右上角（-12° 盖章角度）。环体为程序生成的回纹 SVG（data-uri），
-            2×2 四字用原生 Text 叠加保证衬线粗体渲染，除线条与字外全透明 */}
-        {!result.isInvalid && (
-          <View className="absolute top-3 right-3 w-24 h-24 -rotate-12 pointer-events-none">
-            <Image src={stampRingUri} className="w-full h-full" mode="aspectFit" />
-            <View className="absolute inset-0 flex flex-col items-center justify-center">
-              <Text className="block font-display font-black text-2xl leading-none tracking-[0.25em] pl-[0.25em]" style={{ color: stampColor }}>{result.level.slice(0, 2)}</Text>
-              <Text className="block font-display font-black text-2xl leading-none tracking-[0.25em] pl-[0.25em] mt-2" style={{ color: stampColor }}>{result.level.slice(2, 4)}</Text>
-            </View>
-          </View>
+        {/* 等级印章：服务端按分数返回的切图，盖在照片右上角（-12° 盖章角度）。
+            无切图的分数段 stampUrl 为空，不渲染印章层 */}
+        {stampUrl && (
+          <Image
+            src={stampUrl}
+            className="absolute top-3 right-3 w-24 h-24 -rotate-12 pointer-events-none"
+            mode="aspectFit"
+          />
         )}
       </View>
 
