@@ -18,30 +18,38 @@ const LEVEL_TITLES: Record<number, string> = {
   74: '勉强及格', 73: '翻车边缘', 72: '白费努力', 71: '眼睛被辣', 70: '迷之搭配',
   69: '行为艺术', 68: '视觉冲击', 67: '灾难现场', 66: '精神污染', 65: '裸奔更佳',
 }
-/** 等级印章切图 TOS key（分数 → key）。已制作 66-84 逐分 + 88；
-    85-87/89/90+/93+/95+ 与 65/<65 暂无切图（返回 null，前端隐藏印章）。
+/** 等级印章切图 TOS key（分数 → key）。v2 版：66-90 逐分 + 93/95 共 27 级，
+    含半透明奶油金牌面底（任何照片底色上文字清晰可读）。
+    仅 65/<65 无切图（返回 null，前端隐藏印章）。
     key 永久有效，返回前端时经 signKey 动态换签（30 天有效期） */
 const STAMP_KEYS: Record<number, string> = {
-  66: 'stamps/level-66_a4714b11.png',
-  67: 'stamps/level-67_5a83aac3.png',
-  68: 'stamps/level-68_961eac35.png',
-  69: 'stamps/level-69_ddb11174.png',
-  70: 'stamps/level-70_5fe01c7c.png',
-  71: 'stamps/level-71_c6cef588.png',
-  72: 'stamps/level-72_9b464777.png',
-  73: 'stamps/level-73_c9e61c05.png',
-  74: 'stamps/level-74_4101dbf2.png',
-  75: 'stamps/level-75_c2217fc7.png',
-  76: 'stamps/level-76_34947e96.png',
-  77: 'stamps/level-77_b453421b.png',
-  78: 'stamps/level-78_dbee7cfe.png',
-  79: 'stamps/level-79_19695bdd.png',
-  80: 'stamps/level-80_8377be2e.png',
-  81: 'stamps/level-81_5ab65976.png',
-  82: 'stamps/level-82_02ad9423.png',
-  83: 'stamps/level-83_4eaf31aa.png',
-  84: 'stamps/level-84_ad2df5d3.png',
-  88: 'stamps/level-88_0eea4e96.png',
+  66: 'stamps/v2/level-66_31cde78a.png',
+  67: 'stamps/v2/level-67_5c9d8327.png',
+  68: 'stamps/v2/level-68_537828b2.png',
+  69: 'stamps/v2/level-69_4587d1ec.png',
+  70: 'stamps/v2/level-70_f922fe4a.png',
+  71: 'stamps/v2/level-71_a8903475.png',
+  72: 'stamps/v2/level-72_fd77c6bb.png',
+  73: 'stamps/v2/level-73_123a226c.png',
+  74: 'stamps/v2/level-74_b20dc39e.png',
+  75: 'stamps/v2/level-75_22716889.png',
+  76: 'stamps/v2/level-76_fae32646.png',
+  77: 'stamps/v2/level-77_7c708a25.png',
+  78: 'stamps/v2/level-78_6cb777e2.png',
+  79: 'stamps/v2/level-79_32f6bcc2.png',
+  80: 'stamps/v2/level-80_0358edff.png',
+  81: 'stamps/v2/level-81_81f25a6d.png',
+  82: 'stamps/v2/level-82_982bdb88.png',
+  83: 'stamps/v2/level-83_27c16df9.png',
+  84: 'stamps/v2/level-84_50d2813d.png',
+  85: 'stamps/v2/level-85_198b9ea0.png',
+  86: 'stamps/v2/level-86_ffc83144.png',
+  87: 'stamps/v2/level-87_97e99ad7.png',
+  88: 'stamps/v2/level-88_d6430c45.png',
+  89: 'stamps/v2/level-89_5b24ce80.png',
+  90: 'stamps/v2/level-90_bda278b6.png',
+  93: 'stamps/v2/level-93_0b775aa3.png',
+  95: 'stamps/v2/level-95_a428704f.png',
 }
 /** 每日评分次数上限：默认 99 便于测试；正式环境通过环境变量 FASHION_RATING_DAILY_LIMIT 调整为 3（PRD：登录用户 3 次/天） */
 export const DAILY_LIMIT = Number(process.env.FASHION_RATING_DAILY_LIMIT) || 99
