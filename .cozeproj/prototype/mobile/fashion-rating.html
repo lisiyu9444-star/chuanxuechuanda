@@ -90,17 +90,9 @@
       <p class="text-xs text-on-surface-variant mt-2">上传穿搭照片，AI 毒舌打分</p>
     </div>
 
-    <!-- IP 形象图：AI 时尚测评官（透明背景 PNG，直接置于白底上） -->
-    <img id="img-ip-mascot"
-         src="https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/ip-fashion-mascot_92fb08fc.png?sign=1790406478-08a4023dbf-0-5c7bfabe234e88df2ec5036c50905e346e2f65c67b57c585203617f562683ec5"
-         alt="戴紫色墨镜手持放大镜的3D卡通女孩"
-         data-category="人物"
-         draggable="false"
-         class="block w-[55%] h-auto mx-auto mt-6 select-none" />
-
     <!-- 上传卡片区：整卡可点击，3:4 竖版虚线卡片 -->
     <div id="card-upload"
-         class="w-[62%] aspect-[3/4] mx-auto mt-6 bg-white border-2 border-dashed border-outline rounded-2xl
+         class="w-[62%] aspect-[3/4] mx-auto mt-8 bg-white border-2 border-dashed border-outline rounded-2xl
                 flex flex-col items-center justify-center cursor-pointer active:scale-[0.98] transition-transform">
       <i data-lucide="plus" class="w-8 h-8 text-primary"></i>
       <p class="text-base font-semibold text-on-surface mt-3">上传穿搭照片</p>
@@ -109,11 +101,8 @@
     <!-- 上传方式提示 -->
     <p id="upload-hint" class="text-xs text-on-surface-variant mt-4 text-center">拍照或从相册选择</p>
 
-    <!-- 弹性留白：将底部剩余次数压到页面最底部 -->
-    <div class="flex-1"></div>
-
-    <!-- 底部剩余次数 -->
-    <p id="remaining-count" class="text-xs text-on-surface-variant text-center pb-10">今日还可测 3 次</p>
+    <!-- 剩余次数：跟随上传卡，同步上移 -->
+    <p id="remaining-count" class="text-xs text-on-surface-variant text-center mt-6">今日还可测 3 次</p>
 
     <!-- @main-content:end -->
   </main>
