@@ -34,7 +34,7 @@ const STAMP_KEYS: Record<number, string> = {
   74: 'stamps/v4/level-74_86dffeab.png',
   75: 'stamps/v4/level-75_c3162d7b.png',
   76: 'stamps/v4/level-76_2e0aacb0.png',
-  77: 'stamps/v4/level-77_7746f685.png',
+  77: 'stamps/v5/level-77_c6df3036.png',
   78: 'stamps/v4/level-78_bc39cfa3.png',
   79: 'stamps/v4/level-79_cee45cd1.png',
   80: 'stamps/v4/level-80_90276bde.png',
