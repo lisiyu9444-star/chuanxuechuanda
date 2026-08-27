@@ -4,7 +4,7 @@ import { and, desc, eq, gte, sql } from 'drizzle-orm'
 import { db } from '@/storage/database/db'
 import { fashionRatings } from '@/storage/database/schema'
 import { getWxCredentials } from '@/auth/secrets'
-import { getStorage, signKey } from '@/assets/tos-utils'
+import { getStorage, signKey, resolveKeyVariant } from '@/assets/tos-utils'
 
 /** 多模态评分模型（与 stylist 同一可用模型，支持图片输入） */
 const FASHION_MODEL = 'doubao-seed-2-0-pro-260215'
@@ -191,12 +191,16 @@ export class FashionRatingService {
     }
   }
 
-  /** 按分数附加等级印章签名 URL（不入库，每次返回动态换签；无切图分数段/无效图不附加） */
+  /** 按分数附加等级印章签名 URL（不入库，每次返回动态换签；无切图分数段/无效图不附加）。
+      环境隔离自愈：硬编码 key 仅在首个上传环境存在，其他环境经 sync-static 同步后
+      由 resolveKeyVariant 按前缀发现变体（含 5 分钟缓存），仍缺失则不附加（前端隐藏印章） */
   private async attachStampUrl(result: FashionRatingResult): Promise<FashionRatingResult> {
     if (result.isInvalid) return result
     const key = STAMP_KEYS[result.totalScore]
     if (!key) return result
-    const stampUrl = await signKey(key)
+    const resolved = await resolveKeyVariant(key)
+    if (!resolved) return result
+    const stampUrl = await signKey(resolved)
     return stampUrl ? { ...result, stampUrl } : result
   }
 

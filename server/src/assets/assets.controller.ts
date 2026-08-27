@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common'
 import { SkipThrottle } from '@nestjs/throttler'
 import { Public } from '@/auth/public.decorator'
-import { getStorage, signKey, DEFAULT_SIGN_EXPIRE_SECONDS } from './tos-utils'
+import { getStorage, signKey, clearResolvedKeyCache, resolveKeyVariant, DEFAULT_SIGN_EXPIRE_SECONDS } from './tos-utils'
 
 /**
  * 前端静态资源（幸运星 IP、示例图、兜底图）的对象 key。
@@ -35,37 +35,7 @@ const getSyncSecret = (): string => process.env.ASSETS_SYNC_SECRET || ''
 /** 源 URL 白名单：仅允许从本平台 TOS 域名拉取 */
 const SOURCE_URL_PATTERN = /^https:\/\/[^/]+\.tos\.coze\.site\//
 
-/** key 解析结果内存缓存：name -> 实际 key（null 表示当前环境缺失） */
-const resolvedKeyCache = new Map<string, { key: string | null; cachedAt: number }>()
-const RESOLVE_CACHE_TTL = 5 * 60 * 1000
-
-/**
- * 解析静态资源在当前环境中的实际对象 key。
- * 环境隔离导致各环境的实际 key 不同（UUID 后缀不同），按两级解析：
- * 1. fileExists(硬编码 key)：首个上传环境直接命中
- * 2. listFiles(去扩展名前缀)：发现 sync-static 上传的同源变体（取字典序最大者）
- */
-async function resolveAssetKey(name: string, configuredKey: string): Promise<string | null> {
-  const cached = resolvedKeyCache.get(name)
-  if (cached && Date.now() - cached.cachedAt < RESOLVE_CACHE_TTL) return cached.key
-
-  const storage = getStorage()
-  let resolved: string | null = null
-  try {
-    if (await storage.fileExists({ fileKey: configuredKey })) {
-      resolved = configuredKey
-    } else {
-      const prefix = configuredKey.replace(/\.[a-z0-9]+$/i, '')
-      const listed = await storage.listFiles({ prefix, maxKeys: 20 })
-      const variants = (listed.keys || []).filter((k) => typeof k === 'string' && k.length > 0).sort()
-      if (variants.length > 0) resolved = variants[variants.length - 1]
-    }
-  } catch (e) {
-    console.warn('[Assets] resolve key failed:', name, e)
-  }
-  resolvedKeyCache.set(name, { key: resolved, cachedAt: Date.now() })
-  return resolved
-}
+/** 静态资源 key 的变体解析统一走 tos-utils.resolveKeyVariant（环境隔离自愈，含缓存） */
 
 @Public()
 @Controller('assets')
@@ -80,7 +50,7 @@ export class AssetsController {
   async getStaticAssets(): Promise<{ data: { assets: Record<string, string>; expiresIn: number } }> {
     const entries = await Promise.all(
       Object.entries(STATIC_ASSET_KEYS).map(async ([name, key]) => {
-        const resolved = await resolveAssetKey(name, key)
+        const resolved = await resolveKeyVariant(key)
         return [name, resolved ? await signKey(resolved) : ''] as const
       }),
     )
@@ -101,7 +71,7 @@ export class AssetsController {
   @HttpCode(200)
   @SkipThrottle()
   async syncStatic(
-    @Body() body: { secret?: string; sources?: Record<string, string> },
+    @Body() body: { secret?: string; sources?: Record<string, string>; extraSources?: Record<string, string> },
   ): Promise<{ data: { synced: Record<string, string>; errors: Record<string, string> } }> {
     const synced: Record<string, string> = {}
     const errors: Record<string, string> = {}
@@ -127,12 +97,33 @@ export class AssetsController {
         }
         try {
           synced[name] = await storage.uploadFromUrl({ url, timeout: 30000 })
-          resolvedKeyCache.delete(name)
         } catch (e) {
           errors[name] = e instanceof Error ? e.message : String(e)
         }
       }),
     )
+    // 通用 key 同步：等级印章等未纳入 STATIC_ASSET_KEYS 的资源，按对象 key 提供源签名 URL。
+    // 上传产生的变体 key（带新随机后缀）由 resolveKeyVariant 的前缀发现机制自动命中。
+    const extraSources = body?.extraSources && typeof body.extraSources === 'object' ? body.extraSources : {}
+    await Promise.all(
+      Object.entries(extraSources).map(async ([key, url]) => {
+        if (!KEY_PATTERN.test(key) || key.includes('..')) {
+          errors[key] = 'invalid key'
+          return
+        }
+        if (typeof url !== 'string' || !SOURCE_URL_PATTERN.test(url)) {
+          errors[key] = 'source url not allowed'
+          return
+        }
+        try {
+          synced[key] = await storage.uploadFromUrl({ url, timeout: 30000 })
+        } catch (e) {
+          errors[key] = e instanceof Error ? e.message : String(e)
+        }
+      }),
+    )
+    // 同步成功后清空变体解析缓存，让新变体立即被发现（否则最多等 5 分钟 TTL）
+    clearResolvedKeyCache()
     return { data: { synced, errors } }
   }
 

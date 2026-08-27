@@ -69,3 +69,42 @@ export async function signUrl(url?: string, expireTime = DEFAULT_SIGN_EXPIRE_SEC
   const signed = await signKey(key, expireTime)
   return signed || url
 }
+
+/** key 变体解析结果内存缓存：configuredKey -> 实际 key（null 表示当前环境缺失） */
+const resolvedKeyCache = new Map<string, { key: string | null; cachedAt: number }>()
+const RESOLVE_CACHE_TTL = 5 * 60 * 1000
+
+/**
+ * 解析对象在当前环境中的实际 key（环境隔离自愈）。
+ *
+ * 对象存储按环境隔离（代理层自动加环境前缀），硬编码 key 只在首个上传环境存在；
+ * 其他环境经 sync-static 同步后产生的变体 key（同前缀、带新随机后缀）按前缀发现。
+ * 1. fileExists(硬编码 key)：首个上传环境直接命中
+ * 2. listFiles(去扩展名前缀)：发现同步产生的同源变体（取字典序最大者）
+ */
+export async function resolveKeyVariant(configuredKey: string): Promise<string | null> {
+  const cached = resolvedKeyCache.get(configuredKey)
+  if (cached && Date.now() - cached.cachedAt < RESOLVE_CACHE_TTL) return cached.key
+
+  const storage = getStorage()
+  let resolved: string | null = null
+  try {
+    if (await storage.fileExists({ fileKey: configuredKey })) {
+      resolved = configuredKey
+    } else {
+      const prefix = configuredKey.replace(/\.[a-z0-9]+$/i, '')
+      const listed = await storage.listFiles({ prefix, maxKeys: 20 })
+      const variants = (listed.keys || []).filter((k) => typeof k === 'string' && k.length > 0).sort()
+      if (variants.length > 0) resolved = variants[variants.length - 1]
+    }
+  } catch (e) {
+    console.warn('[TosUtils] resolve key variant failed:', configuredKey, e)
+  }
+  resolvedKeyCache.set(configuredKey, { key: resolved, cachedAt: Date.now() })
+  return resolved
+}
+
+/** 清空变体解析缓存（sync-static 同步成功后调用，让新同步的变体立即被发现） */
+export function clearResolvedKeyCache(): void {
+  resolvedKeyCache.clear()
+}
