@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- 字体（Google 字体） -->
-  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/>
+  <!-- 字体（按需，系统字体时省略；只能用 Google 字体，CSS 地址前缀：https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google） -->
+  <!-- <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/> -->
 
   <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
   <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
@@ -14,41 +14,40 @@
 
   <style type="text/tailwindcss">
     @theme {
-      /* === 品牌色（轻奢风：墨黑 CTA + 金色点缀） === */
-      --color-primary:              #101010;
-      --color-primary-container:    #B9975B;
+      /* === 品牌色（天命穿搭：深藏青黑主色，东方玄学 × 轻奢质感） === */
+      --color-primary:              #0f172a;
+      --color-primary-container:    #1e293b;
       --color-on-primary:           #ffffff;
-      /* === 背景 / 表面（暖象牙白 + 中性暖调色阶） === */
-      --color-background:                 #F8F4EC;
-      --color-surface-container-lowest:   #FFFFFF;
-      --color-surface:                    #FCFAF5;
-      --color-surface-container:          #F0EADD;
-      --color-surface-container-high:     #E8E1D2;
-      --color-surface-container-highest:  #DFD7C6;
+      /* === 背景 / 表面（白底 + 中性 gray 色阶，与现有产品一致） === */
+      --color-background:                 #ffffff;
+      --color-surface-container-lowest:   #ffffff;
+      --color-surface:                    #ffffff;
+      --color-surface-container:          #f9fafb;
+      --color-surface-container-high:     #f1f5f9;
+      --color-surface-container-highest:  #e5e7eb;
       /* === 文字 === */
-      --color-on-surface:           #1B1712;
-      --color-on-surface-variant:   #7B7164;
+      --color-on-surface:           #111827;
+      --color-on-surface-variant:   #6b7280;
       /* === 功能色 === */
       --color-success:  #22c55e;
       --color-error:    #ef4444;
       --color-warning:  #f59e0b;
-      /* === 边框（暖灰，使用需 /10~/30 透明度弱化） === */
-      --color-outline:          #8F8578;
-      --color-outline-variant:  #CFC7B8;
-      /* === 圆角（轻奢克制，小圆角精致感） === */
-      --radius-sm:   0.25rem;
-      --radius-md:   0.375rem;
-      --radius-lg:   0.5rem;
-      --radius-xl:   0.75rem;
-      --radius-2xl:  1rem;
+      /* === 边框 === */
+      --color-outline:          #d1d5db;
+      --color-outline-variant:  #e5e7eb;
+      /* === 圆角 === */
+      --radius-sm:   0.5rem;
+      --radius-md:   0.75rem;
+      --radius-lg:   1rem;
+      --radius-xl:   1.25rem;
+      --radius-2xl:  1.5rem;
       --radius-full: 9999px;
-      /* === 阴影（暖调柔和） === */
-      --shadow-card:   0 4px 12px rgba(27,23,18,0.06);
-      --shadow-float:  0 10px 25px rgba(27,23,18,0.08);
-      --shadow-dialog: 0 25px 50px rgba(27,23,18,0.12);
-      /* === 字体（正文优雅无衬线；标题用高反差衬线 font-display 局部使用） === */
-      --font-sans: "Noto Sans SC", system-ui, sans-serif;
-      --font-display: "Playfair Display", "Noto Serif SC", Georgia, serif;
+      /* === 阴影（克制柔和） === */
+      --shadow-card:   0 4px 12px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.10);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: system-ui, -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
     }
   </style>
 
@@ -81,29 +80,7 @@
 <body class="bg-background text-on-surface font-sans">
 
   <!-- @nav:start 导航组件，不需要的页面则不要复制此段（从 @nav:start 到 @nav:end） -->
-  <!-- 一级页 Header：标题居中，轻奢风字距拉开；二级页由子 Agent 改为「返回按钮 + 标题」形态 -->
-  <header class="bg-background sticky top-0 z-40 h-14 flex items-center justify-center px-4">
-    <h1 class="text-base font-semibold tracking-[0.3em] text-on-surface">测 评</h1>
-  </header>
-  <!-- 底部 TabBar：3 个一级页（首页为既有页面，本原型仅测评可点） -->
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest border-t border-outline-variant/20
-              flex justify-around items-center h-14 pb-[env(safe-area-inset-bottom)]">
-    <a href="#" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
-                       hover:text-on-surface transition-colors">
-      <i data-lucide="home" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">首页</span>
-    </a>
-    <a href="fashion-rating.html" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-primary"
-       aria-current="page">
-      <i data-lucide="shirt" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">测评</span>
-    </a>
-    <a href="#" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
-                       hover:text-on-surface transition-colors">
-      <i data-lucide="user" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">我的</span>
-    </a>
-  </nav>
+  <!-- 主 Agent 在此处生成实际的导航 HTML 代码（header / TabBar 等） -->
   <!-- @nav:end 导航组件，不需要的页面则不要复制此段 -->
 
   <main class="flex-1">

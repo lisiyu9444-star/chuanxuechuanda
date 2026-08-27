@@ -3,10 +3,10 @@
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- 字体（Google 字体） -->
-  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/>
+  <!-- 字体（按需，系统字体时省略；只能用 Google 字体，CSS 地址前缀：https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google） -->
+  <!-- <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/> -->
 
   <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
   <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
@@ -14,41 +14,40 @@
 
   <style type="text/tailwindcss">
     @theme {
-      /* === 品牌色（轻奢风：墨黑 CTA + 金色点缀） === */
-      --color-primary:              #101010;
-      --color-primary-container:    #B9975B;
+      /* === 品牌色（天命穿搭：深藏青黑主色，东方玄学 × 轻奢质感） === */
+      --color-primary:              #0f172a;
+      --color-primary-container:    #1e293b;
       --color-on-primary:           #ffffff;
-      /* === 背景 / 表面（暖象牙白 + 中性暖调色阶） === */
-      --color-background:                 #F8F4EC;
-      --color-surface-container-lowest:   #FFFFFF;
-      --color-surface:                    #FCFAF5;
-      --color-surface-container:          #F0EADD;
-      --color-surface-container-high:     #E8E1D2;
-      --color-surface-container-highest:  #DFD7C6;
+      /* === 背景 / 表面（白底 + 中性 gray 色阶，与现有产品一致） === */
+      --color-background:                 #ffffff;
+      --color-surface-container-lowest:   #ffffff;
+      --color-surface:                    #ffffff;
+      --color-surface-container:          #f9fafb;
+      --color-surface-container-high:     #f1f5f9;
+      --color-surface-container-highest:  #e5e7eb;
       /* === 文字 === */
-      --color-on-surface:           #1B1712;
-      --color-on-surface-variant:   #7B7164;
+      --color-on-surface:           #111827;
+      --color-on-surface-variant:   #6b7280;
       /* === 功能色 === */
       --color-success:  #22c55e;
       --color-error:    #ef4444;
       --color-warning:  #f59e0b;
-      /* === 边框（暖灰，使用需 /10~/30 透明度弱化） === */
-      --color-outline:          #8F8578;
-      --color-outline-variant:  #CFC7B8;
-      /* === 圆角（轻奢克制，小圆角精致感） === */
-      --radius-sm:   0.25rem;
-      --radius-md:   0.375rem;
-      --radius-lg:   0.5rem;
-      --radius-xl:   0.75rem;
-      --radius-2xl:  1rem;
+      /* === 边框 === */
+      --color-outline:          #d1d5db;
+      --color-outline-variant:  #e5e7eb;
+      /* === 圆角 === */
+      --radius-sm:   0.5rem;
+      --radius-md:   0.75rem;
+      --radius-lg:   1rem;
+      --radius-xl:   1.25rem;
+      --radius-2xl:  1.5rem;
       --radius-full: 9999px;
-      /* === 阴影（暖调柔和） === */
-      --shadow-card:   0 4px 12px rgba(27,23,18,0.06);
-      --shadow-float:  0 10px 25px rgba(27,23,18,0.08);
-      --shadow-dialog: 0 25px 50px rgba(27,23,18,0.12);
-      /* === 字体（正文优雅无衬线；标题用高反差衬线 font-display 局部使用） === */
-      --font-sans: "Noto Sans SC", system-ui, sans-serif;
-      --font-display: "Playfair Display", "Noto Serif SC", Georgia, serif;
+      /* === 阴影（克制柔和） === */
+      --shadow-card:   0 4px 12px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.10);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: system-ui, -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
     }
   </style>
 
@@ -80,69 +79,47 @@
 
 <body class="bg-background text-on-surface font-sans flex flex-col">
 
-  <!-- @nav:start 导航组件，不需要的页面则不要复制此段（从 @nav:start 到 @nav:end） -->
-  <!-- 一级页 Header：标题居中，轻奢风字距拉开；二级页由子 Agent 改为「返回按钮 + 标题」形态 -->
-  <header class="bg-background sticky top-0 z-40 h-14 flex items-center justify-center px-4">
-    <h1 class="text-base font-semibold tracking-[0.3em] text-on-surface">测 评</h1>
-  </header>
-  <!-- 底部 TabBar：3 个一级页（首页为既有页面，本原型仅测评可点） -->
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest border-t border-outline-variant/20
-              flex justify-around items-center h-14 pb-[env(safe-area-inset-bottom)]">
-    <a href="#" id="nav-home" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
-                       hover:text-on-surface transition-colors">
-      <i data-lucide="home" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">首页</span>
-    </a>
-    <a href="fashion-rating.html" id="nav-rating" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-primary"
-       aria-current="page">
-      <i data-lucide="shirt" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">测评</span>
-    </a>
-    <a href="#" id="nav-profile" class="flex flex-col items-center gap-0.5 px-5 py-1.5 text-on-surface-variant
-                       hover:text-on-surface transition-colors">
-      <i data-lucide="user" class="w-5 h-5"></i>
-      <span class="text-[10px] font-bold tracking-wide">我的</span>
-    </a>
-  </nav>
-  <!-- @nav:end 导航组件，不需要的页面则不要复制此段 -->
+  <!-- 本页面无自定义 header / 底部 TabBar（微信原生导航栏承载标题），@nav 段不复制 -->
 
   <main class="flex-1 flex flex-col">
     <!-- @main-content:start -->
 
-    <!-- 品牌点缀区：衬线体品牌名 + 金色细分隔线 + 金色英文小字，克制不喧宾夺主 -->
-    <section id="brand-block" class="px-4 pt-8 flex flex-col items-center">
-      <p class="font-display text-xl font-medium tracking-wide text-on-surface">AI 毒舌时尚官</p>
-      <span class="w-8 h-px bg-primary-container my-2.5"></span>
-      <p class="text-[10px] font-semibold tracking-[0.35em] text-primary-container">FASHION RATING</p>
-    </section>
+    <!-- 标题区 -->
+    <div id="title-area" class="pt-10 text-center px-4">
+      <h1 class="text-xl font-semibold text-on-surface">AI 毒舌时尚官</h1>
+      <p class="text-xs text-on-surface-variant mt-2">上传穿搭照片，AI 毒舌打分</p>
+    </div>
 
-    <!-- 上留白：撑开空间，让上传卡片落在屏幕纵向约 55%-65% 的视觉重心处 -->
-    <div class="flex-[2]"></div>
+    <!-- IP 形象图：AI 时尚测评官（透明背景 PNG，直接置于白底上） -->
+    <img id="img-ip-mascot"
+         src="https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/ip-fashion-mascot_92fb08fc.png?sign=1790406478-08a4023dbf-0-5c7bfabe234e88df2ec5036c50905e346e2f65c67b57c585203617f562683ec5"
+         alt="戴紫色墨镜手持放大镜的3D卡通女孩"
+         data-category="人物"
+         draggable="false"
+         class="block w-[55%] h-auto mx-auto mt-6 select-none" />
 
-    <!-- 上传卡片区：约 70% 宽虚线卡片，整卡可点击 -->
-    <section id="upload-block" class="px-4 flex flex-col items-center">
-      <button id="card-upload" type="button"
-              class="w-[70%] border-2 border-dashed border-outline-variant/60 rounded-2xl
-                     bg-surface-container-lowest py-14 flex flex-col items-center justify-center gap-3
-                     hover:shadow-card active:scale-[0.98] transition-all cursor-pointer">
-        <i data-lucide="plus" class="w-8 h-8 text-primary-container"></i>
-        <span class="text-base font-semibold text-on-surface">上传穿搭照片</span>
-      </button>
-      <p id="text-upload-hint" class="mt-4 text-xs text-on-surface-variant text-center">拍照或从相册选择</p>
-    </section>
+    <!-- 上传卡片区：整卡可点击，3:4 竖版虚线卡片 -->
+    <div id="card-upload"
+         class="w-[62%] aspect-[3/4] mx-auto mt-6 bg-white border-2 border-dashed border-outline rounded-2xl
+                flex flex-col items-center justify-center cursor-pointer active:scale-[0.98] transition-transform">
+      <i data-lucide="plus" class="w-8 h-8 text-primary"></i>
+      <p class="text-base font-semibold text-on-surface mt-3">上传穿搭照片</p>
+    </div>
 
-    <!-- 下留白：略小于上留白，形成重心偏下的杂志式构图 -->
-    <div class="flex-[1.1]"></div>
+    <!-- 上传方式提示 -->
+    <p id="upload-hint" class="text-xs text-on-surface-variant mt-4 text-center">拍照或从相册选择</p>
 
-    <!-- 底部剩余次数（TabBar 上方） -->
-    <p id="text-remaining"
-       class="text-xs text-on-surface-variant text-center pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.25rem)]">今日还可测 2 次</p>
+    <!-- 弹性留白：将底部剩余次数压到页面最底部 -->
+    <div class="flex-1"></div>
+
+    <!-- 底部剩余次数 -->
+    <p id="remaining-count" class="text-xs text-on-surface-variant text-center pb-10">今日还可测 3 次</p>
 
     <!-- @main-content:end -->
   </main>
 
   <script>
-    // ===== 导航辅助函数 =====
+    /* 导航辅助函数（Mobile 每页必须定义，原型演示用） */
     function navPush(route) {
       console.log(`[原型演示] PUSH 到: ${route}`);
       window.location.href = route;
@@ -161,28 +138,13 @@
     }
 
     $(function () {
-      // 上传卡片：点击模拟「拍照/从相册选择」完成上传，跳转结果页
-      // 完整行为（后续开发实现）：
-      // 1. 点击后先 requireLogin 登录拦截；次数为 0 时按钮灰显并 toast「今日次数已用完」
-      // 2. 已登录则调起系统拍照/相册选择器
-      // 3. 选图后前端压缩（>2MB 时 canvas 压缩长边≤1024/0.8/jpg），临时路径存 storage
-      // 4. 跳转 loading 页（mode=fashion-rating）发起评分请求，成功后回切结果态
-      // 原型流程：上传完成 → Loading 页（毒舌文案轮播）→ 自动跳转结果页
+      // 上传卡片 - 点击后应调起微信原生图片选择能力（拍照或从相册选择），属于原生/第三方接口：
+      // 原型阶段仅保留事件入口并输出日志。完整行为：
+      // 1. 调用 wx.chooseMedia（或 wx.chooseImage）选择 1 张穿搭照片
+      // 2. 选择成功后将图片上传并进入 AI 毒舌测评流程
+      // 3. 测评完成后扣减当日剩余次数，更新「今日还可测 N 次」
       $('#card-upload').on('click', function () {
-        navPush('fashion-rating-loading.html');
-      });
-
-      // TabBar：测评已激活；首页/我的为既有小程序页面，原型中不可点
-      $('#nav-rating').on('click', function (e) {
-        e.preventDefault();
-      });
-      $('#nav-home').on('click', function (e) {
-        e.preventDefault();
-        console.log('[原型演示] 首页为既有页面，本原型不提供跳转');
-      });
-      $('#nav-profile').on('click', function (e) {
-        e.preventDefault();
-        console.log('[原型演示] 我的为既有页面，本原型不提供跳转');
+        console.log('需要调用微信原生接口 wx.chooseMedia 实现拍照或从相册选择穿搭照片');
       });
     });
   </script>
