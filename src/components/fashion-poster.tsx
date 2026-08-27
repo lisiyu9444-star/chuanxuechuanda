@@ -180,7 +180,8 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
       // 印章半径：随页面端调小约 15%（96px 直径 → 82px）
       const R = 41
       ctx.save()
-      ctx.translate(CARD_X + CARD_W - R - 12, CARD_Y + R + 12)
+      // 右下角定位（与页面端 bottom-3 right-3 一致，压在底部渐隐蒙层上）
+      ctx.translate(CARD_X + CARD_W - R - 12, CARD_Y + CARD_H - R - 12)
       ctx.rotate((-12 * Math.PI) / 180)
       ctx.drawImage(stampImg, -R, -R, R * 2, R * 2)
       ctx.restore()
@@ -229,12 +230,12 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
           className="absolute inset-x-0 bottom-0 h-3/5 pointer-events-none"
           style={{ backgroundImage: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.6) 60%, transparent 100%)' }}
         />
-        {/* 等级印章：服务端按分数返回的切图，盖在照片右上角（-12° 盖章角度）。
-            无切图的分数段 stampUrl 为空，不渲染印章层 */}
+        {/* 等级印章：服务端按分数返回的切图，盖在照片右下角（-12° 盖章角度），
+            压在底部渐隐蒙层上保证清晰度。无切图的分数段 stampUrl 为空，不渲染印章层 */}
         {stampUrl && (
           <Image
             src={stampUrl}
-            className="absolute top-3 right-3 w-20 h-20 -rotate-12 pointer-events-none"
+            className="absolute bottom-3 right-3 w-20 h-20 -rotate-12 pointer-events-none"
             mode="aspectFit"
           />
         )}
