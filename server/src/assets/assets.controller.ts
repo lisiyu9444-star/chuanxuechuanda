@@ -21,6 +21,8 @@ const STATIC_ASSET_KEYS: Record<string, string> = {
   exampleFlat: 'example_flat_compressed_fcb0c028_2340446d.jpg',
   exampleTryOn: 'example_tryon_compressed_2655e65c_38629783.jpg',
   fallback: 'placeholder_compressed_fc42a6fb_22887e81.jpg',
+  /** 测评上传页 IP 形象图（透明底 PNG，去背景 flood fill 处理） */
+  ipMascot: 'ip-fashion-mascot-v2-nobg_f17c7ede.png',
 }
 
 /** key 合法性：仅允许字母数字与 . _ - /，防路径穿越 */

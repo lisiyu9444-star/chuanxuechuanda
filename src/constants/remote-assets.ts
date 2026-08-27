@@ -18,14 +18,17 @@ export interface RemoteAssets {
   exampleFlat: string
   exampleTryOn: string
   fallback: string
+  /** 测评上传页 IP 形象图（透明底） */
+  ipMascot: string
 }
 
 /**
  * 缓存版本 v3：v1 仅校验 fallback 是否存在，可能把含空字段的半成品
  * 缓存 7 天导致首页长期空白；v2 强制旧缓存失效并启用全字段校验；
- * v3 更换透明底幸运星图（旧图为浅灰实色底），强制换签新 URL。
+ * v3 更换透明底幸运星图（旧图为浅灰实色底），强制换签新 URL；
+ * v4 新增 ipMascot 字段（测评上传页 IP 图），旧缓存缺该字段，强制换签。
  */
-const STORAGE_KEY = 'remote_assets_v3'
+const STORAGE_KEY = 'remote_assets_v4'
 /** 本地缓存 7 天（URL 本身 30 天有效，提前换签留足余量） */
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 

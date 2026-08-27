@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import Taro, { useDidShow, useLoad, useShareAppMessage } from '@tarojs/taro'
-import { View, Text } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import { Plus } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { isLoggedIn, requireLogin } from '@/utils/auth'
+import { ensureRemoteAssets } from '@/constants/remote-assets'
 import { FashionPoster } from '@/components/fashion-poster'
 import { LoginSheet } from '@/components/login-sheet'
 import type { FashionRatingRecord } from '@/types/fashion'
@@ -45,6 +46,8 @@ export default function FashionRatingPage() {
   const [view, setView] = useState<'upload' | 'result'>('upload')
   const [record, setRecord] = useState<FashionRatingRecord | null>(null)
   const [remaining, setRemaining] = useState(99)
+  /** IP 形象图 URL（远程静态资产动态签发，防签名过期；拉取失败则不展示图） */
+  const [ipMascotUrl, setIpMascotUrl] = useState('')
   /** 是否从分享卡片进入（决定重测按钮文案为「我也要测」） */
 
   /** 拉取今日剩余次数（未登录时保持默认值，点击上传时会先唤起登录） */
@@ -98,6 +101,23 @@ export default function FashionRatingPage() {
       fetchShared(shareId)
     }
   })
+
+  // 结果态隐藏原生 tabBar（全屏海报沉浸式展示），上传态恢复显示
+  useEffect(() => {
+    const toggle = view === 'result' ? Taro.hideTabBar : Taro.showTabBar
+    toggle({ animation: false }).catch((e) => {
+      console.warn('[FashionRating] toggle tabBar failed:', e)
+    })
+  }, [view])
+
+  // 拉取 IP 形象图（三级缓存：内存 -> 本地 7 天 -> 网络；失败静默不展示）
+  useEffect(() => {
+    ensureRemoteAssets()
+      .then((assets) => {
+        if (assets?.ipMascot) setIpMascotUrl(assets.ipMascot)
+      })
+      .catch((e) => console.warn('[FashionRating] load ipMascot failed:', e))
+  }, [])
 
   // 导航栏配色跟随页面状态：结果态黑底白字，上传态白底黑字
   useEffect(() => {
@@ -195,8 +215,8 @@ export default function FashionRatingPage() {
   // ===== 结果态：黑色海报 =====
   if (view === 'result' && record) {
     return (
-      // pb-32 留出 tabBar 高度，避免底部点评/操作按钮被原生 tabBar 遮挡
-      <View className="min-h-screen bg-black flex flex-col items-center px-6 pt-8 pb-32">
+      // 结果态已隐藏原生 tabBar（view 切换时 hideTabBar），底部仅需常规留白
+      <View className="min-h-screen bg-black flex flex-col items-center px-6 pt-8 pb-8">
         <FashionPoster
           imageUrl={record.imageUrl}
           result={record.result}
@@ -215,30 +235,30 @@ export default function FashionRatingPage() {
         <Text className="block text-xs text-muted-foreground mt-2">上传穿搭照片，AI 毒舌打分</Text>
       </View>
 
-      {/* 上留白：撑开空间，让上传卡落在屏幕纵向视觉重心处 */}
-      <View className="flex-[2]" />
+      {/* IP 形象图 + 上传卡片区：图卡同宽（62% 页宽），卡片上移与图底部重叠 30% 且处于上层。
+          两者置于同一无 padding 容器，确保 -mt-[18.6%] 与图高同基准（方图高=62% 容器宽，30%×62%≈18.6%） */}
+      <View className="flex flex-col items-center">
+        {ipMascotUrl ? (
+          <Image src={ipMascotUrl} mode="widthFix" className="block w-[62%] mt-8" />
+        ) : null}
 
-      {/* 上传卡片区：虚线卡片，整卡可点击 */}
-      <View className="px-4 flex flex-col items-center">
+        {/* 上传卡片：3:4 竖版虚线卡片，整卡可点击 */}
         <View
-          className={`w-[70%] border-2 border-dashed border-slate-300 rounded-2xl bg-white py-14 flex flex-col items-center justify-center gap-3 ${
-            remaining <= 0 ? 'opacity-40' : 'active:scale-[0.98]'
-          }`}
+          className={`relative z-10 w-[62%] aspect-[3/4] border-2 border-dashed border-slate-300 rounded-2xl bg-white flex flex-col items-center justify-center gap-3 ${
+            ipMascotUrl ? '-mt-[18.6%]' : 'mt-8'
+          } ${remaining <= 0 ? 'opacity-40' : 'active:scale-[0.98]'}`}
           onClick={handleUpload}
         >
           <Plus size={32} color="#0f172a" />
           <Text className="block text-base font-semibold text-foreground">上传穿搭照片</Text>
         </View>
         <Text className="block mt-4 text-xs text-muted-foreground text-center">拍照或从相册选择</Text>
+
+        {/* 剩余次数：跟随上传卡上移，不再压底 */}
+        <Text className="block text-xs text-muted-foreground text-center mt-6">
+          {remaining > 0 ? `今日还可测 ${remaining} 次` : '今日评分次数已用完'}
+        </Text>
       </View>
-
-      {/* 下留白：略小于上留白，形成重心偏下的杂志式构图 */}
-      <View className="flex-1" />
-
-      {/* 底部剩余次数 */}
-      <Text className="block text-xs text-muted-foreground text-center pb-8">
-        {remaining > 0 ? `今日还可测 ${remaining} 次` : '今日评分次数已用完'}
-      </Text>
 
       {/* 全局登录弹层（requireLogin 唤起，各页面需自行挂载实例） */}
       <LoginSheet />
