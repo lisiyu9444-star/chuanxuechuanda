@@ -7,6 +7,14 @@
       },
       "title": "AI毒舌测评-上传首页",
       "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/fashion-result.html"
+      },
+      "title": "AI毒舌测评-结果海报",
+      "size": "mobile"
     }
   ]
 }

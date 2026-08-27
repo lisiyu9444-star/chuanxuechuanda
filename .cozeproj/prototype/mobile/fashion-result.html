@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- 字体（按需，系统字体时省略；只能用 Google 字体，CSS 地址前缀：https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google） -->
+  <!-- <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/> -->
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色（天命穿搭：深藏青黑主色，东方玄学 × 轻奢质感） === */
+      --color-primary:              #0f172a;
+      --color-primary-container:    #1e293b;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面（白底 + 中性 gray 色阶，与现有产品一致） === */
+      --color-background:                 #ffffff;
+      --color-surface-container-lowest:   #ffffff;
+      --color-surface:                    #ffffff;
+      --color-surface-container:          #f9fafb;
+      --color-surface-container-high:     #f1f5f9;
+      --color-surface-container-highest:  #e5e7eb;
+      /* === 文字 === */
+      --color-on-surface:           #111827;
+      --color-on-surface-variant:   #6b7280;
+      /* === 功能色 === */
+      --color-success:  #22c55e;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      /* === 边框 === */
+      --color-outline:          #d1d5db;
+      --color-outline-variant:  #e5e7eb;
+      /* === 圆角 === */
+      --radius-sm:   0.5rem;
+      --radius-md:   0.75rem;
+      --radius-lg:   1rem;
+      --radius-xl:   1.25rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影（克制柔和） === */
+      --shadow-card:   0 4px 12px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.10);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: system-ui, -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+    }
+  </style>
+
+  <style>
+    body {
+      min-height: max(812px, 100dvh);
+      font-family: system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <main class="flex-1">
+    <!-- @main-content:start -->
+    <!-- 结果海报页：整页黑底沉浸式（本页为特殊暗色场景，直接使用字面值 bg-black / text-white，覆盖骨架白底） -->
+    <div class="min-h-screen bg-black text-white px-6 pt-8 pb-8 flex flex-col items-center">
+
+      <!-- 1. 照片卡：3:4 竖版，圆角裁切 -->
+      <div id="photo-card" class="w-full aspect-[3/4] rounded-3xl overflow-hidden relative bg-black">
+        <!-- 用户穿搭照片：铺满容器 -->
+        <img src="https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/example_tryon_compressed_2655e65c_38629783.jpg?sign=1790411165-1570cb5e20-0-2b19c3a4ea16090cdb0e8047ca7323b5098771149f3ffc0f128e755b400a5005"
+             alt="用户穿搭照片" data-category="人物"
+             class="w-full h-full object-cover" />
+        <!-- 底部渐隐遮罩：保证印章与分数可读 -->
+        <div class="absolute inset-x-0 bottom-0 h-3/5 pointer-events-none"
+             style="background-image: linear-gradient(to top, #000 0%, rgba(0,0,0,0.6) 60%, transparent 100%)"></div>
+        <!-- 等级印章：右下角，压在黑色渐隐蒙层上（验收核心，禁止移回右上角） -->
+        <img src="https://coze-coding-project.tos.coze.site/coze_storage_7665650076865331200/stamps/v4/level-95_857f1ccd_197d964d.png?sign=1790411165-740b0492c5-0-242a5c0d84ab7c5db05d70523ec862bd8d83138fc72c7cb709c2ae97825e595f"
+             alt="等级印章" data-category="图标"
+             class="absolute bottom-3 right-3 w-20 h-20 -rotate-12 pointer-events-none" />
+      </div>
+
+      <!-- 2. 分数：上移压入照片卡渐隐遮罩 -->
+      <p id="score-value" class="text-8xl font-bold font-serif text-white leading-none -mt-12 relative z-10 text-center">95</p>
+
+      <!-- 3. 风格人格 -->
+      <p id="style-persona" class="text-xl font-medium text-white mt-4 text-center">行走的时尚教科书</p>
+
+      <!-- 4. 毒舌点评 -->
+      <p id="roast-comment" class="text-sm italic text-white/50 text-center mt-4 max-w-72 leading-relaxed">“这身搭配终于让你看起来不像个迷路的大学生了，紫色用得大胆又克制。”</p>
+
+      <!-- 5. 操作区：三个纯图标按钮（静态原型，无点击行为） -->
+      <div id="action-bar" class="flex items-center justify-center gap-16 mt-10">
+        <!-- 保存海报 -->
+        <button id="btn-save-poster" type="button" aria-label="保存海报"
+                class="w-12 h-12 flex items-center justify-center text-white/80 bg-transparent border-none">
+          <i data-lucide="save" class="w-6 h-6"></i>
+        </button>
+        <!-- 重新测评 -->
+        <button id="btn-retry-rating" type="button" aria-label="重新测评"
+                class="w-12 h-12 flex items-center justify-center text-white/80 bg-transparent border-none">
+          <i data-lucide="rotate-ccw" class="w-6 h-6"></i>
+        </button>
+        <!-- 分享海报 -->
+        <button id="btn-share-poster" type="button" aria-label="分享海报"
+                class="w-12 h-12 flex items-center justify-center text-white/80 bg-transparent border-none">
+          <i data-lucide="share-2" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <!-- 6. 品牌落款 -->
+      <p id="brand-signature" class="text-xs text-white/30 tracking-[0.3em] mt-8 text-center">传学幸运穿搭</p>
+
+    </div>
+    <!-- @main-content:end -->
+  </main>
+
+  <script>
+    /* === 导航辅助函数（Mobile 页面必须定义；本页为静态海报页，无跳转调用） === */
+    function navPush(route) {
+      console.log(`[原型演示] PUSH 到: ${route}`);
+      window.location.href = route;
+    }
+
+    function navReplace(route) {
+      console.log(`[原型演示] REPLACE 为: ${route}`);
+      window.location.replace(route);
+    }
+
+    function navReset(route) {
+      console.log(`[原型演示] RESET 到: ${route}`);
+      window.location.href = route;
+    }
+
+    function navBack() {
+      console.log(`[原型演示] BACK 返回上一页`);
+      if (window.history.length > 1) window.history.back();
+    }
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>
