@@ -27,8 +27,11 @@ export interface RemoteAssets {
  * 缓存 7 天导致首页长期空白；v2 强制旧缓存失效并启用全字段校验；
  * v3 更换透明底幸运星图（旧图为浅灰实色底），强制换签新 URL；
  * v4 新增 ipMascot 字段（测评上传页 IP 图），旧缓存缺该字段，强制换签。
+ * v5 修复生产残缺缓存：生产曾仅有 4 个必需字段有值（luckyStar/ipMascot 为空），
+ * 残缺响应被 isValidAssets 判为有效并缓存 7 天，导致生产完成资源同步后
+ * 已缓存用户仍长期缺图；强制丢弃旧缓存重新拉取完整数据。
  */
-const STORAGE_KEY = 'remote_assets_v4'
+const STORAGE_KEY = 'remote_assets_v5'
 /** 本地缓存 7 天（URL 本身 30 天有效，提前换签留足余量） */
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 
