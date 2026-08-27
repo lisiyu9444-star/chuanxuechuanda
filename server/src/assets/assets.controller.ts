@@ -103,7 +103,9 @@ export class AssetsController {
       }),
     )
     // 通用 key 同步：等级印章等未纳入 STATIC_ASSET_KEYS 的资源，按对象 key 提供源签名 URL。
-    // 上传产生的变体 key（带新随机后缀）由 resolveKeyVariant 的前缀发现机制自动命中。
+    // 注意不用 uploadFromUrl：它只保留源 URL 的 basename，会丢失 stamps/v4/ 这类目录前缀，
+    // 导致 resolveKeyVariant 的前缀发现无法命中。改为下载后 uploadFile 并传入完整 key 作为
+    // fileName，SDK 会保留目录结构生成变体 key（dirname 保留 + 文件名加 8 位随机后缀）。
     const extraSources = body?.extraSources && typeof body.extraSources === 'object' ? body.extraSources : {}
     await Promise.all(
       Object.entries(extraSources).map(async ([key, url]) => {
@@ -116,7 +118,14 @@ export class AssetsController {
           return
         }
         try {
-          synced[key] = await storage.uploadFromUrl({ url, timeout: 30000 })
+          const res = await fetch(url, { signal: AbortSignal.timeout(30000) })
+          if (!res.ok) throw new Error(`fetch source failed: ${res.status}`)
+          const buf = Buffer.from(await res.arrayBuffer())
+          synced[key] = await storage.uploadFile({
+            fileContent: buf,
+            fileName: key,
+            contentType: res.headers.get('content-type') || 'application/octet-stream',
+          })
         } catch (e) {
           errors[key] = e instanceof Error ? e.message : String(e)
         }
