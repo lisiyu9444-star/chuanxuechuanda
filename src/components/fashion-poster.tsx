@@ -177,7 +177,8 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
 
     // 等级印章：切图（服务端按分数返回）盖在照片右上角，-12° 盖章角度，与页面端同位置同尺寸
     if (stampImg) {
-      const R = 48
+      // 印章半径：随页面端调小约 15%（96px 直径 → 82px）
+      const R = 41
       ctx.save()
       ctx.translate(CARD_X + CARD_W - R - 12, CARD_Y + R + 12)
       ctx.rotate((-12 * Math.PI) / 180)
@@ -233,7 +234,7 @@ export function FashionPoster({ imageUrl, result, onRetry }: FashionPosterProps)
         {stampUrl && (
           <Image
             src={stampUrl}
-            className="absolute top-3 right-3 w-24 h-24 -rotate-12 pointer-events-none"
+            className="absolute top-3 right-3 w-20 h-20 -rotate-12 pointer-events-none"
             mode="aspectFit"
           />
         )}
