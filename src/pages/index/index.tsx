@@ -28,6 +28,7 @@ import { ELEMENT_COLORS } from '@/constants/element-colors'
 import { pickLuckyStarIconName } from '@/constants/lucky-icons'
 import { SHOW_METAPHYSICS } from '@/utils/channel'
 import { AUTH_EVENTS, ensureAiAccess, ensureLoggedIn, hasAgreedPrivacy, isLoggedIn, isWeappEnv, requireLogin } from '@/utils/auth'
+import { loginSheetStore } from '@/utils/login-sheet-store'
 import { restoreFromCloud } from '@/utils/cloudRestore'
 import { LoginSheet } from '@/components/login-sheet'
 
@@ -166,8 +167,17 @@ export default function Index() {
       // 或切换恰逢冷却未进 loading——统一清除残留 previous，避免过期回退
       consumePreviousArchiveId()
     } else {
-      // 微信小程序：未同意隐私协议（未登录）时不自动触发 AI 生成，等待用户在登录弹层完成授权
-      if (isWeappEnv() && !hasAgreedPrivacy()) return
+      // 微信小程序：未同意隐私协议（含隐私版本升级后老同意标记失效）时不自动触发 AI 生成。
+      // 直接 return 会让页面停在骨架屏假死（currentArchive 已设置、dailyResult=null 且非失败态 → 命中骨架分支），
+      // 这里改为：1) 切到「待生成」空态卡片（复用取消态 UI，含手动生成按钮，点击经 ensureAiAccess 唤起授权）；
+      //          2) 主动唤起登录弹层引导重新授权，同意后广播 LOGIN_SUCCESS 自动恢复生成。
+      if (isWeappEnv() && !hasAgreedPrivacy()) {
+        setDailyResult(null)
+        setGenerateFailed(true)
+        setGenerateCancelled(true)
+        loginSheetStore.open()
+        return
+      }
       // 日期变化或缓存异常：清除该档案所有旧日期缓存，重新进入 loading 请求
       clearDailyResultsByArchive(activeArchive.id)
       setHasArchiveChanged(false)
