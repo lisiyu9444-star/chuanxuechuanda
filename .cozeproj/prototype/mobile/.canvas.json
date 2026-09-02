@@ -15,6 +15,14 @@
       },
       "title": "AI毒舌测评-结果海报",
       "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/daily-yongshen.html"
+      },
+      "title": "今日穿搭指南-用神区块改造",
+      "size": "mobile"
     }
   ]
 }

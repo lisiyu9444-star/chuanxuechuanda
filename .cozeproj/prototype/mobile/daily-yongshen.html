@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- 字体（按需，系统字体时省略；只能用 Google 字体，CSS 地址前缀：https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google） -->
+  <!-- <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/> -->
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色（天命穿搭：深藏青黑主色，东方玄学 × 轻奢质感） === */
+      --color-primary:              #0f172a;
+      --color-primary-container:    #1e293b;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面（白底 + 中性 gray 色阶，与现有产品一致） === */
+      --color-background:                 #ffffff;
+      --color-surface-container-lowest:   #ffffff;
+      --color-surface:                    #ffffff;
+      --color-surface-container:          #f9fafb;
+      --color-surface-container-high:     #f1f5f9;
+      --color-surface-container-highest:  #e5e7eb;
+      /* === 文字 === */
+      --color-on-surface:           #111827;
+      --color-on-surface-variant:   #6b7280;
+      /* === 功能色 === */
+      --color-success:  #22c55e;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      /* === 边框 === */
+      --color-outline:          #d1d5db;
+      --color-outline-variant:  #e5e7eb;
+      /* === 圆角 === */
+      --radius-sm:   0.5rem;
+      --radius-md:   0.75rem;
+      --radius-lg:   1rem;
+      --radius-xl:   1.25rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影（克制柔和） === */
+      --shadow-card:   0 4px 12px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.10);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: system-ui, -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+    }
+  </style>
+
+  <style>
+    body {
+      min-height: max(812px, 100dvh);
+      font-family: system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <main class="flex-1 px-4 py-6">
+    <!-- @main-content:start -->
+
+    <!-- 页头：返回箭头 + 标题 + 日期副标题（本页为局部区块展示页，无全局导航/TabBar） -->
+    <header class="mb-6">
+      <div class="flex items-center gap-1">
+        <button id="btn-back" aria-label="返回"
+                class="w-12 h-12 -ml-3 flex items-center justify-center text-gray-700 rounded-full
+                       hover:bg-gray-100 active:bg-gray-200 transition-colors">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <div>
+          <h1 class="text-base font-semibold text-gray-900">今日穿搭指南</h1>
+          <p class="text-xs text-gray-400 mt-0.5">2026年8月28日 · 甲申日</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="space-y-4">
+
+      <!-- 运势指数卡（简化展示，收拢页面上下文） -->
+      <section id="fortune-card" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <h2 class="text-sm font-medium text-gray-900 mb-3">今日运势</h2>
+        <div class="space-y-2.5">
+          <!-- 指数条-综合 -->
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 w-8 shrink-0">综合</span>
+            <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full" style="width: 85%"></div>
+            </div>
+            <span class="text-xs font-medium text-gray-700 w-8 text-right shrink-0">85</span>
+          </div>
+          <!-- 指数条-事业 -->
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 w-8 shrink-0">事业</span>
+            <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full" style="width: 82%"></div>
+            </div>
+            <span class="text-xs font-medium text-gray-700 w-8 text-right shrink-0">82</span>
+          </div>
+          <!-- 指数条-桃花 -->
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 w-8 shrink-0">桃花</span>
+            <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full" style="width: 76%"></div>
+            </div>
+            <span class="text-xs font-medium text-gray-700 w-8 text-right shrink-0">76</span>
+          </div>
+          <!-- 指数条-放松 -->
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 w-8 shrink-0">放松</span>
+            <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full" style="width: 80%"></div>
+            </div>
+            <span class="text-xs font-medium text-gray-700 w-8 text-right shrink-0">80</span>
+          </div>
+          <!-- 指数条-灵感 -->
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 w-8 shrink-0">灵感</span>
+            <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full" style="width: 88%"></div>
+            </div>
+            <span class="text-xs font-medium text-gray-700 w-8 text-right shrink-0">88</span>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">木气生发，思维活跃，适合推进创意类事务。</p>
+      </section>
+
+      <!-- 【重点】喜用神分析卡片：每日用神区块改造演示（① 隐藏喜神 ② 新增推导原因文案） -->
+      <section id="yongshen-card" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <h2 class="text-sm font-medium text-gray-900 mb-3">喜用神分析</h2>
+
+        <!-- 命盘信息行（命盘层面信息，保持原样不动，喜神在此仍正常展示） -->
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-[#16a34a15] border-2 border-[#16a34a]">
+            <span class="text-xl font-bold text-[#16a34a]">木</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-700">核心用神「木」· 喜神「水」</p>
+            <p class="text-xs text-gray-400 mt-1">忌神「金」· 身弱</p>
+          </div>
+        </div>
+
+        <!-- 灰底说明块 -->
+        <div class="bg-gray-50 rounded-lg p-3">
+          <p class="text-xs text-gray-500 leading-relaxed">局中日主偏弱，印星无力，取木为用神帮身，水为喜神调候。</p>
+        </div>
+
+        <!-- 每日用神区块（本次改造核心）：标题行只显示「今日用神」，喜神已隐藏；下方新增推导原因 -->
+        <div id="daily-yongshen-block" class="mt-3 bg-gray-50 rounded-lg p-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#16a34a15] border border-[#16a34a]">
+              <span class="text-sm font-bold text-[#16a34a]">木</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <!-- 改造点①：原为「今日用神「木」· 喜神「水」」，现隐藏喜神后缀 -->
+              <p class="text-sm text-gray-700">今日用神「木」</p>
+              <!-- 改造点②：新增推导原因文案（五行色弱化显示） -->
+              <p class="text-xs mt-1 text-[#16a34a]/70 leading-relaxed">今日干支五行属木，与您命盘用神一致，能量纯粹，今日用神仍为「木」</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 对比示例卡片（原型演示用）：另一日「用神变化」场景，卡片结构与上方完全一致 -->
+      <section id="yongshen-card-compare" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500 mb-3">另一日示例 · 用神变化时</span>
+        <h2 class="text-sm font-medium text-gray-900 mb-3">喜用神分析</h2>
+
+        <!-- 命盘信息行（与主卡片相同，命盘层面信息不变） -->
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-[#16a34a15] border-2 border-[#16a34a]">
+            <span class="text-xl font-bold text-[#16a34a]">木</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-700">核心用神「木」· 喜神「水」</p>
+            <p class="text-xs text-gray-400 mt-1">忌神「金」· 身弱</p>
+          </div>
+        </div>
+
+        <!-- 灰底说明块 -->
+        <div class="bg-gray-50 rounded-lg p-3">
+          <p class="text-xs text-gray-500 leading-relaxed">局中日主偏弱，印星无力，取木为用神帮身，水为喜神调候。</p>
+        </div>
+
+        <!-- 每日用神区块（用神变化场景：取「火」，火色系展示） -->
+        <div id="daily-yongshen-block-fire" class="mt-3 bg-gray-50 rounded-lg p-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#dc262615] border border-[#dc2626]">
+              <span class="text-sm font-bold text-[#dc2626]">火</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-700">今日用神「火」</p>
+              <p class="text-xs mt-1 text-[#dc2626]/70 leading-relaxed">今日日干为火，泄命盘用神木之气，最需补足「火」本身能量，故今日用神取「火」</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 今日幸运色卡（收拢页面上下文） -->
+      <section id="lucky-color-card" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <h2 class="text-sm font-medium text-gray-900 mb-3">今日幸运色</h2>
+        <div class="flex gap-3">
+          <!-- 色块-主色 米白（上衣），默认选中态 -->
+          <div id="lucky-color-1" class="flex-1 lucky-color-item cursor-pointer">
+            <div class="lucky-color-swatch h-14 rounded-lg border border-gray-100 ring-2 ring-offset-2 ring-gray-900 transition-shadow" style="background-color:#F5F5DC"></div>
+            <p class="text-xs text-gray-500 mt-2 text-center">主色 · 米白</p>
+            <p class="text-xs text-gray-500 mt-0.5 text-center">上衣</p>
+          </div>
+          <!-- 色块-辅色 雾霾蓝（下装） -->
+          <div id="lucky-color-2" class="flex-1 lucky-color-item cursor-pointer">
+            <div class="lucky-color-swatch h-14 rounded-lg transition-shadow" style="background-color:#6B8CAE"></div>
+            <p class="text-xs text-gray-500 mt-2 text-center">辅色 · 雾霾蓝</p>
+            <p class="text-xs text-gray-500 mt-0.5 text-center">下装</p>
+          </div>
+          <!-- 色块-点缀 香槟金（配饰） -->
+          <div id="lucky-color-3" class="flex-1 lucky-color-item cursor-pointer">
+            <div class="lucky-color-swatch h-14 rounded-lg transition-shadow" style="background-color:#D4AF37"></div>
+            <p class="text-xs text-gray-500 mt-2 text-center">点缀 · 香槟金</p>
+            <p class="text-xs text-gray-500 mt-0.5 text-center">配饰</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <!-- @main-content:end -->
+  </main>
+
+  <script>lucide.createIcons();</script>
+  <script>
+    // 导航辅助函数（原型演示，每个页面必须定义）
+    function navPush(route) {
+      console.log(`[原型演示] PUSH 到: ${route}`);
+      window.location.href = route;
+    }
+
+    function navReplace(route) {
+      console.log(`[原型演示] REPLACE 为: ${route}`);
+      window.location.replace(route);
+    }
+
+    function navReset(route) {
+      console.log(`[原型演示] RESET 到: ${route}`);
+      window.location.href = route;
+    }
+
+    function navBack() {
+      console.log('[原型演示] BACK 返回上一页');
+      if (window.history.length > 1) window.history.back();
+    }
+
+    $(function () {
+      // 页头返回按钮：返回上一页（真实小程序中为 navigateBack）
+      $('#btn-back').on('click', function () {
+        navBack();
+      });
+
+      // 幸运色块点击：单选高亮（ring 描边切换）
+      // 后续可扩展：选中色块后联动展示该色对应的穿搭单品建议列表
+      $('#lucky-color-card').on('click', '.lucky-color-item', function () {
+        $('.lucky-color-swatch').removeClass('ring-2 ring-offset-2 ring-gray-900');
+        $(this).find('.lucky-color-swatch').addClass('ring-2 ring-offset-2 ring-gray-900');
+      });
+    });
+  </script>
+</body>
+
+</html>
