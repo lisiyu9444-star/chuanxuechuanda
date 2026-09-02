@@ -198,6 +198,7 @@ interface DailyResult {
   ganZhiDate: { month: string; day: string }
   dailyYongShen: string
   dailyXiShen: string
+  dailyYongShenReason?: string
   imageUrl?: string
   tryOnUrl?: string
   imageKey?: string
@@ -656,6 +657,7 @@ const ResultPage = () => {
           ganZhiDate: bazi.ganZhiDate,
           dailyYongShen: bazi.dailyYongShen || bazi.favorableElement,
           dailyXiShen: bazi.dailyXiShen || bazi.favorableAnalysis?.assistantXiShen,
+          dailyYongShenReason: bazi.dailyYongShenReason || '',
           imageUrl: bazi.imageUrl || undefined,
           imageKey: bazi.imageKey || undefined,
           tryOnUrl: undefined,
@@ -792,6 +794,7 @@ const ResultPage = () => {
         ganZhiDate: result.ganZhiDate,
         dailyYongShen: result.dailyYongShen,
         dailyXiShen: result.dailyXiShen,
+        dailyYongShenReason: result.dailyYongShenReason,
         // 穿搭数据：不属于玄学内容，分享给好友后仍需展示
         llmPlan: result.llmPlan,
         age: result.age,
@@ -1252,15 +1255,15 @@ const ResultPage = () => {
                     </View>
                     <View className="flex-1">
                       <Text className="block text-gray-700 text-sm">
-                        今日用神「{result.dailyYongShen}」· 喜神「{result.dailyXiShen}」
+                        今日用神「{result.dailyYongShen}」
                       </Text>
                       <Text
                         className="block text-xs mt-1"
                         style={{ color: themeColor, opacity: 0.7 }}
                       >
-                        {result.dailyYongShen === result.favorableElement
+                        {result.dailyYongShenReason || (result.dailyYongShen === result.favorableElement
                           ? '今日用神回归，穿搭主色调保持不变'
-                          : '今日五行能量变化，穿搭主色调已相应调整'}
+                          : '今日五行能量变化，穿搭主色调已相应调整')}
                       </Text>
                     </View>
                   </View>

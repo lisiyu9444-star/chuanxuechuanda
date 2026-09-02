@@ -168,6 +168,7 @@ const LoadingPage = () => {
         date: dateStr,
         dailyYongShen: apiData.baziResult?.dailyYongShen || apiData.baziResult?.favorableElement || '',
         dailyXiShen: apiData.baziResult?.dailyXiShen || apiData.baziResult?.favorableAnalysis?.assistantXiShen || '',
+        dailyYongShenReason: apiData.baziResult?.dailyYongShenReason || '',
         ganZhiDate: apiData.baziResult?.ganZhiDate,
         // 顶层冗余一份平铺图 URL 与 key，便于结果页/历史记录直接读取与换签
         imageUrl: apiData.baziResult?.imageUrl || undefined,

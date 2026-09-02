@@ -57,6 +57,8 @@ export interface BaZiResult {
   outfit: OutfitRecommendation
   dailyYongShen?: string
   dailyXiShen?: string
+  /** 今日用神的通俗推导说明（怎么得出今日用神的） */
+  dailyYongShenReason?: string
 }
 
 // ========== Constants ==========
@@ -300,31 +302,39 @@ export function getDailyFavorableElements(
   natalYongShen: string,
   natalXiShen: string,
   dayElement: string,
-): { yongShen: string; xiShen: string } {
-  // 确定当日用神
+): { yongShen: string; xiShen: string; reason: string } {
+  // 确定当日用神（reason 为面向用户的通俗推导说明，与各分支一一对应）
   let yongShen = natalYongShen
-  
+  let reason = `今日干支五行属${dayElement}，结合您命盘五行流转，今日用神取「${natalYongShen}」`
+
   if (GENERATES[dayElement] === natalYongShen) {
     // 日干生用神 → 用神=日干
     yongShen = dayElement
+    reason = `今日日干五行属${dayElement}，${dayElement}生${natalYongShen}会持续耗泄日干元气，最需补足「${dayElement}」本身，故今日用神取「${dayElement}」`
   } else if (dayElement === natalYongShen) {
     // 日干=用神 → 不变
     yongShen = natalYongShen
+    reason = `今日干支五行属${dayElement}，与您命盘用神一致，能量纯粹共振，今日用神仍为「${dayElement}」`
   } else if (GENERATES[natalYongShen] === dayElement) {
     // 用神生日干 → 用神=日干
     yongShen = dayElement
+    reason = `今日日干五行属${dayElement}，命盘用神「${natalYongShen}」生${dayElement}，能量顺势汇入日干，故今日用神取「${dayElement}」`
   } else if (OVERCOMES[dayElement] === natalYongShen) {
     // 日干克用神 → 用神=命盘喜神
     yongShen = natalXiShen
+    reason = `今日日干五行属${dayElement}，${dayElement}克${natalYongShen}压制了命盘用神，需借喜神「${natalXiShen}」通关调候，故今日用神取「${natalXiShen}」`
   } else if (OVERCOMES[natalYongShen] === dayElement) {
     // 用神克日干 → 不变
     yongShen = natalYongShen
+    reason = `今日日干五行属${dayElement}，其气偏旺，命盘用神「${natalYongShen}」相克正好制衡，今日用神仍为「${natalYongShen}」`
   } else if (GENERATES[dayElement] === natalXiShen) {
     // 日干生喜神 → 用神=命盘喜神
     yongShen = natalXiShen
+    reason = `今日日干五行属${dayElement}，${dayElement}生${natalXiShen}催旺命盘喜神，喜神当令可担调候之责，故今日用神取「${natalXiShen}」`
   } else if (dayElement === natalXiShen) {
     // 日干=喜神 → 用神=命盘喜神
     yongShen = natalXiShen
+    reason = `今日干支五行属${dayElement}，与您命盘喜神一致，喜神得助可代行调候，故今日用神取「${natalXiShen}」`
   }
 
   // 确定当日喜神
@@ -339,7 +349,7 @@ export function getDailyFavorableElements(
     xiShen = candidates[Math.floor(Math.random() * candidates.length)]
   }
 
-  return { yongShen, xiShen }
+  return { yongShen, xiShen, reason }
 }
 
 /** 根据用神选取背景色（70%中性色，30%撞色） */
@@ -470,6 +480,7 @@ export class BaziService {
       dayMaster, dayMasterElement, fourPillars, fiveElements,
       favorableElement, favorableAnalysis, outfit,
       dailyYongShen, dailyXiShen,
+      dailyYongShenReason: dailyElements.reason,
     }
   }
 

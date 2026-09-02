@@ -73,6 +73,8 @@ export interface BaZiResult {
   ganZhiDate?: { month: string; day: string }
   dailyYongShen?: string
   dailyXiShen?: string
+  /** 今日用神的通俗推导说明（后端按当日干支与命盘五行关系生成） */
+  dailyYongShenReason?: string
   llmPlan?: StylistResult
 }
 

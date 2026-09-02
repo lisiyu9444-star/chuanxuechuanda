@@ -59,6 +59,8 @@ export interface DailyResult {
   ganZhiDate: { month: string; day: string }
   dailyYongShen: string
   dailyXiShen: string
+  /** 今日用神推导说明（旧缓存无此字段，展示层需空值兜底） */
+  dailyYongShenReason?: string
   imageUrl?: string
   tryOnUrl?: string
   /** 平铺图对象 key（永久有效，URL 过期后可凭 key 换签） */

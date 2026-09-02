@@ -155,6 +155,7 @@ export class BaziController {
       }
       dailyYongShen?: string
       dailyXiShen?: string
+      dailyYongShenReason?: string
       llmPlan?: StylistResult
     }
   }> {
@@ -241,6 +242,7 @@ export class BaziController {
           ganZhiDate,
           dailyYongShen: baziResult.dailyYongShen,
           dailyXiShen: baziResult.dailyXiShen,
+          dailyYongShenReason: baziResult.dailyYongShenReason,
           llmPlan,
         },
       }
@@ -351,6 +353,7 @@ export class BaziController {
         ganZhiDate,
         dailyYongShen: baziResult.dailyYongShen || baziResult.favorableElement,
         dailyXiShen: baziResult.dailyXiShen || baziResult.favorableAnalysis.assistantXiShen,
+        dailyYongShenReason: baziResult.dailyYongShenReason,
       } as BaZiResult
 
       // 计算结果自动保存到 bazi_records（后端兜底，与前端图片补丁共享幂等键）

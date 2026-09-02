@@ -42,6 +42,8 @@ interface OutfitGuideContentProps {
   llmPlan?: StylistResult
   yongShen?: string
   xiShen?: string
+  /** 今日用神推导说明（喜神已对用户隐藏，此字段替代原泛化说明文案） */
+  yongShenReason?: string
   themeColor: string
   occasionColor?: string
   occasionBgTransparent?: boolean
@@ -54,7 +56,7 @@ export function OutfitGuideContent({
   result,
   llmPlan: llmPlanProp,
   yongShen: yongShenProp,
-  xiShen: xiShenProp,
+  yongShenReason: yongShenReasonProp,
   themeColor,
   occasionColor,
   occasionBgTransparent,
@@ -66,7 +68,7 @@ export function OutfitGuideContent({
   const tagBg = occasionBgTransparent ? 'transparent' : `${tagColor}1a`
   const llmPlan = llmPlanProp || result.llmPlan
   const yongShen = yongShenProp || result.dailyYongShen
-  const xiShen = xiShenProp || result.dailyXiShen
+  const yongShenReason = yongShenReasonProp || result.dailyYongShenReason
   const elementColor = ELEMENT_COLORS[result.favorableElement] || '#6366f1'
   const showBaZiContent = result.fourPillars && result.fourPillars.length > 0
 
@@ -163,12 +165,12 @@ export function OutfitGuideContent({
                 </View>
                 <View className="flex-1">
                   <Text className="block text-gray-700 text-sm">
-                    今日用神「{yongShen}」· 喜神「{xiShen}」
+                    今日用神「{yongShen}」
                   </Text>
                   <Text className="block text-xs mt-1" style={{ color: themeColor, opacity: 0.7 }}>
-                    {yongShen === result.favorableElement
+                    {yongShenReason || (yongShen === result.favorableElement
                       ? '今日用神回归，穿搭主色调保持不变'
-                      : '今日五行能量变化，穿搭主色调已相应调整'}
+                      : '今日五行能量变化，穿搭主色调已相应调整')}
                   </Text>
                 </View>
               </View>

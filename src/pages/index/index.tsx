@@ -109,6 +109,7 @@ const EXAMPLE_DAILY_RESULT: DailyResult = {
   ganZhiDate: { month: '丁卯', day: '甲子' },
   dailyYongShen: '木',
   dailyXiShen: '水',
+  dailyYongShenReason: '今日干支五行属木，与您命盘用神一致，能量纯粹共振，今日用神仍为「木」',
   generatedAt: Date.now(),
 }
 
@@ -538,6 +539,7 @@ export default function Index() {
               pageMode="daily"
               yongShen={dailyResult.dailyYongShen}
               xiShen={dailyResult.dailyXiShen}
+              yongShenReason={dailyResult.dailyYongShenReason}
               themeColor={themeColor}
               occasionColor="#111827"
               occasionBgTransparent
