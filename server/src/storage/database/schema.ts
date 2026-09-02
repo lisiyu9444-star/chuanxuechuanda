@@ -122,6 +122,32 @@ export const fashionRatings = pgTable(
   ]
 );
 
+// 分享访问统计表（穿搭测评分享 + 八字穿搭结果分享，两条路径统一记录）
+// 统计口径：分享者本人打开不计；同一访客（登录按 userId / 匿名按 IP+UA 哈希）
+// 24 小时内重复访问同一分享只记一次（PV/UV 同口径）
+// 表结构由 share-visit.service.ts 的 ensureShareVisitsTable 运行时幂等自举（含索引），此处定义供 Drizzle 查询使用
+export const shareVisits = pgTable(
+  "share_visits",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    // 分享类型：fashion=穿搭测评分享（share_id 为 fashion_ratings.id），bazi=八字穿搭结果分享（share_id 为 shares.id）
+    shareType: varchar("share_type", { length: 20 }).notNull(),
+    shareId: varchar("share_id", { length: 64 }).notNull(),
+    // 分享者 userId（匿名分享为 null；冗余存储便于按分享者聚合查询，不做外键）
+    sharerUserId: varchar("sharer_user_id", { length: 64 }),
+    // 已登录访客 userId（未登录访客为 null）
+    visitorUserId: varchar("visitor_user_id", { length: 64 }),
+    // UV 去重键：u:{userId} 或 a:{sha256(ip|ua) 前 32 位}
+    visitorKey: varchar("visitor_key", { length: 128 }).notNull(),
+    visitedAt: bigint("visited_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    index("share_visits_share_idx").on(table.shareType, table.shareId, table.visitedAt),
+    index("share_visits_sharer_idx").on(table.sharerUserId, table.visitedAt),
+    index("share_visits_dedup_idx").on(table.shareType, table.shareId, table.visitorKey, table.visitedAt),
+  ]
+);
+
 // 每日运势结果缓存表（前端 DAILY_RESULTS_KEY 的云端副本）
 // 唯一键 (user_id, archive_id, date)：同一档案同一天只保留最新一条，upsert 幂等
 export const dailyResults = pgTable(

@@ -15,6 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express'
 import { Public } from '@/auth/public.decorator'
 import { DAILY_LIMIT, FashionRatingService } from './fashion-rating.service'
+import { getClientIp } from '@/share/share-visit.service'
 
 /** multer 上传文件（memoryStorage 模式必有 buffer） */
 interface UploadedImageFile {
@@ -84,8 +85,16 @@ export class FashionRatingController {
    */
   @Public()
   @Get('shared/:id')
-  async shared(@Param('id') id: string) {
-    const data = await this.fashionRatingService.getShared(id)
+  async shared(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const data = await this.fashionRatingService.getShared(id, {
+      authorization,
+      ip: getClientIp(req),
+      userAgent: req?.headers?.['user-agent'],
+    })
     if (!data) {
       throw new NotFoundException('测评记录不存在或已删除')
     }

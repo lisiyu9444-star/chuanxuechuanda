@@ -5,6 +5,7 @@ import { db } from '@/storage/database/db'
 import { fashionRatings } from '@/storage/database/schema'
 import { getWxCredentials } from '@/auth/secrets'
 import { getStorage, signKey, resolveKeyVariant } from '@/assets/tos-utils'
+import { ShareVisitService, VisitContext } from '@/share/share-visit.service'
 
 /** 多模态评分模型（与 stylist 同一可用模型，支持图片输入） */
 const FASHION_MODEL = 'doubao-seed-2-0-pro-260215'
@@ -142,6 +143,8 @@ interface UploadedImageFile {
 
 @Injectable()
 export class FashionRatingService {
+  constructor(private readonly shareVisitService: ShareVisitService) {}
+
   /** 微信 access_token 进程缓存（有效期 7200s，提前 5 分钟续期） */
   private wxTokenCache: { token: string; expiresAt: number } | null = null
 
@@ -179,10 +182,16 @@ export class FashionRatingService {
   }
 
   /** 分享场景查询单条记录（公开，无需登录；imageUrl 动态换签防过期），不存在返回 null */
-  async getShared(id: string) {
+  async getShared(id: string, visitCtx?: VisitContext) {
     const rows = await db.select().from(fashionRatings).where(eq(fashionRatings.id, id)).limit(1)
     const row = rows[0]
     if (!row) return null
+    // 分享访问统计：fire-and-forget，不阻塞响应，失败不影响查询
+    if (visitCtx) {
+      void this.shareVisitService
+        .recordVisit('fashion', id, row.userId, visitCtx)
+        .catch(err => console.error('[ShareVisit] record failed:', err))
+    }
     return {
       id: row.id,
       imageUrl: await signKey(row.imageUrl),

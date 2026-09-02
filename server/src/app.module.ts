@@ -16,6 +16,7 @@ import { ProfileModule } from '@/profile/profile.module'
 import { HistoryModule } from '@/history/history.module'
 import { FashionRatingModule } from '@/fashion-rating/fashion-rating.module'
 import { DailyResultsModule } from '@/daily-results/daily-results.module'
+import { ShareVisitModule } from '@/share/share-visit.module'
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { DailyResultsModule } from '@/daily-results/daily-results.module'
     HistoryModule,
     FashionRatingModule,
     DailyResultsModule,
+    ShareVisitModule,
   ],
   controllers: [AppController, BaziController, ConfigController, ShareController, LogController, AssetsController, AdminController],
   providers: [

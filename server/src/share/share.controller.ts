@@ -22,6 +22,7 @@ import { signUrl } from '../assets/tos-utils'
 import { Public } from '../auth/public.decorator'
 import { RequireAuth } from '../auth/require-auth.decorator'
 import { AuthService } from '../auth/auth.service'
+import { ShareVisitService, getClientIp } from './share-visit.service'
 
 // 分享查看页可能被未登录访客打开，整个控制器保持公开；
 // save 时若携带有效 token 则关联 userId，便于后续统计。
@@ -30,7 +31,10 @@ import { AuthService } from '../auth/auth.service'
 export class ShareController {
   private readonly logger = new Logger(ShareController.name)
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly shareVisitService: ShareVisitService,
+  ) {}
 
   @Post('save')
   @HttpCode(HttpStatus.OK)
@@ -124,7 +128,11 @@ export class ShareController {
   }
 
   @Get(':id')
-  async getShare(@Param('id') id: string) {
+  async getShare(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Headers('authorization') authorization?: string,
+  ) {
     try {
       const results = await db.select().from(shares).where(eq(shares.id, id)).limit(1)
 
@@ -137,6 +145,15 @@ export class ShareController {
       if (Date.now() > share.expiresAt) {
         return { expired: true }
       }
+
+      // 分享访问统计：fire-and-forget，不阻塞响应，失败不影响查询；过期/不存在的分享不计入
+      void this.shareVisitService
+        .recordVisit('bazi', id, share.userId, {
+          authorization,
+          ip: getClientIp(req),
+          userAgent: req?.headers?.['user-agent'],
+        })
+        .catch(err => console.error('[ShareVisit] record failed:', err))
 
       let result
       try {
