@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { CloudOff, RefreshCw, X } from 'lucide-react-taro'
 import { WuxingLoader } from '@/components/wuxing-loader'
 import { Network } from '@/network'
-import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, markDailyGenerateCancelled, clearDailyGenerateFailed, consumePreviousArchiveId, revertToArchiveId, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
+import { getArchiveById, getDailyResult, getNativeResult, saveDailyResult, saveNativeResult, getToday, markDailyGenerateFailed, markDailyGenerateCancelled, clearDailyGenerateFailed, clearDailyGenerating, consumePreviousArchiveId, revertToArchiveId, type DailyResult, type NativeResult } from '@/utils/archiveStorage'
 import { buildHistoryRecord, saveHistoryFromDailyResult, saveHistoryFromNativeResult } from '@/utils/historyStorage'
 import { syncArchiveToServer, syncHistoryToServer } from '@/utils/serverSync'
 import { isLoggedIn, isWeappEnv } from '@/utils/auth'
@@ -32,6 +32,12 @@ const FASHION_LOADING_TEXTS = [
   '让我看看你的个性表达...',
   '时尚评分即将出炉...',
 ]
+
+/** 请求被主动中断（页面卸载清理 / 重入替换，微信 errno 600004）：属预期行为不算失败，静默处理 */
+const isAbortError = (e: unknown): boolean => {
+  const err = e as { errMsg?: string; errno?: number } | null
+  return err?.errno === 600004 || (typeof err?.errMsg === 'string' && err.errMsg.includes('abort'))
+}
 
 const LoadingPage = () => {
   const [currentStep, setCurrentStep] = useState(0)
@@ -182,6 +188,7 @@ const LoadingPage = () => {
       // 服务端历史记录由 daily 接口自动保存（幂等键一致），此处仅档案兜底同步
       syncArchiveToServer(currentArchive)
       clearDailyGenerateFailed(archiveId, dateStr)
+      clearDailyGenerating(archiveId, dateStr)
       setProgressValue(100)
       if (fromRef.current === 'result') {
         // 从结果页“再测一次”进入，返回原结果页展示新数据
@@ -190,15 +197,18 @@ const LoadingPage = () => {
         Taro.switchTab({ url: '/pages/index/index' })
       }
     } catch (error) {
-      // 页面已退出、被主动取消或请求已被新一轮取代，静默处理
-      if (cancelledRef.current || seq !== requestSeqRef.current) return
+      // 页面已退出、被主动取消/中断（abort）或请求已被新一轮取代，静默处理
+      if (cancelledRef.current || seq !== requestSeqRef.current || isAbortError(error)) return
       // 请求已终结，清理残留引用，避免退出页面时误判为"进行中"而重复写标记/发无效 cancel
       requestTaskRef.current = null
       clientTaskIdRef.current = ''
       console.error(`[Loading] ${pageMode} request failed:`, error)
       // 失败停留本页展示重试入口，不再自动回首页：首页 onShow 会自动跳回 loading，直接返回会形成死循环。
       // daily 自动场景写冷却标记，首页据此暂停自动跳转，把主动权交还用户。
-      if (pageMode === 'daily') markDailyGenerateFailed(archiveId)
+      if (pageMode === 'daily') {
+        markDailyGenerateFailed(archiveId)
+        clearDailyGenerating(archiveId)
+      }
       setRequestFailed(true)
     }
   }
@@ -313,7 +323,7 @@ const LoadingPage = () => {
         Taro.switchTab({ url: '/pages/index/index' })
       }
     } catch (error) {
-      if (cancelledRef.current || seq !== requestSeqRef.current) return
+      if (cancelledRef.current || seq !== requestSeqRef.current || isAbortError(error)) return
       requestTaskRef.current = null
       clientTaskIdRef.current = ''
       console.error(`[Loading] redesign ${pageMode} failed:`, error)
@@ -369,7 +379,7 @@ const LoadingPage = () => {
       Taro.setStorageSync('fashion_latest_result', record)
       Taro.navigateBack()
     } catch (error) {
-      if (cancelledRef.current || seq !== requestSeqRef.current) return
+      if (cancelledRef.current || seq !== requestSeqRef.current || isAbortError(error)) return
       requestTaskRef.current = null
       console.error('[Loading] fashion-rating failed:', error)
       Taro.removeStorageSync('fashion_pending_image')
@@ -471,6 +481,8 @@ const LoadingPage = () => {
     // 防止回到首页后 onShow 立即又自动跳进 loading（用户感知为"退不出去"），
     // 首页据此展示正常空态而非失败卡片；toast 为全局提示，会在返回后的页面上展示
     const last = lastRequestRef.current
+    // 释放首页 in-flight 标记：无论本次生成成功/失败/取消，页面销毁时都交还首页自动跳转的主动权
+    if (last && last.pageMode === 'daily') clearDailyGenerating(last.archiveId)
     if (wasRequesting && last && last.pageMode === 'daily' && last.action !== 'redesign') {
       markDailyGenerateCancelled(last.archiveId)
       // 撤销本次档案切换：回退到上一个选中的档案，其首页按正常状态展示；

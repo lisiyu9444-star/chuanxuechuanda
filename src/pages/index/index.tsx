@@ -21,6 +21,9 @@ import {
   isDailyGenerateCoolingDown,
   isDailyGenerateCancelled,
   clearDailyGenerateFailed,
+  isDailyGenerating,
+  markDailyGenerating,
+  clearDailyGenerating,
   consumePreviousArchiveId,
 } from '@/utils/archiveStorage'
 import { ensureRemoteAssets, type RemoteAssets } from '@/constants/remote-assets'
@@ -179,15 +182,24 @@ export default function Index() {
         loginSheetStore.open()
         return
       }
+      // 防重：等待静默登录期间 restoreFromCloud / LOGIN_SUCCESS 会重跑 loadData，
+      // 重复进入本分支会重复 navigateTo 产生双 loading 实例互相 abort（request:fail 600004）
+      if (isDailyGenerating(activeArchive.id, today)) return
       // 日期变化或缓存异常：清除该档案所有旧日期缓存，重新进入 loading 请求
       clearDailyResultsByArchive(activeArchive.id)
       setHasArchiveChanged(false)
       setGenerateFailed(false)
       setGenerateCancelled(false)
+      // 标记必须先置位再 await：等待静默登录期间标记即生效，拦截上述重入路径
+      markDailyGenerating(activeArchive.id, today)
       // 确保已持有 token 再进入生成流程（登录未完成时等一次静默登录，避免 401）
       await ensureLoggedIn()
       Taro.navigateTo({
         url: `/pages/loading/index?mode=daily&archiveId=${activeArchive.id}`,
+      }).catch((e) => {
+        // 跳转失败（如页面栈超限）：立即释放标记，允许后续重试
+        clearDailyGenerating(activeArchive.id, today)
+        console.warn('[Index] navigateTo loading failed:', e)
       })
       return
     }

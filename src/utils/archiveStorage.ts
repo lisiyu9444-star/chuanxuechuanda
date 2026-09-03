@@ -273,6 +273,36 @@ export function isDailyGenerateCancelled(archiveId: string, date: string = getTo
   return Date.now() - entry.ts <= DAILY_FAIL_COOLDOWN_MS
 }
 
+// ===== 今日生成中（in-flight）内存标记 =====
+// 背景：首页 loadData 等待静默登录期间，restoreFromCloud / LOGIN_SUCCESS 会重跑 loadData，
+// 重复进入生成分支导致重复 navigateTo loading（双实例互相 abort，request:fail 600004）。
+// 内存级即可：进程重启后标记自然消失，本就应重新生成；TTL 兜底防异常残留造成死锁。
+let dailyGeneratingKey: string | null = null
+let dailyGeneratingAt = 0
+const DAILY_GENERATING_TTL = 3 * 60 * 1000
+
+export function markDailyGenerating(archiveId: string, date: string = getToday()): void {
+  dailyGeneratingKey = `${archiveId}_${date}`
+  dailyGeneratingAt = Date.now()
+}
+
+export function clearDailyGenerating(archiveId: string, date: string = getToday()): void {
+  if (dailyGeneratingKey === `${archiveId}_${date}`) {
+    dailyGeneratingKey = null
+    dailyGeneratingAt = 0
+  }
+}
+
+export function isDailyGenerating(archiveId: string, date: string = getToday()): boolean {
+  if (dailyGeneratingKey !== `${archiveId}_${date}`) return false
+  if (Date.now() - dailyGeneratingAt > DAILY_GENERATING_TTL) {
+    dailyGeneratingKey = null
+    dailyGeneratingAt = 0
+    return false
+  }
+  return true
+}
+
 export function clearAllStorage(): void {
   try {
     Taro.removeStorageSync(ARCHIVES_KEY)
