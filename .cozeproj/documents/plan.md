@@ -1,90 +1,74 @@
-# 今日用神展示优化（隐藏喜神 + 推导原因说明）
+# 出生城市省市区三级联动改造计划
 
 ## 概述
 
-针对八字穿搭指南的"每日用神"区块做两项展示优化（mobile 小程序）：
-1. **隐藏喜神**：文案 `今日用神「x」· 喜神「y」` 中的喜神对用户不可见（后端喜神仍参与运势/穿搭色计算，仅 UI 不展示；且当前喜神多为随机选取，展示价值低）。
-2. **新增推导原因**：告诉用户"今日用神为什么是 x"——后端按 7 条相生相克规则生成通俗解释文案，前端替换现有泛化说明。
-
-先产出 HTML 原型验收，再实施代码开发。
+档案表单页「出生城市」由前端硬编码 50 城升级为全国 省→市→区 三级联动选择器（34 省 / 343 地级市 / 3311 区县，内置精简数据约 25KB，离线可用）。存储值保持城市短名（如「广州」），与现有 `location` 字段及后端 `findLongitude` 真太阳时校正完全兼容，存量档案零迁移。平台：mobile（微信小程序，兼容 H5）。
 
 ## 技术方案
 
 | 维度 | 选择 | 理由 |
 |------|------|------|
-| 原型 | design-canvas 产出 mobile HTML 原型 | 设计引导已开启，用户明确要求先画 demo |
-| 喜神隐藏 | 仅改前端两处文案，后端字段/逻辑不动 | 喜神仍参与运势与穿搭色计算；避免破坏缓存与类型 |
-| 推导原因 | 后端 `getDailyFavorableElements` 返回新增 `reason`，7 分支各配文案 | 原因与算法同源，保证解释与真实规则一致，不依赖 LLM（零成本零延迟） |
-| 接口透出 | bazi 响应新增 `dailyYongShenReason?: string` | 可选字段，旧缓存/旧客户端兼容 |
-| 缓存兼容 | 前端空值兜底：无 reason 时显示现有泛化文案 | dailyResults 为 jsonb 存储，无需改表；历史缓存不报错 |
-| 文案呈现 | reason 置于用神行下方，替换现有"今日用神回归/已相应调整"泛化文案 | 原型确认视觉层级 |
+| 数据源 | `province-city-china` npm 包，构建期脚本抽取仅含 name 的三级树，生成 `src/constants/region-data.ts`（≈25KB）入库 | 离线零请求；包体积影响极小；数据可复现、可更新 |
+| 选择器 | Taro `Picker mode="multiSelector"` 三列，`onColumnChange` 联动刷新市/区列 | 原生滚轮体验，小程序与 H5 均支持，与现表单交互风格一致 |
+| 存储值 | 城市短名（城市名剥 `市/地区/盟/自治州` 尾缀，如「广州」） | 与现 CITIES 数据风格一致；后端 `normalizeCandidates` 剥缀 + 包含匹配双保险命中经度 |
+| 显示值 | 全路径「广东省 广州市 天河区」；省市同名（直辖市）去重显示「北京市 朝阳区」 | 用户可确认完整归属地 |
+| 编辑回显 | 按城市短名在数据中定位省/市列，区县列默认首项 | 历史数据无区县信息，无损降级 |
+| 校验 | 提交时要求三级均已选定（默认即有值，保持现有「必选」语义） | 沿用现有校验模式 |
 
 ## 功能模块
 
-### 1. 后端：用神推导原因生成
-- `getDailyFavorableElements(natalYongShen, natalXiShen, dayElement)` 返回值 `{ yongShen, xiShen }` → `{ yongShen, xiShen, reason }`
-- 7 个分支文案（通俗、一句化、含五行关系），示例：
-  - 日干=命盘用神：`今日干支五行属${dayElement}，与您命盘用神一致，能量纯粹，今日用神仍为「${yongShen}」`
-  - 日干生用神：`今日日干${dayElement}生${natalYongShen}（能量外泄），最需补足「${dayElement}」本身，故今日用神取「${yongShen}」`
-  - 用神生日干：`今日日干得命盘用神相生，顺势取「${yongShen}」为今日用神`
-  - 日干克用神：`今日日干${dayElement}克命盘用神${natalYongShen}，需以喜神「${natalXiShen}」通关调候，故今日用神取「${yongShen}」`
-  - 用神克日干 / 日干生喜神 / 日干=喜神：同理各配一条通俗解释
-- 调用处（`bazi.service.ts` 462-464 行）将 `reason` 组装进响应 `dailyYongShenReason`
+### 1. 省市区数据模块 `src/constants/region-data.ts`
 
-### 2. 前端：两处用神区块改造（同一视觉规格）
-涉及 `outfit-guide-content.tsx`（首页）与 `result/index.tsx`（结果页）两处同构实现：
-- 文案：`今日用神「x」· 喜神「y」` → `今日用神「x」`
-- 泛化说明行 → 真实 `reason`（无 reason 兜底显示原泛化文案）
-- `types/bazi.ts`、`types/archive.ts` 增加 `dailyYongShenReason?: string`；`loading/index.tsx` 透传；`index/index.tsx` mock 数据补 reason
+- 生成物：三级树 `[{ name: '广东省', cities: [{ name: '广州市', districts: ['天河区', ...] }] }, ...]`（仅保留 name，压缩体积）
+- 附带工具函数：
+  - `stripCitySuffix(name: string)`：剥 `市/地区/盟/自治州` 尾缀生成存储短名
+  - `locateByCity(shortName: string)`：按短名定位 `[省idx, 市idx]`，供编辑回显
+  - `formatRegionLabel(p, c, d)`：全路径显示（省市同名去重）
+
+### 2. 表单页改造 `src/pages/archive/form/index.tsx`
+
+- 删除硬编码 `CITIES`（67-75 行）与单列 selector
+- 城市选择改为 `Picker mode="multiSelector"`：range 为三列名数组，value 为 `[pIdx, cIdx, dIdx]`，`onColumnChange` 联动重置后续列
+- 编辑回显：`locateByCity(archive.location)` 命中则设置三列下标，未命中落回默认值
+- 提交存储：`location = stripCitySuffix(选中市名)`（保持「广州」格式）
+- 输入框样式、ChevronDown 图标等外观沿用现状，仅显示文本变为全路径
+
+### 3. 兼容性验证（开发期）
+
+- tsx 脚本抽样验证：若干短名（广州/延边/乌鲁木齐/呼和浩特等）经 `findLongitude` 均命中预期经度
+- 存量 50 城短名全部能 `locateByCity` 定位回显
 
 ## 是否有原型设计
 
-是（设计引导工具已开启，且用户明确要求先画 demo）
+是（设计引导工具已开启，且用户明确要求先看 demo）
 
 ## 实施步骤
 
-### 阶段一：原型设计
-1. **产出"每日用神区块"改造原型**：加载 design-canvas 技能，基于现有穿搭指南页结构，产出含改造后用神区块的 mobile HTML 原型（隐藏喜神 + 推导原因展示，给 1-2 条示例文案）；完成后 done 提交，等用户验收确认。
+**阶段一：原型设计**
 
-### 阶段二：代码开发
-2. **后端用神 reason 生成与透出**：`bazi.service.ts`（`getDailyFavorableElements` 返回 reason、响应组装 `dailyYongShenReason`）、`stylist.service.ts`（如响应在此组装）。
-3. **前端两处展示改造**：按原型还原用神区块（隐藏喜神 + reason 展示），同步类型与透传：`outfit-guide-content.tsx`、`result/index.tsx`、`loading/index.tsx`（含 `types/bazi.ts`、`types/archive.ts`、`index/index.tsx` mock）。
-4. **API 测试与前后端匹配验证**：curl 调开发接口确认响应含 `dailyYongShenReason` 且文案与分支规则一致；核对前端字段名/解析层级。
-5. **校验交付**：`pnpm validate` 修复所有 error 后交付。
+1. 加载 `design-canvas` 技能，产出档案表单页 HTML 原型：完整表单 + 出生城市三级联动滚轮交互（选省→市→区实时联动，确认后显示全路径）。原型完成后调用 done 提交，等候用户验收确认。
+
+**阶段二：代码开发**
+
+2. 生成省市区数据：`pnpm add province-city-china`，脚本抽取精简三级树生成 `src/constants/region-data.ts`（含工具函数），核对省份 34 / 城市 343 / 区县 3311 数量。
+3. 表单页城市选择改造：`src/pages/archive/form/index.tsx` 替换为三级联动 Picker，完成回显、存储短名、全路径显示与校验。
+4. 兼容验证 + `pnpm validate`：tsx 抽样验证 `findLongitude` 命中与存量短名回显定位，修复所有 lint/tsc error。
+5. 编译检查 `pnpm build:weapp` + 日志健康检查，确认无新增报错后交付。
 
 ## 页面规格
 
-> 本次为已有页面局部区块改造，不涉及导航变更；规格仅覆盖改动区块。
+##### @page(/archive-form) 档案表单
 
-##### @nav(mobile-tabbar)
-> type: tabbar
-> platform: mobile
-
-沿用现有导航结构，本次不变更。
-
-##### @page(/) 首页（今日穿搭指南）
-
-**核心职责**：展示用户今日运势与穿搭建议（本次仅改"喜用神分析"卡片内的"每日用神"区块）。
-**访问路径**：现有入口不变。
-
-**每日用神区块字段**：
-- 圆形五行图标（用神字 + 五行色描边/浅底）/ 标题行：`今日用神「x」`（不再展示喜神）/ 推导原因行：后端 `dailyYongShenReason` 文案（一句化通俗解释，五行色弱化显示）/ 兜底：无 reason 时显示"今日用神回归，穿搭主色调保持不变"或"今日五行能量变化，穿搭主色调已相应调整"
+**核心职责**：创建/编辑命盘档案（本次仅改造「出生城市」字段，其余字段不变）。
+**访问路径**：档案列表页新增/编辑入口跳转进入（现有路由不变）。
+**布局**：沿用现有表单纵向布局（昵称/性别/历法/出生日期/出生时辰/出生城市/风格偏好），仅城市选择器交互升级。
 
 **交互说明**
 
 | 元素 | 动作 | 响应 | 传参 | 备注 |
 |------|------|------|------|------|
-| 每日用神区块 | 无交互 | 纯展示 | — | 仅 pageMode='daily' 显示；本命模式不出现该区块 |
-
-##### @page(/result) 结果页
-
-**核心职责**：八字分析结果与穿搭方案展示（本次仅改"喜用神分析"卡片内的"每日用神"区块，视觉规格与首页完全一致）。
-**访问路径**：测评/生成流程完成后进入。
-
-**每日用神区块字段**：与 @page(/) 一致（同一组件结构的两份实现，本次同步改造）。
-
-**交互说明**
-
-| 元素 | 动作 | 响应 | 传参 | 备注 |
-|------|------|------|------|------|
-| 每日用神区块 | 无交互 | 纯展示 | — | 仅 pageMode='daily' 显示 |
+| 出生城市选择框 | 点击 | 唤起三列滚轮（省/市/区） | — | 默认定位当前已选值 |
+| 省份列 | 滚动 | 市列、区列联动重置为首项 | — | `onColumnChange` |
+| 城市列 | 滚动 | 区列联动重置为首项 | — | 同上 |
+| 滚轮确认 | 点击 | 选择框显示全路径「广东省 广州市 天河区」；提交时存城市短名「广州」 | — | 直辖市显示「北京市 朝阳区」 |
+| 提交按钮 | 点击 | 城市未选时 Toast「请选择所在城市」；否则沿用现有保存流程 | location=城市短名 | 语义不变 |

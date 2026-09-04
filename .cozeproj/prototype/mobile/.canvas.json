@@ -23,6 +23,14 @@
       },
       "title": "今日穿搭指南-用神区块改造",
       "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/archive-form.html"
+      },
+      "title": "档案表单-出生城市三级联动",
+      "size": "mobile"
     }
   ]
 }

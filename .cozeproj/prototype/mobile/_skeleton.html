@@ -80,7 +80,15 @@
 <body class="bg-background text-on-surface font-sans">
 
   <!-- @nav:start 导航组件，不需要的页面则不要复制此段（从 @nav:start 到 @nav:end） -->
-  <!-- 主 Agent 在此处生成实际的导航 HTML 代码（header / TabBar 等） -->
+  <!-- 二级页 Header：返回按钮 + 居中标题，无底部 TabBar -->
+  <header class="bg-background sticky top-0 z-40 h-14 flex items-center justify-between px-4">
+    <button class="w-10 h-10 flex items-center justify-center text-on-surface-variant rounded-full
+                   hover:bg-surface-container active:bg-surface-container-high transition-colors">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </button>
+    <h1 class="text-base font-semibold text-on-surface">创建档案</h1>
+    <div class="w-10 h-10"></div>
+  </header>
   <!-- @nav:end 导航组件，不需要的页面则不要复制此段 -->
 
   <main class="flex-1">

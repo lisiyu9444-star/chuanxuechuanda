@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- 字体（按需，系统字体时省略；只能用 Google 字体，CSS 地址前缀：https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google） -->
+  <!-- <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/> -->
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色（天命穿搭：深藏青黑主色，东方玄学 × 轻奢质感） === */
+      --color-primary:              #0f172a;
+      --color-primary-container:    #1e293b;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面（白底 + 中性 gray 色阶，与现有产品一致） === */
+      --color-background:                 #ffffff;
+      --color-surface-container-lowest:   #ffffff;
+      --color-surface:                    #ffffff;
+      --color-surface-container:          #f9fafb;
+      --color-surface-container-high:     #f1f5f9;
+      --color-surface-container-highest:  #e5e7eb;
+      /* === 文字 === */
+      --color-on-surface:           #111827;
+      --color-on-surface-variant:   #6b7280;
+      /* === 功能色 === */
+      --color-success:  #22c55e;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      /* === 边框 === */
+      --color-outline:          #d1d5db;
+      --color-outline-variant:  #e5e7eb;
+      /* === 圆角 === */
+      --radius-sm:   0.5rem;
+      --radius-md:   0.75rem;
+      --radius-lg:   1rem;
+      --radius-xl:   1.25rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影（克制柔和） === */
+      --shadow-card:   0 4px 12px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.10);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: system-ui, -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+    }
+  </style>
+
+  <style>
+    body {
+      min-height: max(812px, 100dvh);
+      font-family: system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件，不需要的页面则不要复制此段（从 @nav:start 到 @nav:end） -->
+  <!-- 二级页 Header：返回按钮 + 居中标题，无底部 TabBar -->
+  <header class="bg-background sticky top-0 z-40 h-14 flex items-center justify-between px-4">
+    <button id="btn-back" class="w-10 h-10 flex items-center justify-center text-on-surface-variant rounded-full
+                   hover:bg-surface-container active:bg-surface-container-high transition-colors">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </button>
+    <h1 class="text-base font-semibold text-on-surface">创建档案</h1>
+    <div class="w-10 h-10"></div>
+  </header>
+  <!-- @nav:end 导航组件，不需要的页面则不要复制此段 -->
+
+  <main class="flex-1">
+    <!-- @main-content:start -->
+    <div class="px-4 pt-2 pb-[calc(2rem+env(safe-area-inset-bottom))] flex flex-col gap-5">
+
+      <!-- 表单字段-昵称：输入框 + 框内右侧随机换一个（dices）按钮 -->
+      <div>
+        <label for="input-nickname" class="block text-xs text-on-surface-variant mb-1.5">昵称</label>
+        <div class="relative">
+          <input id="input-nickname" type="text" value="莫奈的睡莲"
+                 class="w-full bg-surface-container border-none rounded-xl px-4 py-3 pr-12 text-base
+                        text-on-surface placeholder:text-on-surface-variant/50
+                        focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+          <button id="btn-dice" aria-label="随机换一个昵称"
+                  class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center
+                         text-on-surface-variant rounded-full
+                         hover:bg-surface-container-high active:bg-surface-container-highest transition-colors">
+            <i data-lucide="dices" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 表单字段-性别：女/男 两个并排大选项，当前选中「女」 -->
+      <div>
+        <span class="block text-xs text-on-surface-variant mb-1.5">性别</span>
+        <div class="flex gap-3">
+          <button id="gender-female"
+                  class="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold
+                         bg-primary text-on-primary active:scale-[0.98] transition-all">
+            <i data-lucide="venus" class="w-4 h-4"></i>女
+          </button>
+          <button id="gender-male"
+                  class="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold
+                         bg-surface-container text-on-surface-variant active:scale-[0.98] transition-all">
+            <i data-lucide="mars" class="w-4 h-4"></i>男
+          </button>
+        </div>
+      </div>
+
+      <!-- 表单字段-历法：公历/农历 分段切换，当前选中「公历」 -->
+      <div>
+        <span class="block text-xs text-on-surface-variant mb-1.5">历法</span>
+        <div class="flex bg-surface-container rounded-xl p-1">
+          <button id="calendar-solar"
+                  class="flex-1 py-2 rounded-lg text-sm font-semibold bg-primary text-on-primary transition-all">公历</button>
+          <button id="calendar-lunar"
+                  class="flex-1 py-2 rounded-lg text-sm font-semibold text-on-surface-variant transition-all">农历</button>
+        </div>
+      </div>
+
+      <!-- 表单字段-出生日期：选择框 -->
+      <div>
+        <span class="block text-xs text-on-surface-variant mb-1.5">出生日期</span>
+        <button id="select-birth-date"
+                class="w-full bg-surface-container border-none rounded-xl px-4 py-3 flex items-center justify-between
+                       text-base text-on-surface active:bg-surface-container-high transition-colors">
+          <span id="birth-date-value">2000-01-01</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-on-surface-variant"></i>
+        </button>
+      </div>
+
+      <!-- 表单字段-出生时辰：选择框 -->
+      <div>
+        <span class="block text-xs text-on-surface-variant mb-1.5">出生时辰</span>
+        <button id="select-birth-time"
+                class="w-full bg-surface-container border-none rounded-xl px-4 py-3 flex items-center justify-between
+                       text-base text-on-surface active:bg-surface-container-high transition-colors">
+          <span id="birth-time-value">午时 (11:00-13:00)</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-on-surface-variant"></i>
+        </button>
+      </div>
+
+      <!-- 表单字段-出生城市（本页核心演示字段）：选择框 + 辅助说明，默认已选「广东省 广州市 天河区」 -->
+      <div>
+        <span class="block text-xs text-on-surface-variant mb-1.5">出生城市</span>
+        <button id="select-city"
+                class="w-full bg-surface-container border-none rounded-xl px-4 py-3 flex items-center justify-between
+                       text-base text-on-surface active:bg-surface-container-high transition-colors">
+          <span id="city-value">广东省 广州市 天河区</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-on-surface-variant"></i>
+        </button>
+        <p class="text-xs text-on-surface-variant mt-1.5">用于真太阳时校正，精确到区县更准确</p>
+      </div>
+
+      <!-- 表单字段-穿搭风格偏好：选择框 -->
+      <div>
+        <span class="block text-xs text-on-surface-variant mb-1.5">穿搭风格偏好</span>
+        <button id="select-style"
+                class="w-full bg-surface-container border-none rounded-xl px-4 py-3 flex items-center justify-between
+                       text-base text-on-surface active:bg-surface-container-high transition-colors">
+          <span id="style-value">自由搭配</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-on-surface-variant"></i>
+        </button>
+      </div>
+
+      <!-- CTA 主按钮：保存档案（深色，距底部留 safe-area 间距） -->
+      <div class="pt-3">
+        <button id="btn-save"
+                class="w-full bg-primary text-on-primary rounded-full py-3.5 text-base font-semibold
+                       hover:opacity-90 active:scale-[0.98] transition-all">保存档案</button>
+      </div>
+
+    </div>
+    <!-- @main-content:end -->
+  </main>
+
+  <!-- 省市区三级联动选择器：全屏遮罩 + 底部滑出面板（默认隐藏） -->
+  <div id="city-picker" class="fixed inset-0 z-50 hidden">
+    <!-- 半透明黑色遮罩，点击关闭 -->
+    <div id="picker-mask" class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300"></div>
+    <!-- 底部面板：约 56% 屏高，带向上滑入过渡 -->
+    <div id="picker-panel"
+         class="absolute bottom-0 left-0 right-0 h-[56dvh] bg-surface rounded-t-2xl shadow-dialog
+                translate-y-full transition-transform duration-300 ease-out flex flex-col">
+      <!-- 面板顶部操作条：取消 / 标题 / 确定 -->
+      <div class="flex items-center justify-between px-4 h-14 shrink-0">
+        <button id="btn-picker-cancel" class="px-2 py-2 text-sm text-on-surface-variant active:opacity-60 transition-opacity">取消</button>
+        <h2 class="text-base font-semibold text-on-surface">选择出生城市</h2>
+        <button id="btn-picker-confirm" class="px-2 py-2 text-sm text-primary font-semibold active:opacity-60 transition-opacity">确定</button>
+      </div>
+      <!-- 三列滚轮区：省 | 市 | 区 -->
+      <div id="wheel-area" class="relative flex-1 flex px-3 overflow-hidden">
+        <!-- 中间选中指示带 -->
+        <div class="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-11 bg-surface-container-high rounded-lg pointer-events-none z-0"></div>
+        <!-- 上边缘渐隐遮罩 -->
+        <div class="absolute left-0 right-0 top-0 h-20 bg-gradient-to-b from-surface via-surface/70 to-transparent pointer-events-none z-20"></div>
+        <!-- 下边缘渐隐遮罩 -->
+        <div class="absolute left-0 right-0 bottom-0 h-20 bg-gradient-to-t from-surface via-surface/70 to-transparent pointer-events-none z-20"></div>
+        <!-- 省份列（列表项由 JS 依据内嵌 REGION_DATA 生成，支持滚动吸附与点击定位） -->
+        <div id="wheel-province"
+             class="relative z-10 flex-1 h-full overflow-y-auto overscroll-contain snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div id="wheel-province-list"></div>
+        </div>
+        <!-- 城市列 -->
+        <div id="wheel-city"
+             class="relative z-10 flex-1 h-full overflow-y-auto overscroll-contain snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div id="wheel-city-list"></div>
+        </div>
+        <!-- 区县列 -->
+        <div id="wheel-district"
+             class="relative z-10 flex-1 h-full overflow-y-auto overscroll-contain snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div id="wheel-district-list"></div>
+        </div>
+      </div>
+      <!-- 底部 safe-area 留白 -->
+      <div class="shrink-0 pb-[env(safe-area-inset-bottom)]"></div>
+    </div>
+  </div>
+
+  <!-- 轻提示 Toast（保存反馈） -->
+  <div id="toast"
+       class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] bg-on-surface/85 text-surface text-sm
+              px-5 py-2.5 rounded-full opacity-0 pointer-events-none transition-opacity duration-300">档案保存成功</div>
+
+  <script>
+    /* ===== 导航辅助函数（原型演示） ===== */
+    function navPush(route) {
+      console.log(`[原型演示] PUSH 到: ${route}`);
+      window.location.href = route;
+    }
+    function navReplace(route) {
+      console.log(`[原型演示] REPLACE 为: ${route}`);
+      window.location.replace(route);
+    }
+    function navReset(route) {
+      console.log(`[原型演示] RESET 到: ${route}`);
+      window.location.href = route;
+    }
+    function navBack() {
+      console.log(`[原型演示] BACK 返回上一页`);
+      if (window.history.length > 1) window.history.back();
+    }
+  </script>
+
+  <script>
+    $(function () {
+
+      /* ============================================================
+       * 内嵌省市区三级样本数据（真实地名）
+       * 结构：{ name: '省', cities: [{ name: '市', districts: ['区', ...] }] }
+       * 第一列完整覆盖全国 34 个省级行政区（23 省、5 自治区、4 直辖市、2 特别行政区）
+       * ============================================================ */
+      const REGION_DATA = [
+        { name: '北京市', cities: [
+          { name: '北京市', districts: ['朝阳区', '海淀区', '东城区', '西城区', '丰台区'] } ] },
+        { name: '天津市', cities: [
+          { name: '天津市', districts: ['和平区', '河西区', '南开区'] } ] },
+        { name: '河北省', cities: [
+          { name: '石家庄市', districts: ['长安区', '桥西区', '裕华区'] },
+          { name: '唐山市', districts: ['路南区', '路北区'] },
+          { name: '保定市', districts: ['竞秀区', '莲池区'] } ] },
+        { name: '山西省', cities: [
+          { name: '太原市', districts: ['小店区', '迎泽区', '杏花岭区'] },
+          { name: '大同市', districts: ['平城区', '云冈区'] } ] },
+        { name: '内蒙古自治区', cities: [
+          { name: '呼和浩特市', districts: ['新城区', '回民区'] },
+          { name: '包头市', districts: ['昆都仑区', '青山区'] } ] },
+        { name: '辽宁省', cities: [
+          { name: '沈阳市', districts: ['和平区', '沈河区', '皇姑区'] },
+          { name: '大连市', districts: ['中山区', '西岗区', '沙河口区'] } ] },
+        { name: '吉林省', cities: [
+          { name: '长春市', districts: ['朝阳区', '南关区'] },
+          { name: '延边朝鲜族自治州', districts: ['延吉市', '珲春市'] } ] },
+        { name: '黑龙江省', cities: [
+          { name: '哈尔滨市', districts: ['道里区', '南岗区', '道外区'] },
+          { name: '大庆市', districts: ['萨尔图区', '让胡路区'] } ] },
+        { name: '上海市', cities: [
+          { name: '上海市', districts: ['黄浦区', '徐汇区', '浦东新区'] } ] },
+        { name: '江苏省', cities: [
+          { name: '南京市', districts: ['玄武区', '秦淮区', '建邺区'] },
+          { name: '苏州市', districts: ['姑苏区', '虎丘区', '吴中区'] },
+          { name: '无锡市', districts: ['梁溪区', '滨湖区'] } ] },
+        { name: '浙江省', cities: [
+          { name: '杭州市', districts: ['西湖区', '拱墅区', '上城区', '滨江区'] },
+          { name: '宁波市', districts: ['海曙区', '鄞州区'] },
+          { name: '温州市', districts: ['鹿城区', '龙湾区'] } ] },
+        { name: '安徽省', cities: [
+          { name: '合肥市', districts: ['瑶海区', '庐阳区', '蜀山区'] },
+          { name: '芜湖市', districts: ['镜湖区', '鸠江区'] } ] },
+        { name: '福建省', cities: [
+          { name: '福州市', districts: ['鼓楼区', '台江区', '仓山区'] },
+          { name: '厦门市', districts: ['思明区', '湖里区'] },
+          { name: '泉州市', districts: ['鲤城区', '丰泽区'] } ] },
+        { name: '江西省', cities: [
+          { name: '南昌市', districts: ['东湖区', '西湖区', '青山湖区'] },
+          { name: '赣州市', districts: ['章贡区', '南康区'] } ] },
+        { name: '山东省', cities: [
+          { name: '济南市', districts: ['历下区', '市中区', '槐荫区'] },
+          { name: '青岛市', districts: ['市南区', '市北区', '崂山区'] },
+          { name: '烟台市', districts: ['芝罘区', '莱山区'] } ] },
+        { name: '河南省', cities: [
+          { name: '郑州市', districts: ['中原区', '二七区', '金水区'] },
+          { name: '洛阳市', districts: ['老城区', '西工区', '涧西区'] } ] },
+        { name: '湖北省', cities: [
+          { name: '武汉市', districts: ['江岸区', '江汉区', '武昌区'] },
+          { name: '宜昌市', districts: ['西陵区', '伍家岗区'] },
+          { name: '襄阳市', districts: ['襄城区', '樊城区'] } ] },
+        { name: '湖南省', cities: [
+          { name: '长沙市', districts: ['芙蓉区', '天心区', '岳麓区'] },
+          { name: '株洲市', districts: ['荷塘区', '芦淞区'] } ] },
+        { name: '广东省', cities: [
+          { name: '广州市', districts: ['天河区', '越秀区', '海珠区', '白云区', '番禺区'] },
+          { name: '深圳市', districts: ['南山区', '福田区', '罗湖区', '宝安区'] },
+          { name: '佛山市', districts: ['禅城区', '南海区'] },
+          { name: '东莞市', districts: ['南城街道', '东城街道'] } ] },
+        { name: '广西壮族自治区', cities: [
+          { name: '南宁市', districts: ['兴宁区', '青秀区', '江南区'] },
+          { name: '桂林市', districts: ['秀峰区', '象山区'] },
+          { name: '柳州市', districts: ['城中区', '鱼峰区'] } ] },
+        { name: '海南省', cities: [
+          { name: '海口市', districts: ['秀英区', '龙华区', '美兰区'] },
+          { name: '三亚市', districts: ['海棠区', '吉阳区'] } ] },
+        { name: '重庆市', cities: [
+          { name: '重庆市', districts: ['渝中区', '江北区', '南岸区'] } ] },
+        { name: '四川省', cities: [
+          { name: '成都市', districts: ['锦江区', '武侯区', '青羊区', '金牛区'] },
+          { name: '绵阳市', districts: ['涪城区', '游仙区'] } ] },
+        { name: '贵州省', cities: [
+          { name: '贵阳市', districts: ['南明区', '云岩区', '观山湖区'] },
+          { name: '遵义市', districts: ['红花岗区', '汇川区'] } ] },
+        { name: '云南省', cities: [
+          { name: '昆明市', districts: ['五华区', '盘龙区', '官渡区'] },
+          { name: '丽江市', districts: ['古城区', '玉龙纳西族自治县'] },
+          { name: '大理白族自治州', districts: ['大理市', '祥云县'] } ] },
+        { name: '西藏自治区', cities: [
+          { name: '拉萨市', districts: ['城关区', '堆龙德庆区'] },
+          { name: '日喀则市', districts: ['桑珠孜区'] } ] },
+        { name: '陕西省', cities: [
+          { name: '西安市', districts: ['新城区', '碑林区', '莲湖区'] },
+          { name: '咸阳市', districts: ['秦都区', '渭城区'] } ] },
+        { name: '甘肃省', cities: [
+          { name: '兰州市', districts: ['城关区', '七里河区', '西固区'] },
+          { name: '天水市', districts: ['秦州区', '麦积区'] } ] },
+        { name: '青海省', cities: [
+          { name: '西宁市', districts: ['城东区', '城中区', '城西区'] },
+          { name: '海东市', districts: ['乐都区', '平安区'] } ] },
+        { name: '宁夏回族自治区', cities: [
+          { name: '银川市', districts: ['兴庆区', '金凤区', '西夏区'] },
+          { name: '石嘴山市', districts: ['大武口区', '惠农区'] } ] },
+        { name: '新疆维吾尔自治区', cities: [
+          { name: '乌鲁木齐市', districts: ['天山区', '沙依巴克区'] },
+          { name: '喀什地区', districts: ['喀什市', '疏附县'] } ] },
+        { name: '台湾省', cities: [
+          { name: '台北市', districts: ['中正区', '信义区', '大安区'] },
+          { name: '高雄市', districts: ['前金区', '苓雅区'] } ] },
+        { name: '香港特别行政区', cities: [
+          { name: '香港岛', districts: ['中西区', '湾仔区', '东区'] },
+          { name: '九龙', districts: ['油尖旺区', '深水埗区', '九龙城区'] },
+          { name: '新界', districts: ['沙田区', '荃湾区', '屯门区'] } ] },
+        { name: '澳门特别行政区', cities: [
+          { name: '澳门半岛', districts: ['花地玛堂区', '圣安多尼堂区', '大堂区'] },
+          { name: '氹仔岛', districts: ['嘉模堂区'] },
+          { name: '路环岛', districts: ['圣方济各堂区'] } ] }
+      ];
+
+      /* ===== 滚轮选择器常量与状态 ===== */
+      const ROW_H = 44; // 单项行高 44px
+      // 当前滚轮中的三列下标
+      const pickerState = { p: 0, c: 0, d: 0 };
+      // 当前已提交的城市选择（默认：广东省 广州市 天河区）
+      let currentCity = { p: '广东省', c: '广州市', d: '天河区' };
+      // 联动刷新标记：程序性重置滚动期间忽略 scroll 事件处理
+      let linking = false;
+
+      /* ===== 滚轮渲染工具函数 ===== */
+      // 列表-滚轮项：生成单个滚轮选项节点（scroll-snap 居中对齐）
+      function wheelItemHtml(name, idx) {
+        return '<div class="wheel-item h-11 w-full flex items-center justify-center snap-center '
+          + 'text-sm text-on-surface-variant truncate px-1 select-none cursor-pointer" data-idx="'
+          + idx + '">' + name + '</div>';
+      }
+
+      // 渲染一整列数据，并标记选中项样式
+      function renderColumn(listId, names, selectedIdx) {
+        let html = '';
+        for (let i = 0; i < names.length; i++) html += wheelItemHtml(names[i], i);
+        $('#' + listId).html(html);
+        markSelected(listId, selectedIdx);
+      }
+
+      // 更新某列的选中态：选中项 text-on-surface font-semibold，其余 text-on-surface-variant
+      function markSelected(listId, idx) {
+        $('#' + listId).find('.wheel-item').each(function () {
+          const on = Number($(this).data('idx')) === idx;
+          $(this).toggleClass('text-on-surface', on)
+                 .toggleClass('font-semibold', on)
+                 .toggleClass('text-on-surface-variant', !on);
+        });
+      }
+
+      // 城市列数据（按当前省）
+      function cityNames(pIdx) {
+        return REGION_DATA[pIdx].cities.map(function (c) { return c.name; });
+      }
+      // 区县列数据（按当前省市）
+      function districtNames(pIdx, cIdx) {
+        return REGION_DATA[pIdx].cities[cIdx].districts;
+      }
+
+      /* ===== 联动刷新：省变化 → 市、区列重置首项；市变化 → 区列重置首项 ===== */
+      function refreshCityColumn() {
+        linking = true;
+        renderColumn('wheel-city-list', cityNames(pickerState.p), 0);
+        $('#wheel-city').scrollTop(0);
+        setTimeout(function () { linking = false; }, 60);
+      }
+      function refreshDistrictColumn() {
+        linking = true;
+        renderColumn('wheel-district-list', districtNames(pickerState.p, pickerState.c), 0);
+        $('#wheel-district').scrollTop(0);
+        setTimeout(function () { linking = false; }, 60);
+      }
+
+      /* ===== 绑定单列滚轮：scroll-snap 吸附检测 + 点击定位 ===== */
+      function bindWheel(colId, listId, onSettle) {
+        let timer = null;
+        // 滚动事件：实时高亮居中项，停止滚动后吸附并触发回调
+        $('#' + colId).on('scroll', function () {
+          if (linking) return;
+          const $col = $(this);
+          const idx = Math.max(0, Math.round($col.scrollTop() / ROW_H));
+          markSelected(listId, idx);
+          clearTimeout(timer);
+          timer = setTimeout(function () {
+            if (linking) return;
+            // 吸附校正到最近的整行（配合 CSS scroll-snap 双保险）
+            if (Math.abs($col.scrollTop() - idx * ROW_H) > 1) $col.scrollTop(idx * ROW_H);
+            onSettle(idx);
+          }, 90);
+        });
+        // 点击某一项：平滑滚动到该项，吸附后由 scroll 回调完成选中与联动
+        $('#' + listId).on('click', '.wheel-item', function () {
+          const idx = Number($(this).data('idx'));
+          $('#' + colId).stop(true).animate({ scrollTop: idx * ROW_H }, 180);
+        });
+      }
+
+      // 省份列：选中变化 → 市、区列联动刷新并滚回首项
+      bindWheel('wheel-province', 'wheel-province-list', function (idx) {
+        const maxIdx = REGION_DATA.length - 1;
+        idx = Math.min(idx, maxIdx);
+        if (idx === pickerState.p) return;
+        pickerState.p = idx;
+        pickerState.c = 0;
+        pickerState.d = 0;
+        refreshCityColumn();
+        refreshDistrictColumn();
+      });
+      // 城市列：选中变化 → 区列联动刷新并滚回首项
+      bindWheel('wheel-city', 'wheel-city-list', function (idx) {
+        const maxIdx = REGION_DATA[pickerState.p].cities.length - 1;
+        idx = Math.min(idx, maxIdx);
+        if (idx === pickerState.c) return;
+        pickerState.c = idx;
+        pickerState.d = 0;
+        refreshDistrictColumn();
+      });
+      // 区县列：仅记录选中
+      bindWheel('wheel-district', 'wheel-district-list', function (idx) {
+        const maxIdx = districtNames(pickerState.p, pickerState.c).length - 1;
+        pickerState.d = Math.min(idx, maxIdx);
+      });
+
+      /* ===== 打开 / 关闭选择器 ===== */
+      function openPicker() {
+        // 初始定位到当前已选值（广东省 / 广州市 / 天河区）
+        let pIdx = REGION_DATA.findIndex(function (p) { return p.name === currentCity.p; });
+        if (pIdx < 0) pIdx = 0;
+        let cIdx = REGION_DATA[pIdx].cities.findIndex(function (c) { return c.name === currentCity.c; });
+        if (cIdx < 0) cIdx = 0;
+        let dIdx = districtNames(pIdx, cIdx).indexOf(currentCity.d);
+        if (dIdx < 0) dIdx = 0;
+        pickerState.p = pIdx;
+        pickerState.c = cIdx;
+        pickerState.d = dIdx;
+
+        renderColumn('wheel-province-list', REGION_DATA.map(function (p) { return p.name; }), pIdx);
+        renderColumn('wheel-city-list', cityNames(pIdx), cIdx);
+        renderColumn('wheel-district-list', districtNames(pIdx, cIdx), dIdx);
+
+        $('#city-picker').removeClass('hidden');
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            $('#picker-mask').removeClass('opacity-0');
+            $('#picker-panel').removeClass('translate-y-full');
+            // 面板可见后：按列高计算上下内边距（保证首末项可吸附到中心），并滚到当前已选值
+            linking = true;
+            ['province', 'city', 'district'].forEach(function (key) {
+              const colH = $('#wheel-' + key).height();
+              const pad = Math.max(0, (colH - ROW_H) / 2);
+              $('#wheel-' + key + '-list').css({ 'padding-top': pad + 'px', 'padding-bottom': pad + 'px' });
+            });
+            $('#wheel-province').scrollTop(pIdx * ROW_H);
+            $('#wheel-city').scrollTop(cIdx * ROW_H);
+            $('#wheel-district').scrollTop(dIdx * ROW_H);
+            setTimeout(function () { linking = false; }, 80);
+          });
+        });
+        $('body').css('overflow', 'hidden');
+      }
+
+      function closePicker() {
+        $('#picker-mask').addClass('opacity-0');
+        $('#picker-panel').addClass('translate-y-full');
+        setTimeout(function () {
+          $('#city-picker').addClass('hidden');
+          $('body').css('overflow', '');
+        }, 320);
+      }
+
+      // 点击「出生城市」选择框 → 唤起三级联动选择器
+      $('#select-city').on('click', openPicker);
+      // 点遮罩或「取消」关闭
+      $('#picker-mask').on('click', closePicker);
+      $('#btn-picker-cancel').on('click', closePicker);
+
+      // 点「确定」：关闭面板，选择框显示全路径「省 市 区」；市与省同名（直辖市）时去重显示「省 区」
+      $('#btn-picker-confirm').on('click', function () {
+        const p = REGION_DATA[pickerState.p].name;
+        const c = REGION_DATA[pickerState.p].cities[pickerState.c].name;
+        const d = districtNames(pickerState.p, pickerState.c)[pickerState.d];
+        currentCity = { p: p, c: c, d: d };
+        const label = (c === p) ? (p + ' ' + d) : (p + ' ' + c + ' ' + d);
+        $('#city-value').text(label);
+        console.log('[原型演示] 已选择出生城市：', label, '（存储城市短名：' + c.replace(/(市|地区|盟|自治州)$/, '') + '）');
+        closePicker();
+      });
+
+      /* ===== 其他表单项交互 ===== */
+
+      // 昵称-骰子按钮：随机换一个昵称
+      const NICKNAMES = ['莫奈的睡莲', '星野拾贝', '月下听松', '山间清风', '雾里看花', '云边小筑'];
+      $('#btn-dice').on('click', function () {
+        const cur = $('#input-nickname').val();
+        let next = cur;
+        while (next === cur) next = NICKNAMES[Math.floor(Math.random() * NICKNAMES.length)];
+        $('#input-nickname').val(next);
+      });
+
+      // 性别切换：选中项深色填充，未选中项 Tonal Fill
+      const GENDER_ON = 'bg-primary text-on-primary';
+      const GENDER_OFF = 'bg-surface-container text-on-surface-variant';
+      $('#gender-female').on('click', function () {
+        $('#gender-female').removeClass(GENDER_OFF).addClass(GENDER_ON);
+        $('#gender-male').removeClass(GENDER_ON).addClass(GENDER_OFF);
+      });
+      $('#gender-male').on('click', function () {
+        $('#gender-male').removeClass(GENDER_OFF).addClass(GENDER_ON);
+        $('#gender-female').removeClass(GENDER_ON).addClass(GENDER_OFF);
+      });
+
+      // 历法分段切换
+      $('#calendar-solar').on('click', function () {
+        $('#calendar-solar').removeClass('text-on-surface-variant').addClass('bg-primary text-on-primary');
+        $('#calendar-lunar').removeClass('bg-primary text-on-primary').addClass('text-on-surface-variant');
+      });
+      $('#calendar-lunar').on('click', function () {
+        $('#calendar-lunar').removeClass('text-on-surface-variant').addClass('bg-primary text-on-primary');
+        $('#calendar-solar').removeClass('bg-primary text-on-primary').addClass('text-on-surface-variant');
+      });
+
+      // 出生日期选择框 - 点击后应实现完整行为：
+      // 1. 唤起底部日期滚轮面板（小程序端为 Picker mode="date"），年/月/日三列
+      // 2. 可选范围 1900-01-01 至当天；历法切为「农历」时显示农历年月日并支持闰月
+      // 3. 确认后更新 #birth-date-value 文本（公历显示 YYYY-MM-DD，农历显示「农历 X年X月X日」）
+      $('#select-birth-date').on('click', function () {
+        console.log('[原型演示] 唤起出生日期选择器（公历/农历按当前历法切换）');
+      });
+
+      // 出生时辰选择框 - 点击后应实现完整行为：
+      // 1. 唤起底部单列滚轮，列出十二时辰：子(23:00-01:00)/丑/寅/卯/辰/巳/午/未/申/酉/戌/亥
+      // 2. 初始定位到当前已选时辰（午时）
+      // 3. 确认后更新 #birth-time-value 文本
+      $('#select-birth-time').on('click', function () {
+        console.log('[原型演示] 唤起出生时辰选择器（十二时辰单列滚轮）');
+      });
+
+      // 穿搭风格偏好选择框 - 点击后应实现完整行为：
+      // 1. 唤起底部选项列表：自由搭配 / 简约通勤 / 街头潮流 / 新中式 / 甜酷少女 / 静奢老钱
+      // 2. 当前项带选中勾选态，点选即确认并关闭
+      // 3. 确认后更新 #style-value 文本
+      $('#select-style').on('click', function () {
+        console.log('[原型演示] 唤起穿搭风格偏好选择列表');
+      });
+
+      // 返回按钮：演示用途，不实际跳转
+      $('#btn-back').on('click', function () {
+        console.log('[原型演示] 返回上一页（演示用途，不实际跳转）');
+      });
+
+      /* ===== Toast 轻提示 ===== */
+      let toastTimer = null;
+      function showToast(msg) {
+        $('#toast').text(msg).removeClass('opacity-0');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { $('#toast').addClass('opacity-0'); }, 1800);
+      }
+
+      // 保存档案：校验 + 汇总提交（演示）
+      $('#btn-save').on('click', function () {
+        const nickname = $.trim($('#input-nickname').val());
+        if (!nickname) { showToast('请输入昵称'); return; }
+        const archive = {
+          nickname: nickname,
+          gender: $('#gender-female').hasClass('bg-primary') ? '女' : '男',
+          calendar: $('#calendar-solar').hasClass('bg-primary') ? '公历' : '农历',
+          birthDate: $('#birth-date-value').text(),
+          birthTime: $('#birth-time-value').text(),
+          city: $('#city-value').text(),
+          style: $('#style-value').text()
+        };
+        console.log('[原型演示] 保存档案：', archive);
+        showToast('档案保存成功');
+      });
+
+    });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>
