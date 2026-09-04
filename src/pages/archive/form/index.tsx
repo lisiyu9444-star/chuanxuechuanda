@@ -41,7 +41,7 @@ const calculateAge = (birthDate: string) => {
   return Math.max(1, age)
 }
 
-const getDefaultStyle = () => '简约风'
+const getDefaultStyle = () => '多巴胺穿搭'
 
 const getStyleOptions = (gender: string) => {
   const options = gender === 'male'
