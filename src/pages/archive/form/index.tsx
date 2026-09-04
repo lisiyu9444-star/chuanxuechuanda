@@ -15,6 +15,7 @@ import {
 } from '@/utils/archiveStorage'
 import { syncArchiveToServer } from '@/utils/serverSync'
 import { isLoggedIn, isWeappEnv } from '@/utils/auth'
+import { REGION_DATA, stripCitySuffix, locateByCity, formatRegionLabel } from '@/constants/region-data'
 import type { Archive } from '@/types/archive'
 import './index.css'
 
@@ -64,16 +65,6 @@ const SHICHEN_OPTIONS = [
   '亥时 (21:00-23:00)',
 ]
 
-const CITIES = [
-  '北京', '上海', '广州', '深圳', '杭州', '成都', '重庆', '武汉',
-  '南京', '天津', '苏州', '西安', '长沙', '沈阳', '青岛', '郑州',
-  '大连', '东莞', '宁波', '厦门', '福州', '无锡', '合肥', '昆明',
-  '哈尔滨', '济南', '佛山', '长春', '温州', '石家庄', '南宁', '常州',
-  '泉州', '南昌', '贵阳', '太原', '烟台', '嘉兴', '南通', '金华',
-  '珠海', '惠州', '徐州', '海口', '乌鲁木齐', '绍兴', '中山', '台州',
-  '兰州', '呼和浩特',
-]
-
 const DEFAULT_NICKNAMES = [
   'La Vie', "C'est la vie", 'Belle', 'Douceur', 'Étoile',
   'Aurora', 'Luna', 'Stella', 'Flora', 'Iris',
@@ -90,11 +81,34 @@ const ArchiveFormPage = () => {
   const [calendarType, setCalendarType] = useState<'solar' | 'lunar'>('solar')
   const [birthDate, setBirthDate] = useState('2000-01-01')
   const [shichenIndex, setShichenIndex] = useState(-1)
-  const [cityIndex, setCityIndex] = useState(0)
+  const [regionIndex, setRegionIndex] = useState<[number, number, number]>([0, 0, 0])
   const [stylePreference, setStylePreference] = useState(getDefaultStyle())
   const [styleSheetOpen, setStyleSheetOpen] = useState(false)
 
   const styleOptions = useMemo(() => getStyleOptions(gender), [gender])
+
+  // 省市区三级联动：列数据随选中下标派生
+  const provinceRange = useMemo(() => REGION_DATA.map(p => p.name), [])
+  const cityRange = useMemo(() => REGION_DATA[regionIndex[0]]?.cities.map(c => c.name) ?? [], [regionIndex])
+  const districtRange = useMemo(() => REGION_DATA[regionIndex[0]]?.cities[regionIndex[1]]?.districts ?? [], [regionIndex])
+  const selectedProvince = REGION_DATA[regionIndex[0]]
+  const selectedCity = selectedProvince?.cities[regionIndex[1]]
+  const selectedDistrict = selectedCity?.districts[regionIndex[2]]
+
+  // 滚轮列变化：省级变化重置市/区列，市级变化重置区列
+  const handleRegionColumnChange = (column: number, value: number) => {
+    setRegionIndex(prev => {
+      const next: [number, number, number] = [...prev]
+      next[column] = value
+      if (column === 0) {
+        next[1] = 0
+        next[2] = 0
+      } else if (column === 1) {
+        next[2] = 0
+      }
+      return next
+    })
+  }
 
   useDidShow(() => {
     // 防御：档案表单需登录（正常入口已门禁，此处拦截直接分享/扫码进入的场景）
@@ -120,8 +134,8 @@ const ArchiveFormPage = () => {
         setBirthDate(archive.birthDate)
         const si = SHICHEN_OPTIONS.findIndex(s => s.includes(archive.birthTime || ''))
         setShichenIndex(si >= 0 ? si : -1)
-        const ci = CITIES.findIndex(c => c === archive.location)
-        setCityIndex(ci >= 0 ? ci : 0)
+        const located = locateByCity(archive.location || '')
+        setRegionIndex(located ? [located[0], located[1], 0] : [0, 0, 0])
         const styles = getStyleOptions(archive.gender)
         const savedStyle = archive.stylePreference
         setStylePreference(savedStyle && styles.some(s => s === savedStyle) ? savedStyle : getDefaultStyle())
@@ -135,7 +149,7 @@ const ArchiveFormPage = () => {
     setCalendarType('solar')
     setBirthDate('2000-01-01')
     setShichenIndex(-1)
-    setCityIndex(0)
+    setRegionIndex([0, 0, 0])
     setStylePreference(getDefaultStyle())
   })
 
@@ -149,8 +163,8 @@ const ArchiveFormPage = () => {
       Taro.showToast({ title: '昵称最多 20 个字符', icon: 'none' })
       return
     }
-    if (cityIndex < 0 || cityIndex >= CITIES.length) {
-      Taro.showToast({ title: '请选择所在城市', icon: 'none' })
+    if (!selectedProvince || !selectedCity || !selectedDistrict) {
+      Taro.showToast({ title: '请选择出生城市', icon: 'none' })
       return
     }
     if (!birthDate) {
@@ -170,7 +184,7 @@ const ArchiveFormPage = () => {
       calendarType,
       birthDate,
       birthTime: SHICHEN_OPTIONS[shichenIndex],
-      location: CITIES[cityIndex],
+      location: stripCitySuffix(selectedCity.name),
       age,
       stylePreference: stylePreference === '无偏好' ? '自由搭配' : (stylePreference || getDefaultStyle()),
       isDefault: false,
@@ -306,16 +320,22 @@ const ArchiveFormPage = () => {
         <View>
           <Text className="block text-xs text-gray-500 mb-2">出生城市</Text>
           <Picker
-            mode="selector"
-            range={CITIES}
-            value={cityIndex}
-            onChange={(e) => setCityIndex(Number(e.detail.value))}
+            mode="multiSelector"
+            range={[provinceRange, cityRange, districtRange]}
+            value={regionIndex}
+            onColumnChange={(e) => handleRegionColumnChange(e.detail.column, Number(e.detail.value))}
+            onChange={(e) => setRegionIndex(e.detail.value as [number, number, number])}
           >
             <View className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
-              <Text className="block text-gray-900">{CITIES[cityIndex]}</Text>
+              <Text className="block text-gray-900">
+                {selectedProvince && selectedCity && selectedDistrict
+                  ? formatRegionLabel(selectedProvince.name, selectedCity.name, selectedDistrict)
+                  : '请选择出生城市'}
+              </Text>
               <ChevronDown size={18} color="#9CA3AF" />
             </View>
           </Picker>
+          <Text className="block text-xs text-gray-400 mt-2">用于真太阳时校正，精确到区县更准确</Text>
         </View>
 
         <View>

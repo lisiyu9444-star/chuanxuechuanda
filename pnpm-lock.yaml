@@ -155,6 +155,9 @@ importers:
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
+      province-city-china:
+        specifier: ^8.5.8
+        version: 8.5.8
       react-refresh:
         specifier: ^0.14.0
         version: 0.14.2
@@ -3258,6 +3261,9 @@ packages:
 
   '@protobufjs/utf8@1.1.0':
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
+
+  '@province-city-china/types@8.5.8':
+    resolution: {integrity: sha512-KZ3NyM8HsaBVcn5BRhWaOeZRhqEvm18PfB6HfRDuZfwwWhJLoTxB81mTENrBlONr2g8fy/fSbjsh44gvOj+/Lw==}
 
   '@rnx-kit/babel-preset-metro-react-native@1.1.8':
     resolution: {integrity: sha512-8DotuBK1ZgV0H/tmCmtW/3ofA7JR/8aPqSu9lKnuqwBfq4bxz+w1sMyfFl89m4teWlkhgyczWBGD6NCLqTgi9A==}
@@ -9197,6 +9203,9 @@ packages:
     resolution: {integrity: sha512-5kQWPaJHi1WoCpjTGszzQ32PG2F4+wRY6BmAT4Vfw56Q2FZ4YZzK20xUYQH4YkfehY1e6QSICrJquM6xXZNcrw==}
     hasBin: true
 
+  province-city-china@8.5.8:
+    resolution: {integrity: sha512-gUV5kSOWHVufemkq6lygb0ngNZ4snMcONmr3QzxHuj1MYOQPphiyjHplfmywcVGWdGQgim30RXia/mYB007eLg==}
+
   proxy-addr@2.0.7:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
@@ -14467,6 +14476,8 @@ snapshots:
   '@protobufjs/pool@1.1.0': {}
 
   '@protobufjs/utf8@1.1.0': {}
+
+  '@province-city-china/types@8.5.8': {}
 
   '@rnx-kit/babel-preset-metro-react-native@1.1.8(@babel/core@7.28.5)(@babel/plugin-transform-typescript@7.28.5(@babel/core@7.28.5))(@babel/runtime@7.28.4)':
     dependencies:
@@ -21559,6 +21570,10 @@ snapshots:
       '@types/long': 4.0.2
       '@types/node': 24.12.4
       long: 4.0.0
+
+  province-city-china@8.5.8:
+    dependencies:
+      '@province-city-china/types': 8.5.8
 
   proxy-addr@2.0.7:
     dependencies:
